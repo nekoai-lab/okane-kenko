@@ -8,10 +8,15 @@
  */
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { extname } from "node:path";
+import { dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const TARGET_EXT = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".css"]);
-const BIOME = "node_modules/.bin/biome";
+
+// カレントディレクトリに依存させない。相対パスで解決すると、呼び出し元の cwd が
+// プロジェクト直下でないときに「整形したつもりで何もしていない」状態になる。
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const BIOME = join(PROJECT_ROOT, "node_modules/.bin/biome");
 
 let input = "";
 process.stdin.setEncoding("utf-8");
@@ -27,10 +32,12 @@ process.stdin.on("end", () => {
     process.exit(0);
   }
   if (typeof filePath !== "string" || !TARGET_EXT.has(extname(filePath))) process.exit(0);
-  if (!existsSync(BIOME) || !existsSync(filePath)) process.exit(0);
+
+  const target = isAbsolute(filePath) ? filePath : join(PROJECT_ROOT, filePath);
+  if (!existsSync(BIOME) || !existsSync(target)) process.exit(0);
 
   try {
-    execFileSync(BIOME, ["format", "--write", filePath], { stdio: "ignore" });
+    execFileSync(BIOME, ["format", "--write", target], { cwd: PROJECT_ROOT, stdio: "ignore" });
   } catch {
     // 整形できなくても編集自体は成立している
   }

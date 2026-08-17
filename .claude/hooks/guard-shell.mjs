@@ -11,6 +11,11 @@
  * Cursor 側は failClosed なので、通す場合でも必ず JSON を書くこと（無言で終わると全部ブロックされる）。
  */
 import { execFileSync } from "node:child_process";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// ブランチ名の判定を呼び出し元の cwd に依存させない（cwd がリポジトリ外だと判定が抜ける）
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 const RULES = [
   [
@@ -60,7 +65,10 @@ function isBarePush(command) {
 
 function currentBranch() {
   try {
-    return execFileSync("git", ["branch", "--show-current"], { encoding: "utf-8" }).trim();
+    return execFileSync("git", ["branch", "--show-current"], {
+      cwd: PROJECT_ROOT,
+      encoding: "utf-8",
+    }).trim();
   } catch {
     return "";
   }

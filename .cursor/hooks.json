@@ -4,18 +4,21 @@
     "beforeShellExecution": [
       {
         "command": "node .claude/hooks/guard-shell.mjs",
+        "timeout": 10,
         "failClosed": true
       }
     ],
     "beforeReadFile": [
       {
         "command": "node .claude/hooks/guard-read.mjs",
+        "timeout": 10,
         "failClosed": true
       }
     ],
     "afterFileEdit": [
       {
-        "command": "node .claude/hooks/format-edited.mjs"
+        "command": "node .claude/hooks/format-edited.mjs",
+        "timeout": 15
       }
     ]
   }
