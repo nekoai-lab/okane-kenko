@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI×お金の健康 ─ デザイン仕様（デジタル庁デザインシステム適用）</title>
+<style>
+:root{
+  --dg-blue-100:#D9E6FF; --dg-blue-200:#C5D7FB; --dg-blue-400:#7096F8; --dg-blue-600:#3460FB;
+  --dg-blue-700:#264AF4; --dg-blue-800:#0031D8; --dg-blue-1000:#00118F;
+  --dg-orange-100:#FFDFCA; --dg-orange-500:#FF7628; --dg-orange-600:#FB5B01;
+  --dg-orange-700:#E25100; --dg-orange-800:#C74700;
+  --dg-green-600:#259D63; --dg-green-800:#197A4B;
+  --dg-red-800:#EC0000; --dg-magenta-700:#C000C0; --dg-lime-700:#6FA104; --dg-cyan-700:#008DA6;
+  --dg-yellow-300:#FFD43D;
+  --gray-50:#F2F2F2; --gray-100:#E6E6E6; --gray-200:#CCCCCC; --gray-300:#B3B3B3;
+  --gray-500:#7F7F7F; --gray-536:#767676; --gray-700:#4D4D4D; --gray-900:#1A1A1A;
+  --surface:#fff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--gray-50);color:var(--gray-900);
+  font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+  line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:48px 16px 80px}
+header.top{background:var(--dg-blue-1000);color:#fff;margin:-48px -16px 0;padding:56px 24px 40px}
+header.top h1{font-size:36px;margin:0 0 8px;line-height:1.4}
+header.top p{margin:0;font-size:14px;opacity:.9}
+section{background:var(--surface);border:1px solid var(--gray-200);border-radius:8px;
+  padding:32px;margin-top:32px}
+.kicker{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--dg-blue-1000);margin:0 0 6px}
+h2{font-size:24px;margin:0 0 6px;line-height:1.5}
+h3{font-size:18px;margin:32px 0 10px;line-height:1.5}
+.lead{font-size:14px;color:var(--gray-700);margin:0 0 24px}
+.note{font-size:12px;color:var(--gray-536);border-top:1px dashed var(--gray-200);
+  padding-top:12px;margin-top:24px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th,td{border:1px solid var(--gray-200);padding:8px 10px;text-align:left;vertical-align:middle}
+th{background:var(--gray-50);font-weight:700}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  background:var(--gray-50);padding:1px 5px;border-radius:3px}
+
+/* --- スウォッチ --- */
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.sw{border:1px solid var(--gray-200);border-radius:6px;overflow:hidden}
+.sw .chip{height:56px}
+.sw .meta{padding:8px 10px;font-size:12px;line-height:1.5}
+.sw .meta b{display:block;font-size:13px}
+.sw .meta span{color:var(--gray-536)}
+
+/* --- 判定バッジ（アイコン＋ラベル＋色の3点セット） --- */
+.verdict{display:inline-flex;align-items:center;gap:8px;border-radius:6px;
+  padding:8px 14px;font-size:15px;font-weight:700;border:2px solid}
+.verdict .ico{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  color:#fff;font-size:13px;flex:none}
+.v-short{border-color:var(--dg-orange-600);color:var(--dg-orange-800);background:#FFF4EC}
+.v-short .ico{background:var(--dg-orange-600)}
+.v-red{border-color:var(--dg-green-600);color:var(--dg-green-800);background:#EAF6F0}
+.v-red .ico{background:var(--dg-green-600)}
+.v-neutral{border-color:var(--gray-300);color:var(--gray-700);background:var(--gray-50)}
+.v-neutral .ico{background:var(--gray-500)}
+.v-error{border-color:var(--dg-red-800);color:var(--dg-red-800);background:#FDEEEE}
+.v-error .ico{background:var(--dg-red-800)}
+
+/* --- 積み上げ棒 --- */
+.bar-row{margin:0 0 22px}
+.bar-head{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:14px;margin:0 0 6px}
+.bar-head .total{font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.bar{display:flex;height:44px;border-radius:4px;overflow:hidden;background:var(--surface)}
+.seg{position:relative;display:grid;place-items:center;color:#fff;font-size:12px;
+  font-weight:700;border-right:2px solid var(--surface);white-space:nowrap;overflow:hidden}
+.seg:last-child{border-right:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--gray-700);
+  margin:8px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.hero{border:2px solid var(--dg-orange-600);border-radius:8px;padding:20px 24px;
+  background:#FFF4EC;margin:24px 0 0}
+.hero .label{font-size:13px;color:var(--dg-orange-800);margin:0 0 4px}
+.hero .num{font-size:48px;font-weight:700;line-height:1.4;color:var(--dg-orange-800);
+  font-variant-numeric:tabular-nums}
+.hero .sub{font-size:13px;color:var(--gray-700);margin:6px 0 0}
+.hero-ok{border-color:var(--dg-green-600);background:#EAF6F0}
+.hero-ok .label,.hero-ok .num{color:var(--dg-green-800)}
+
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--gray-700);
+  border-top:1px solid var(--gray-100);padding-top:4px;margin-top:2px}
+
+/* --- タイポ見本 --- */
+.type-row{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--gray-100);
+  padding:10px 0}
+.type-row .tag{font-size:11px;color:var(--gray-536);width:150px;flex:none;
+  font-family:ui-monospace,monospace}
+
+.pass{color:var(--dg-green-800);font-weight:700}
+@media print{body{background:#fff}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>デザイン仕様 ─ デジタル庁デザインシステムの適用</h1>
+  <p>AI × お金の健康 MVP ／ 2026-08-17 ／ 出典：デジタル庁デザインシステム v2.17.0（Community）
+     https://design.digital.go.jp/ ／ 実装：src/design/tokens.css・tokens.ts</p>
+</header>
+
+<!-- ============ 判定色 ============ -->
+<section>
+  <p class="kicker">01 ─ 判定の色</p>
+  <h2>赤はシステムエラーだけに使う ─ 保障の不足はエラーではないから</h2>
+  <p class="lead">「煽らない」という芯があるので、不足を赤で出さない。減らせる（＝保険料が浮く）は利用者にとって良い知らせなので緑にする。
+  そして<strong>色だけで意味を伝えない</strong>ため、判定は必ずアイコン・ラベル・色の3点で出す。</p>
+
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+    <span class="verdict v-short"><i class="ico">!</i>足りていません</span>
+    <span class="verdict v-red"><i class="ico">↓</i>減らせます</span>
+    <span class="verdict v-neutral"><i class="ico">✓</i>足りています</span>
+    <span class="verdict v-red"><i class="ico">✓</i>保障そのものが要りません</span>
+    <span class="verdict v-error"><i class="ico">×</i>制度改正の反映中（診断停止）</span>
+  </div>
+
+  <table>
+    <tr><th>状態</th><th>色</th><th>元（デジタル庁DS）</th><th>この割り当てにした理由</th></tr>
+    <tr><td>不足している</td><td><code>#FB5B01</code> / 文字 <code>#C74700</code></td><td>Orange-600 / 800（Warning）</td><td>赤は煽りになる。不足はエラーではない</td></tr>
+    <tr><td>減らせる・要らない</td><td><code>#259D63</code> / 文字 <code>#197A4B</code></td><td>Green-600 / 800（Success）</td><td>保険料が浮く＝良い知らせ</td></tr>
+    <tr><td>足りている</td><td><code>#7F7F7F</code> / 文字 <code>#4D4D4D</code></td><td>Gray-500 / 700</td><td>淡々と伝える。良くも悪くもない</td></tr>
+    <tr><td>システムエラー</td><td><code>#EC0000</code></td><td>Red-800（Error）</td><td><strong>赤はここだけ</strong>。パラメータ期限切れ・通信失敗</td></tr>
+  </table>
+  <p class="note">※ フォーカスリングは Yellow-300 <code>#FFD43D</code> と Black の2重構造。デジタル庁DSで「いかなる場合も変更してはいけない」と規定されているため上書きしない。</p>
+</section>
+
+<!-- ============ 主グラフ ============ -->
+<section>
+  <p class="kicker">02 ─ 結果画面の主グラフ</p>
+  <h2>必要保障額の内訳（本人が亡くなった場合・単位：万円）</h2>
+  <p class="lead">診断の中心は「支出いくら vs 収入いくら、だから足りないのはこれだけ」という因数分解。ここが「薄くない診断」の実体なので、最も重要なグラフ。
+  <br>下記は GT-02（夫38歳・年収500万／妻35歳 専業／子5歳・2歳／賃貸／貯蓄200万）の実際の算定結果。</p>
+
+  <div class="bar-row">
+    <div class="bar-head"><span>これから必要な支出</span><span class="total">8,266万円</span></div>
+    <div class="bar" role="img" aria-label="支出の内訳：生活費(子育て期)4,704万円、生活費(独立後)1,680万円、教育費1,682万円、葬儀・予備費200万円">
+      <div class="seg" style="width:56.9%;background:#C74700" title="生活費（子育て期）4,704万円">生活費（子育て期） 4,704</div>
+      <div class="seg" style="width:20.3%;background:#E25100" title="生活費（独立後）1,680万円">生活費（独立後） 1,680</div>
+      <div class="seg" style="width:20.3%;background:#FB5B01" title="教育費 1,682万円">教育費 1,682</div>
+      <div class="seg" style="width:2.4%;background:#FF7628" title="葬儀・予備費 200万円"></div>
+    </div>
+  </div>
+
+  <div class="bar-row">
+    <div class="bar-head"><span>入ってくる収入・資産</span><span class="total">5,695万円</span></div>
+    <div class="bar" role="img" aria-label="収入の内訳：遺族基礎年金2,063万円、遺族厚生年金1,542万円、中高齢寡婦加算890万円、就労収入1,000万円、貯蓄200万円">
+      <div class="seg" style="width:24.9%;background:#00118F" title="遺族基礎年金 2,063万円">遺族基礎年金 2,063</div>
+      <div class="seg" style="width:18.7%;background:#0031D8" title="遺族厚生年金 1,542万円">遺族厚生年金 1,542</div>
+      <div class="seg" style="width:10.8%;background:#3460FB" title="中高齢寡婦加算 890万円">中高齢 890</div>
+      <div class="seg" style="width:12.1%;background:#7096F8" title="奥様の就労収入 1,000万円">就労 1,000</div>
+      <div class="seg" style="width:2.4%;background:#C5D7FB;color:#00118F" title="貯蓄 200万円"></div>
+    </div>
+    <div class="axis"><span>0</span><span>8,266万円</span></div>
+    <div class="legend">
+      <span><i style="background:#FF7628"></i>葬儀・予備費 200万円</span>
+      <span><i style="background:#C5D7FB"></i>貯蓄 200万円</span>
+      <span style="color:#767676">※ 帯が短い項目は凡例で補っています</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <p class="label">差し引いて、足りない分</p>
+    <div class="num">約2,100〜3,100万円</div>
+    <p class="sub">支出 8,266万円 − 収入・資産 5,695万円 ＝ 2,571万円。概算のため幅で示しています。<br>
+      いまの保障は1,000万円なので、<strong>約1,100万円ぶん足りません</strong>。</p>
+  </div>
+
+  <h3>同じ数字を表でも見られるようにする</h3>
+  <table>
+    <tr><th>支出</th><th class="num">万円</th><th>収入・資産</th><th class="num">万円</th></tr>
+    <tr><td>生活費（子育て期・20年）</td><td class="num">4,704</td><td>遺族基礎年金</td><td class="num">2,063</td></tr>
+    <tr><td>生活費（末子独立後・10年）</td><td class="num">1,680</td><td>遺族厚生年金</td><td class="num">1,542</td></tr>
+    <tr><td>教育費（子2人・公立中心）</td><td class="num">1,682</td><td>中高齢寡婦加算</td><td class="num">890</td></tr>
+    <tr><td>住居費（賃貸のため生活費に含む）</td><td class="num">0</td><td>奥様の就労収入</td><td class="num">1,000</td></tr>
+    <tr><td>葬儀・予備費</td><td class="num">200</td><td>貯蓄</td><td class="num">200</td></tr>
+    <tr><th>合計</th><th class="num">8,266</th><th>合計</th><th class="num">5,695</th></tr>
+  </table>
+
+  <h3>この形にした理由</h3>
+  <table>
+    <tr><th>決めたこと</th><th>理由</th></tr>
+    <tr><td><strong>色相＝支出か収入かに意味を持たせる</strong>（支出＝オレンジ系／収入＝ブルー系）</td>
+        <td>10項目を別々の色にすると識別が破綻する。カテゴリカルで安全に識別できるのは6色まで。<br>そもそも伝えたいのは「出ていくお金 vs 入ってくるお金」の対比</td></tr>
+    <tr><td>内訳は<strong>同じ色相の明度差</strong>で分け、<strong>帯の中に直接ラベル</strong>を書く</td>
+        <td>明度だけでは識別できないので、ラベルが本体。色は補助</td></tr>
+    <tr><td>セグメント間に<strong>2pxの背景色の隙間</strong></td><td>隣接した塗りが混ざって1つに見えるのを防ぐ</td></tr>
+    <tr><td>2本の棒は<strong>同じ軸・同じ0始点</strong>で上下に並べる</td><td>長さをそのまま比べられる。円グラフでは比較できない</td></tr>
+    <tr><td>差引きの結果は<strong>ヒーロー数字</strong>で別に置く</td><td>グラフから引き算させない。結論を読み取らせる作業をユーザーにさせない</td></tr>
+    <tr><td>タイトルに<strong>対象・条件・単位</strong>を入れる</td><td>「内訳」だけでは何の数字か分からない</td></tr>
+  </table>
+</section>
+
+<!-- ============ 充足ケース ============ -->
+<section>
+  <p class="kicker">03 ─ 同じグラフで「足りている」を出す</p>
+  <h2>必要保障額の内訳（GT-01：共働き・団信あり世帯・単位：万円）</h2>
+  <p class="lead">10世帯のテストでは19の死亡ケースのうち不足は2件だけでした。<strong>ほとんどの利用者はこちらの画面を見ます。</strong>
+  ここで煽らずに「要りません」と言い切れるかが、このプロダクトの芯そのものです。</p>
+
+  <div class="bar-row">
+    <div class="bar-head"><span>これから必要な支出</span><span class="total">7,949万円</span></div>
+    <div class="bar">
+      <div class="seg" style="width:47.6%;background:#C74700">生活費（子育て期） 5,040</div>
+      <div class="seg" style="width:17.0%;background:#E25100">生活費（独立後） 1,800</div>
+      <div class="seg" style="width:8.6%;background:#FB5B01">教育費 909</div>
+      <div class="seg" style="width:1.9%;background:#FF7628"></div>
+    </div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-head"><span>入ってくる収入・資産</span><span class="total">10,578万円</span></div>
+    <div class="bar">
+      <div class="seg" style="width:16.5%;background:#00118F">遺族基礎 1,746</div>
+      <div class="seg" style="width:14.6%;background:#0031D8">遺族厚生 1,542</div>
+      <div class="seg" style="width:8.4%;background:#3460FB">中高齢 890</div>
+      <div class="seg" style="width:56.7%;background:#7096F8">奥様の就労収入 6,000</div>
+      <div class="seg" style="width:3.8%;background:#C5D7FB;color:#00118F">貯蓄 400</div>
+    </div>
+    <div class="axis"><span>0</span><span>10,578万円</span></div>
+  </div>
+
+  <div class="hero hero-ok">
+    <p class="label">結論</p>
+    <div class="num">上乗せも要りません</div>
+    <p class="sub">収入・資産が支出を2,629万円上回っています。<strong>いまの保障2,000万円は、約1,800万円ぶん減らせます。</strong><br>
+      住宅ローンは団信で消え、遺族年金と奥様の収入が続くので、「何千万も足りない」は当てはまりません。</p>
+  </div>
+  <p class="note">※ 遺族の就労収入を全額差し引く設計にもとづく（ADR-009）。この前提を変えると結論は変わります。<br>
+  ※ 年金額は令和8年度の報道値ベース（<code>verified: false</code>）。一次情報で確定するまで本番に出しません。</p>
+</section>
+
+<!-- ============ カテゴリカル ============ -->
+<section>
+  <p class="kicker">04 ─ 系列を識別するグラフ</p>
+  <h2>カテゴリカルパレット（固定順・6色まで・循環させない）</h2>
+  <p class="lead">法人ダッシュボードや分析用グラフで、複数の系列を区別するときに使う。順番どおりに割り当て、系列が減っても残った系列の色は変えない。</p>
+
+  <div class="sw-grid">
+    <div class="sw"><div class="chip" style="background:#264AF4"></div><div class="meta"><b>1 &nbsp;#264AF4</b><span>Blue-700</span></div></div>
+    <div class="sw"><div class="chip" style="background:#E25100"></div><div class="meta"><b>2 &nbsp;#E25100</b><span>Orange-700</span></div></div>
+    <div class="sw"><div class="chip" style="background:#259D63"></div><div class="meta"><b>3 &nbsp;#259D63</b><span>Green-600</span></div></div>
+    <div class="sw"><div class="chip" style="background:#C000C0"></div><div class="meta"><b>4 &nbsp;#C000C0</b><span>Magenta-700</span></div></div>
+    <div class="sw"><div class="chip" style="background:#6FA104"></div><div class="meta"><b>5 &nbsp;#6FA104</b><span>Lime-700</span></div></div>
+    <div class="sw"><div class="chip" style="background:#008DA6"></div><div class="meta"><b>6 &nbsp;#008DA6</b><span>Cyan-700</span></div></div>
+  </div>
+
+  <h3>検証結果</h3>
+  <table>
+    <tr><th>チェック項目</th><th>ライト（背景 #fcfcfb）</th><th>ダーク（背景 #1a1a19）</th></tr>
+    <tr><td>明度帯に収まっているか</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>彩度が下限以上か（灰色に見えないか）</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+    <tr><td>色覚特性での隣接色の分離</td><td class="pass">PASS（最小 ΔE 9.1）</td><td class="pass">PASS（最小 ΔE 8.9）</td></tr>
+    <tr><td>通常視での隣接色の分離</td><td class="pass">PASS（最小 ΔE 20.4）</td><td class="pass">PASS（最小 ΔE 20.4）</td></tr>
+    <tr><td>背景とのコントラスト 3:1 以上</td><td class="pass">PASS</td><td class="pass">PASS</td></tr>
+  </table>
+  <p class="note">※ 目視ではなく検証スクリプトで確認した結果。パレットを変えたら必ず再実行すること。<br>
+  ※ ダークは自動反転ではなく、同じ色の階調から選び直して検証したもの（1=Blue-500、3=Green-500、4=Magenta-600）。<br>
+  ※ <strong>7系列目が必要になったら色を足さない。</strong>「その他」にまとめるか、グラフを分割する。</p>
+</section>
+
+<!-- ============ タイポ・レイアウト ============ -->
+<section>
+  <p class="kicker">05 ─ タイポグラフィとレイアウト</p>
+  <h2>本文は16px・行間170% ─ 重い話を読ませるので詰めない</h2>
+
+  <div class="type-row"><span class="tag">Dsp-48B-140</span><span style="font-size:48px;font-weight:700;line-height:1.4">約2,571万円</span></div>
+  <div class="type-row"><span class="tag">Std-24B-150</span><span style="font-size:24px;font-weight:700;line-height:1.5">なぜこの額になるのか</span></div>
+  <div class="type-row"><span class="tag">Std-18B-160</span><span style="font-size:18px;font-weight:700;line-height:1.6">遺族年金でカバーされる分</span></div>
+  <div class="type-row"><span class="tag">Std-16N-170</span><span style="font-size:16px;line-height:1.7">住宅ローンは団信で消え、遺族年金と奥様の収入が続きます。</span></div>
+  <div class="type-row"><span class="tag">Dns-14N-130</span><span style="font-size:14px;line-height:1.3;color:#4D4D4D">※ 概算・要精査。前提により変動します。</span></div>
+
+  <h3>レイアウト</h3>
+  <table>
+    <tr><th>画面幅</th><th class="num">マージン</th><th class="num">ガター</th><th class="num">コンテンツ最大幅</th></tr>
+    <tr><td>モバイル（〜767px）<strong>← 優先</strong></td><td class="num">16px</td><td class="num">16px</td><td class="num">画面幅いっぱい</td></tr>
+    <tr><td>タブレット（1024px）</td><td class="num">16px以上</td><td class="num">32px</td><td class="num">固定幅</td></tr>
+    <tr><td>デスクトップ（1280px）</td><td class="num">80px</td><td class="num">32px</td><td class="num">1,120px</td></tr>
+    <tr><td>広画面（1440px）</td><td class="num">32px以上</td><td class="num">32px</td><td class="num">1,312px</td></tr>
+  </table>
+  <p class="note">※ 社員はLINEから開くので、スマートフォン優先で設計する（NFR-04）。タッチターゲットは最低44px。</p>
+</section>
+
+<footer style="margin-top:36px;font-size:12px;color:#767676;border-top:1px solid #CCC;padding-top:16px">
+  AI × お金の健康 ／ 出典：デジタル庁デザインシステム v2.17.0（Community）。
+  本資料は同デザインシステムを参照して当社サービス向けに割り当てを定義したものであり、公的機関が発行する資料ではありません。
+</footer>
+
+</div>
+</body>
+</html>

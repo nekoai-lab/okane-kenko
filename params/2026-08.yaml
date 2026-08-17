@@ -1,0 +1,192 @@
+# 制度パラメータ（ADR-004 / PR-01〜PR-08）
+# 値・出典・有効期限・確認済みフラグを必ずセットで持つ。
+# verified: false のまま本番に出さないこと。期限切れの中核パラメータでは診断を停止する。
+version: "2026.08"
+effectiveFrom: "2026-08-01"
+effectiveTo: "2027-03-31" # 年金額は年度改定。超過したら警告し、中核パラメータなら診断停止
+
+# ============ 公的制度 ============
+public:
+  izokuKisoBase:
+    value: 847500
+    unit: JPY/year
+    label: 遺族基礎年金 基本額
+    source: 日本年金機構 令和8年度年金額
+    verified: false # ★報道値ベース。年金額改定通知で確定させること（OI-02）
+    core: true
+  childAdd1_2:
+    value: 243900
+    unit: JPY/year
+    label: 子の加算 第1・2子
+    source: 同上
+    verified: false
+    core: true
+  childAdd3plus:
+    value: 81300
+    unit: JPY/year
+    label: 子の加算 第3子以降
+    source: 同上
+    verified: false
+    core: true
+  chukoreiKafuAdd:
+    value: 635700
+    unit: JPY/year
+    label: 中高齢寡婦加算
+    source: 老齢基礎年金満額の3/4相当
+    verified: false
+    core: true
+  hoshuHireiCoef:
+    value: 0.005481
+    unit: ratio
+    label: 報酬比例部分の乗率（5.481/1000）
+    source: 厚生年金保険法
+    verified: true
+    core: true
+  izokuKoseiRatio:
+    value: 0.75
+    unit: ratio
+    label: 報酬比例部分の3/4
+    source: 厚生年金保険法
+    verified: true
+    core: true
+  minimumInsuredMonths:
+    value: 300
+    unit: months
+    label: 短期要件のみなし300月
+    source: 厚生年金保険法
+    verified: true
+    core: true
+  reform2028Years:
+    value: 5
+    unit: years
+    label: 2028年4月〜 子のない配偶者の遺族厚生年金（原則5年）
+    source: 2025年改正
+    verified: false # 細目の確定待ち（OI-04）
+    core: true
+  chukoreiKafuMinAge:
+    value: 40
+    unit: age
+    label: 中高齢寡婦加算の年齢要件
+    source: 厚生年金保険法
+    verified: false
+    core: true
+
+# 高額療養費（70歳未満・2026年8月〜 第1段階）
+# 2027年8月に13区分へ細分化予定（OI-03）
+kogaku:
+  assumedMonthlyMedicalCost: 1000000 # 判定に用いる月あたり医療費（総額）
+  brackets:
+    - name: 区分ア
+      minIncome: 11600000
+      base: 270300
+      threshold: 901000
+      rate: 0.01
+    - name: 区分イ
+      minIncome: 7700000
+      base: 179100
+      threshold: 597000
+      rate: 0.01
+    - name: 区分ウ
+      minIncome: 3700000
+      base: 85800
+      threshold: 286000
+      rate: 0.01
+    - name: 区分エ
+      minIncome: 0
+      base: 61500
+      threshold: 0
+      rate: 0
+  source: 2026年8月1日施行（第1段階）
+  verified: false
+
+# ============ 当社基準（公的出典が存在しない） ============
+# ADR-014：結果画面で「当社基準」と明示し、本人が動かせるようにする
+ownStandard:
+  survivorLivingRatioChild:
+    value: 0.70
+    label: 遺族の生活費率（子育て期）
+    note: 業界慣行。公的出典なし
+    userAdjustable: true
+  survivorLivingRatioAlone:
+    value: 0.50
+    label: 遺族の生活費率（末子独立後）
+    note: 公的出典なし
+    userAdjustable: true
+  netIncomeRatio:
+    value: 0.80
+    label: 年収→手取り
+    note: 公的出典なし
+    userAdjustable: false
+  postIndepMinIncome:
+    value: 1000000
+    unit: JPY/year
+    label: 末子独立後の最低就労推定（パート相当）
+    note: ADR-008で新設。公的出典なし
+    userAdjustable: true
+  livingCostFromIncome:
+    value: 0.75
+    label: 年収から生活費を推定する場合の係数
+    note: 公的出典なし
+    userAdjustable: false
+  selfInsureMultiple:
+    value: 3
+    label: 自己保険と判定する資産倍率
+    note: ADR-010。公的な裏付けなし＝当社判断として明示する
+    userAdjustable: false
+  amplemarginRatio:
+    value: 0.2
+    label: 「上乗せも不要」と判定する余剰率（margin > E × この値）
+    note: 煽らないための閾値。当社基準
+    userAdjustable: false
+
+# ============ 出典に差し替えるべき想定値 ============
+toBeSourced:
+  funeralReserve:
+    value: 2000000
+    unit: JPY
+    label: 葬儀・予備費
+    source: TODO 民間の大規模調査に差し替える
+    verified: false
+  educationPublic:
+    value: 10000000
+    unit: JPY/child
+    label: 教育費（公立中心・大学まで）
+    source: TODO 文科省 子供の学習費調査 ＋ 日本政策金融公庫 教育費負担の実態調査
+    verified: false
+  educationMixed:
+    value: 15000000
+    unit: JPY/child
+    label: 教育費（私立混在）
+    source: TODO 同上
+    verified: false
+  educationPrivate:
+    value: 20000000
+    unit: JPY/child
+    label: 教育費（私立中心）
+    source: TODO 同上
+    verified: false
+  hospitalMonthsStd:
+    value: 1
+    unit: months
+    label: 標準入院期間
+    source: TODO 厚労省 患者調査 平均在院日数に差し替える
+    verified: false
+  hospitalMonthsLong:
+    value: 3
+    unit: months
+    label: 長期化ケース
+    source: TODO 同上
+    verified: false
+  uncoveredMedicalMonthly:
+    value: 100000
+    unit: JPY/month
+    label: 保険外費用（差額ベッド・食事・雑費）
+    source: TODO 民間調査に差し替える
+    verified: false
+
+# ============ 固定値 ============
+constants:
+  childIndepAge: 22
+  pensionAge: 65
+  shortageThreshold: 3000000 # これ未満は「不足」と呼ばない
+  roundUnit: 1000000 # 100万円単位に丸め

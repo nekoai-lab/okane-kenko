@@ -1,0 +1,325 @@
+/**
+ * デザイントークン
+ *
+ * 出典：デジタル庁デザインシステム v2.17.0（Community）のプリミティブカラーおよび
+ *       セマンティックカラーの定義にもとづく。ライセンスと最新の定義は
+ *       https://design.digital.go.jp/ を参照すること。
+ *
+ * ここで定義するのは「デジタル庁の色を、このプロダクトの意味にどう割り当てるか」。
+ * プリミティブ（色そのもの）とセマンティック（意味）を分け、コンポーネントは
+ * セマンティックだけを参照する。プリミティブを直接使わない。
+ */
+
+:root {
+  /* ============================================================
+   * プリミティブカラー（デジタル庁DS）
+   * 使うのはトークン定義の中だけ。UIコードから直接参照しない。
+   * ============================================================ */
+
+  /* Blue */
+  --dg-blue-50: #e8f1fe;
+  --dg-blue-100: #d9e6ff;
+  --dg-blue-200: #c5d7fb;
+  --dg-blue-300: #9db7f9;
+  --dg-blue-400: #7096f8;
+  --dg-blue-500: #4979f5;
+  --dg-blue-600: #3460fb;
+  --dg-blue-700: #264af4;
+  --dg-blue-800: #0031d8;
+  --dg-blue-900: #0017c1;
+  --dg-blue-1000: #00118f;
+  --dg-blue-1100: #000071;
+  --dg-blue-1200: #000060;
+
+  /* Light Blue */
+  --dg-lightblue-600: #008bf2;
+  --dg-lightblue-800: #0066be;
+  --dg-lightblue-900: #0055ad;
+
+  /* Cyan */
+  --dg-cyan-200: #99f2ff;
+  --dg-cyan-600: #00a3bf;
+  --dg-cyan-700: #008da6;
+  --dg-cyan-900: #006f83;
+
+  /* Green */
+  --dg-green-500: #2cac6e;
+  --dg-green-600: #259d63;
+  --dg-green-700: #1d8b56;
+  --dg-green-800: #197a4b;
+
+  /* Lime */
+  --dg-lime-700: #6fa104;
+
+  /* Yellow */
+  --dg-yellow-300: #ffd43d; /* フォーカス。変更不可 */
+  --dg-yellow-700: #b78f00;
+  --dg-yellow-900: #927200;
+
+  /* Orange */
+  --dg-orange-100: #ffdfca;
+  --dg-orange-500: #ff7628;
+  --dg-orange-600: #fb5b01;
+  --dg-orange-700: #e25100;
+  --dg-orange-800: #c74700;
+
+  /* Red */
+  --dg-red-50: #fdeeee;
+  --dg-red-800: #ec0000;
+  --dg-red-900: #ce0000;
+
+  /* Magenta */
+  --dg-magenta-600: #db00db;
+  --dg-magenta-700: #c000c0;
+  --dg-magenta-900: #8b008b;
+
+  /* Gray */
+  --dg-white: #ffffff;
+  --dg-gray-50: #f2f2f2;
+  --dg-gray-100: #e6e6e6;
+  --dg-gray-200: #cccccc;
+  --dg-gray-300: #b3b3b3;
+  --dg-gray-500: #7f7f7f;
+  --dg-gray-536: #767676; /* 白背景で4.5:1 を満たす最も薄いグレー */
+  --dg-gray-700: #4d4d4d;
+  --dg-gray-800: #333333;
+  --dg-gray-900: #1a1a1a;
+  --dg-black: #000000;
+
+  /* ============================================================
+   * セマンティックカラー（このプロダクトの意味）
+   * UIコードはここだけを参照する。
+   * ============================================================ */
+
+  /* 面 */
+  --color-surface: var(--dg-white);
+  --color-surface-subtle: var(--dg-gray-50);
+  --color-surface-inverse: var(--dg-blue-1000);
+
+  /* 文字 */
+  --color-text: var(--dg-gray-900);
+  --color-text-secondary: var(--dg-gray-700);
+  --color-text-muted: var(--dg-gray-536);
+  --color-text-on-inverse: var(--dg-white);
+
+  /* 罫線 */
+  --color-border: var(--dg-gray-300);
+  --color-divider: var(--dg-gray-100);
+
+  /* 主要 */
+  --color-primary: var(--dg-blue-1000);
+  --color-link: var(--dg-blue-1000);
+  --color-link-visited: var(--dg-magenta-900);
+
+  /* フォーカス（デジタル庁DSの規定。いかなる場合も変更しない） */
+  --color-focus-inner: var(--dg-yellow-300);
+  --color-focus-outer: var(--dg-black);
+
+  /* 状態 */
+  --color-success: var(--dg-green-600);
+  --color-success-text: var(--dg-green-800);
+  --color-warning: var(--dg-orange-600);
+  --color-warning-text: var(--dg-orange-800);
+  --color-error: var(--dg-red-800);
+  --color-error-text: var(--dg-red-900);
+  --color-error-bg: var(--dg-red-50);
+
+  /* ------------------------------------------------------------
+   * 診断結果の判定色 ─ このプロダクト固有の割り当て
+   *
+   * 「煽らない」という芯があるので、赤はシステムエラーだけに使う。
+   * 保障の不足はエラーではないので warning（橙）にする。
+   * 減らせる＝保険料が浮く＝良い知らせなので success（緑）にする。
+   * 色だけで意味を伝えないため、必ずラベルとアイコンを併記すること。
+   * ------------------------------------------------------------ */
+  --color-verdict-shortage: var(--color-warning); /* 不足している */
+  --color-verdict-shortage-text: var(--color-warning-text);
+  --color-verdict-reducible: var(--color-success); /* 減らせる・入らなくていい */
+  --color-verdict-reducible-text: var(--color-success-text);
+  --color-verdict-adequate: var(--dg-gray-500); /* 適正 */
+  --color-verdict-none: var(--dg-gray-500); /* 保障そのものが不要 */
+
+  /* ------------------------------------------------------------
+   * グラフ
+   * ------------------------------------------------------------ */
+
+  /* 面・軸・グリッド */
+  --chart-surface: var(--dg-white);
+  --chart-grid: var(--dg-gray-100);
+  --chart-axis-text: var(--dg-gray-700);
+
+  /* 支出／収入の対比（結果画面の主グラフ）
+     色相＝支出か収入か（意味を持つ）／明度＝内訳の項目（必ず直接ラベルを併記） */
+  --chart-expense-1: var(--dg-orange-800);
+  --chart-expense-2: var(--dg-orange-700);
+  --chart-expense-3: var(--dg-orange-600);
+  --chart-expense-4: var(--dg-orange-500);
+  --chart-expense-5: var(--dg-orange-100);
+  --chart-income-1: var(--dg-blue-1000);
+  --chart-income-2: var(--dg-blue-800);
+  --chart-income-3: var(--dg-blue-600);
+  --chart-income-4: var(--dg-blue-400);
+  --chart-income-5: var(--dg-blue-200);
+
+  /* カテゴリカル（系列の識別。固定順で割り当て、循環させない）
+     検証済み：dataviz validator の全6項目 PASS（light, surface #fcfcfb）
+     明度帯・彩度下限・色覚特性の分離・通常視の分離・コントラスト すべて合格 */
+  --chart-cat-1: var(--dg-blue-700); /* #264AF4 */
+  --chart-cat-2: var(--dg-orange-700); /* #E25100 */
+  --chart-cat-3: var(--dg-green-600); /* #259D63 */
+  --chart-cat-4: var(--dg-magenta-700); /* #C000C0 */
+  --chart-cat-5: var(--dg-lime-700); /* #6FA104 */
+  --chart-cat-6: var(--dg-cyan-700); /* #008DA6 */
+
+  /* 連続量（1色相・淡→濃） */
+  --chart-seq-1: var(--dg-blue-100);
+  --chart-seq-2: var(--dg-blue-300);
+  --chart-seq-3: var(--dg-blue-500);
+  --chart-seq-4: var(--dg-blue-700);
+  --chart-seq-5: var(--dg-blue-1000);
+
+  /* ------------------------------------------------------------
+   * タイポグラフィ（デジタル庁DSのスケール）
+   * 命名：用途-サイズ-ウェイト-行間  例 Std-16N-170 = 16px / normal / 170%
+   * ------------------------------------------------------------ */
+  --font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui,
+    sans-serif;
+
+  --font-size-dsp-l: 64px; /* Display：トップの主張 */
+  --font-size-dsp-m: 57px;
+  --font-size-dsp-s: 48px;
+  --font-size-std-3xl: 45px; /* Standard：見出し */
+  --font-size-std-2xl: 36px;
+  --font-size-std-xl: 32px;
+  --font-size-std-l: 28px;
+  --font-size-std-m: 24px;
+  --font-size-std-s: 20px;
+  --font-size-std-xs: 18px;
+  --font-size-body: 16px; /* 本文 */
+  --font-size-dense: 14px; /* Dense：表・補足 */
+
+  --line-height-dsp: 1.4;
+  --line-height-heading: 1.5;
+  --line-height-body: 1.7;
+  --line-height-body-loose: 1.75;
+  --line-height-dense: 1.3;
+  --line-height-oneline: 1;
+
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+
+  /* ------------------------------------------------------------
+   * レイアウト（デジタル庁DSの規定）
+   * ------------------------------------------------------------ */
+  --layout-margin-mobile: 16px;
+  --layout-margin-tablet: 32px;
+  --layout-margin-desktop: 80px;
+  --layout-gutter-mobile: 16px;
+  --layout-gutter-tablet: 24px;
+  --layout-gutter-desktop: 32px;
+  --layout-content-max: 1120px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 56px;
+  --space-9: 80px;
+
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+
+  /* タッチターゲットの最小サイズ */
+  --target-min: 44px;
+
+  /* ------------------------------------------------------------
+   * 余白・形・奥行き
+   *
+   * ここは Apple の公開パターン分析（getdesign.md）から取り入れた部分。
+   * 「UIは引いて、主役に語らせる」という考え方が、このプロダクトの
+   * 「数字と根拠が主役」という性格とそのまま一致するため。
+   * 色とアクセシビリティはデジタル庁DSに従い、Apple由来の色は使わない。
+   * ------------------------------------------------------------ */
+
+  /* 8px を基準にした余白。セクション間は大きく取り、画面を詰めない */
+  --space-section: 80px; /* セクションの上下 */
+  --space-section-sm: 48px; /* モバイル */
+  --space-card: 24px; /* カード内側 */
+
+  /* 形 */
+  --radius-pill: 9999px; /* CTA・チップは必ずピル型 */
+  --radius-card: 18px;
+  --radius-control: 8px;
+  --radius-tile: 0; /* 全幅タイルは角を丸めない */
+
+  /* 奥行きは1つだけ。主役（結果カード）にしか使わない。
+     ボタン・入力欄・通常のカードには影を付けない */
+  --shadow-hero: 0 5px 30px rgba(0, 0, 0, 0.08);
+  --backdrop-sticky: saturate(180%) blur(20px);
+
+  /* 字送り。大きな数字だけ少し詰めると、締まって見える。
+     和文の本文には掛けない（詰めると読みにくくなる） */
+  --tracking-display: -0.02em;
+  --tracking-heading: -0.01em;
+  --tracking-body: 0;
+
+  /* 面の切り替え。罫線ではなく面の色でセクションを分ける */
+  --color-tile-plain: var(--dg-white);
+  --color-tile-tinted: var(--dg-gray-50);
+  --color-tile-inverse: var(--dg-blue-1000);
+}
+
+/* ============================================================
+ * ダークモード
+ * 自動反転ではなく、同じ ramp から選び直して検証したもの。
+ * カテゴリカルは dataviz validator の全6項目 PASS（dark, surface #1a1a19）
+ * ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: var(--dg-gray-900);
+    --color-surface-subtle: var(--dg-gray-800);
+    --color-text: var(--dg-gray-50);
+    --color-text-secondary: var(--dg-gray-200);
+    --color-text-muted: var(--dg-gray-300);
+    --color-border: var(--dg-gray-700);
+    --color-divider: var(--dg-gray-800);
+
+    --color-primary: var(--dg-blue-300);
+    --color-link: var(--dg-blue-300);
+    --color-link-visited: #ff8eff;
+
+    --color-success: var(--dg-green-500);
+    --color-success-text: #71c598;
+    --color-warning: var(--dg-orange-500);
+    --color-warning-text: #ffa66d;
+    --color-error: #ff7171;
+    --color-error-text: #ff9696;
+    --color-error-bg: #3b0000;
+
+    --chart-surface: var(--dg-gray-900);
+    --chart-grid: var(--dg-gray-800);
+    --chart-axis-text: var(--dg-gray-200);
+
+    --chart-cat-1: var(--dg-blue-500); /* #4979F5 */
+    --chart-cat-2: var(--dg-orange-700); /* #E25100 */
+    --chart-cat-3: var(--dg-green-500); /* #2CAC6E */
+    --chart-cat-4: var(--dg-magenta-600); /* #DB00DB */
+    --chart-cat-5: var(--dg-lime-700); /* #6FA104 */
+    --chart-cat-6: var(--dg-cyan-700); /* #008DA6 */
+  }
+}
+
+/* ============================================================
+ * フォーカスリング（デジタル庁DSの2重構造。変更しない）
+ * Yellow-300 と Black の2層で、どんな背景でも視認できるようにする。
+ * ============================================================ */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-focus-inner);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px var(--color-focus-outer);
+  border-radius: var(--radius-s);
+}

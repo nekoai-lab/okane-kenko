@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>結果画面モックアップ ─ AI×お金の健康</title>
+<style>
+:root{
+  /* 色はすべてデジタル庁デザインシステム v2.17.0 のプリミティブ */
+  --blue-1000:#00118F; --blue-800:#0031D8; --blue-600:#3460FB; --blue-400:#7096F8; --blue-200:#C5D7FB;
+  --orange-800:#C74700; --orange-700:#E25100; --orange-600:#FB5B01; --orange-500:#FF7628; --orange-100:#FFDFCA;
+  --green-600:#259D63; --green-800:#197A4B;
+  --yellow-300:#FFD43D;
+  --gray-50:#F2F2F2; --gray-100:#E6E6E6; --gray-200:#CCCCCC; --gray-300:#B3B3B3;
+  --gray-500:#7F7F7F; --gray-536:#767676; --gray-700:#4D4D4D; --gray-900:#1A1A1A;
+  /* 形と余白は Apple の公開パターンから */
+  --pill:9999px; --r-card:18px; --r-ctrl:8px;
+  --shadow-hero:0 5px 30px rgba(0,0,0,.08);
+  --tracking-display:-0.02em;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--gray-50);color:var(--gray-900);
+  font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+  line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:0}
+.page{max-width:1120px;margin:0 auto;padding:64px 24px 96px}
+.page > header{margin:0 0 56px}
+.page > header h1{font-size:32px;margin:0 0 8px;letter-spacing:-0.01em;line-height:1.5}
+.page > header p{margin:0;font-size:14px;color:var(--gray-700)}
+.stage{display:flex;gap:48px;flex-wrap:wrap;justify-content:center}
+.col{width:390px}
+.col > .caption{font-size:13px;color:var(--gray-700);margin:0 0 14px;text-align:center}
+.col > .caption b{color:var(--gray-900)}
+
+/* ---- 端末フレーム ---- */
+.phone{background:#fff;border-radius:28px;overflow:hidden;box-shadow:var(--shadow-hero)}
+.bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--gray-100);font-size:13px;color:var(--gray-700)}
+.bar .brand{font-weight:700;color:var(--gray-900);letter-spacing:-0.01em}
+.scr{padding:0 0 40px}
+
+/* セクションは罫線でなく面の色で分ける */
+.sec{padding:40px 20px}
+.sec.tinted{background:var(--gray-50)}
+.sec + .sec{border-top:0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--gray-536);margin:0 0 10px}
+h2{font-size:19px;margin:0 0 12px;line-height:1.5;letter-spacing:-0.01em}
+p{margin:0 0 12px;font-size:15px;line-height:1.75}
+p:last-child{margin-bottom:0}
+.muted{color:var(--gray-700);font-size:13.5px;line-height:1.7}
+
+/* ---- 冒頭の線引き ---- */
+.scope{border:1px solid var(--gray-200);border-radius:var(--r-ctrl);padding:16px 18px;background:#fff}
+.scope dl{margin:0;font-size:13.5px}
+.scope dt{font-weight:700;margin:0 0 4px}
+.scope dt:nth-of-type(2){margin-top:14px}
+.scope dd{margin:0 0 0 0;color:var(--gray-700);line-height:1.7}
+
+/* ---- 判定 ---- */
+.verdict{display:inline-flex;align-items:center;gap:8px;border-radius:var(--pill);
+  padding:7px 16px 7px 10px;font-size:13.5px;font-weight:700;margin:0 0 20px}
+.verdict .ico{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  color:#fff;font-size:12px;flex:none;line-height:1}
+.v-short{background:#FFF4EC;color:var(--orange-800)}
+.v-short .ico{background:var(--orange-600)}
+.v-good{background:#EAF6F0;color:var(--green-800)}
+.v-good .ico{background:var(--green-600)}
+
+.hero-num{font-size:44px;font-weight:700;line-height:1.15;letter-spacing:var(--tracking-display);
+  font-variant-numeric:tabular-nums;margin:0 0 6px}
+.hero-sub{font-size:14px;color:var(--gray-700);margin:0}
+.hero-unit{font-size:24px;font-weight:700;letter-spacing:0}
+.hero-lead{font-size:26px;font-weight:700;line-height:1.5;letter-spacing:-0.01em;margin:0 0 10px}
+
+/* 帰属の内わけ ─ 誰のおかげで足りているのかを分けて書く */
+.credit{margin:20px 0 0;border-top:1px solid var(--gray-200);padding-top:16px}
+.credit-h{font-size:12px;font-weight:700;color:var(--gray-700);margin:0 0 10px}
+.credit-row{display:flex;flex-direction:column;gap:2px;padding:9px 0;
+  border-bottom:1px solid var(--gray-100)}
+.credit-row:last-child{border-bottom:0}
+.credit-row b{font-size:13.5px}
+.credit-row span{font-size:12.5px;color:var(--gray-700);line-height:1.65}
+
+/* ---- 帯グラフ（細い） ---- */
+.bars{margin:20px 0 0}
+.brow{margin:0 0 18px}
+.bhead{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;
+  color:var(--gray-700);margin:0 0 6px}
+.bhead b{color:var(--gray-900);font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.bar-track{display:flex;height:14px;border-radius:var(--pill);overflow:hidden;background:transparent}
+.seg{border-right:2px solid #fff}
+.seg:last-child{border-right:0}
+.tinted .bar-track .seg{border-right-color:var(--gray-50)}
+.blegend{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin:8px 0 0;font-size:11.5px;
+  color:var(--gray-700)}
+.blegend span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.blegend i{width:9px;height:9px;border-radius:2px;flex:none}
+.blegend em{margin-left:auto;font-style:normal;font-variant-numeric:tabular-nums;color:var(--gray-900)}
+
+/* ---- 明細 ---- */
+.rows{margin:16px 0 0;font-size:13.5px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;
+  border-bottom:1px solid var(--gray-100)}
+.row:last-child{border-bottom:0}
+.row .v{font-variant-numeric:tabular-nums;white-space:nowrap}
+.row.total{font-weight:700;border-top:1px solid var(--gray-300);border-bottom:0;margin-top:4px}
+
+/* ---- 次の一歩 ---- */
+.step{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--gray-100)}
+.step:last-of-type{border-bottom:0}
+.step .n{width:22px;height:22px;border-radius:50%;background:var(--blue-1000);color:#fff;
+  font-size:12px;display:grid;place-items:center;flex:none;margin-top:2px}
+.step .t{font-size:14px;line-height:1.7}
+.step .t b{display:block}
+.step .t span{color:var(--gray-700);font-size:13px}
+
+.cta{display:block;width:100%;border:0;border-radius:var(--pill);background:var(--blue-1000);
+  color:#fff;font-size:15px;font-weight:700;padding:14px 20px;margin:20px 0 0;cursor:pointer;
+  min-height:44px;font-family:inherit;transition:transform .12s ease}
+.cta:active{transform:scale(.97)}
+.cta.ghost{background:transparent;color:var(--blue-1000);border:1.5px solid var(--gray-300)}
+.cta:focus-visible{outline:2px solid var(--yellow-300);outline-offset:0;
+  box-shadow:0 0 0 4px #000}
+
+.foot{padding:24px 20px 0;font-size:11.5px;color:var(--gray-536);line-height:1.7}
+.foot a{color:var(--blue-1000)}
+
+/* ---- 解説パネル ---- */
+.notes{margin-top:72px;background:#fff;border:1px solid var(--gray-200);border-radius:var(--r-card);
+  padding:36px 40px}
+.notes h2{font-size:22px;margin:0 0 6px}
+.notes .lead{font-size:14px;color:var(--gray-700);margin:0 0 24px}
+.notes h3{font-size:16px;margin:28px 0 8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid var(--gray-200);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--gray-50);font-weight:700}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--gray-50);
+  padding:1px 5px;border-radius:3px}
+@media(max-width:900px){.stage{gap:56px}.notes{padding:28px 20px}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>結果画面モックアップ</h1>
+  <p>色とアクセシビリティ＝デジタル庁デザインシステム v2.17.0 ／ 余白・形・階層＝Apple の公開パターン分析（getdesign.md）<br>
+     社員はLINEから開くため、モバイル幅（390px）で設計。実データは10世帯テストの GT-02・GT-01。</p>
+</header>
+
+<div class="stage">
+
+<!-- ============ 不足ケース ============ -->
+<div class="col">
+  <p class="caption"><b>GT-02</b>　夫38歳(年収500万)／妻35歳 専業／子5歳・2歳／賃貸／貯蓄200万</p>
+  <div class="phone">
+    <div class="bar"><span class="brand">お金の健康</span><span>診断結果</span></div>
+    <div class="scr">
+
+      <!-- 冒頭に線を引く -->
+      <div class="sec">
+        <p class="eyebrow">はじめに</p>
+        <div class="scope">
+          <dl>
+            <dt>この診断で分かること</dt>
+            <dd>ご家族に必要な保障の額と、いまの保険の過不足</dd>
+            <dt>分からないこと</dt>
+            <dd>家計全体の見直しや、貯め方・増やし方。ここでは扱いません</dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- 判定 -->
+      <div class="sec tinted">
+        <span class="verdict v-short"><i class="ico">!</i>足りていません</span>
+        <div class="hero-num">約2,100〜3,100<span class="hero-unit">万円</span></div>
+        <p class="hero-sub">いまの保障は1,000万円なので、<br><b>約1,100万円ぶん足りません。</b></p>
+      </div>
+
+      <!-- なぜこの額か -->
+      <div class="sec">
+        <p class="eyebrow">なぜこの額になるのか</p>
+        <h2>これから出ていくお金と、<br>入ってくるお金の差</h2>
+
+        <div class="bars">
+          <div class="brow">
+            <div class="bhead"><span>出ていくお金</span><b>8,266万円</b></div>
+            <div class="bar-track">
+              <div class="seg" style="width:56.9%;background:var(--orange-800)"></div>
+              <div class="seg" style="width:20.3%;background:var(--orange-700)"></div>
+              <div class="seg" style="width:20.4%;background:var(--orange-600)"></div>
+              <div class="seg" style="width:2.4%;background:var(--orange-500)"></div>
+            </div>
+            <div class="blegend">
+              <span><i style="background:var(--orange-800)"></i>生活費（子育て期）<em>4,704</em></span>
+              <span><i style="background:var(--orange-700)"></i>生活費（独立後）<em>1,680</em></span>
+              <span><i style="background:var(--orange-600)"></i>教育費<em>1,682</em></span>
+              <span><i style="background:var(--orange-500)"></i>葬儀・予備費<em>200</em></span>
+            </div>
+          </div>
+          <div class="brow">
+            <div class="bhead"><span>入ってくるお金</span><b>5,695万円</b></div>
+            <div class="bar-track" style="width:68.9%">
+              <div class="seg" style="width:36.2%;background:var(--blue-1000)"></div>
+              <div class="seg" style="width:27.1%;background:var(--blue-800)"></div>
+              <div class="seg" style="width:15.6%;background:var(--blue-600)"></div>
+              <div class="seg" style="width:17.6%;background:var(--blue-400)"></div>
+              <div class="seg" style="width:3.5%;background:var(--blue-200)"></div>
+            </div>
+            <div class="blegend">
+              <span><i style="background:var(--blue-1000)"></i>遺族基礎年金<em>2,063</em></span>
+              <span><i style="background:var(--blue-800)"></i>遺族厚生年金<em>1,542</em></span>
+              <span><i style="background:var(--blue-600)"></i>中高齢寡婦加算<em>890</em></span>
+              <span><i style="background:var(--blue-400)"></i>奥様の就労収入<em>1,000</em></span>
+              <span><i style="background:var(--blue-200)"></i>貯蓄<em>200</em></span>
+            </div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:14px">2本の帯は同じ物差しで並べています（単位：万円）。差の 2,571万円が、備えが要る分です。</p>
+      </div>
+
+      <!-- 制度改正 -->
+      <div class="sec tinted">
+        <p class="eyebrow">2028年の制度改正について</p>
+        <h2>お子さんがいるので、<br>直撃しません</h2>
+        <p class="muted">遺族厚生年金が5年で終わる改正（2028年4月〜）は、<b>子のいない配偶者</b>が対象です。ご家庭は当面これまで通りなので、煽るニュースは気にしなくて大丈夫です。</p>
+        <p class="muted" style="margin-top:10px;font-size:12px">出典：日本年金機構「遺族年金ガイド 令和8年度版」</p>
+      </div>
+
+      <!-- 次の一歩 -->
+      <div class="sec">
+        <p class="eyebrow">次の一歩</p>
+        <h2>まず、勤務先の団体保険を<br>見てください</h2>
+        <div class="step"><span class="n">1</span><span class="t"><b>社内ポータルの「福利厚生」を開く</b><span>団体定期保険の案内があります</span></span></div>
+        <div class="step"><span class="n">2</span><span class="t"><b>保障額と保険料を確認する</b><span>個人で入るより安いことが多いです</span></span></div>
+        <div class="step"><span class="n">3</span><span class="t"><b>加入受付は毎年10月</b><span>窓口：人事部 福利厚生担当</span></span></div>
+        <button class="cta ghost">選び方の基準も知りたい</button>
+      </div>
+
+      <p class="foot">
+        概算です。前提により変わります。<br>
+        算定基準日 2026年8月17日／制度データ版 2026.08<br>
+        生活費の前提は<a href="#">こちらで変えられます</a>。
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 減らせるケース ============ -->
+<div class="col">
+  <p class="caption"><b>GT-01</b>　夫37歳(年収500万)／妻35歳(250万)／子2歳／持家・団信あり／貯蓄400万</p>
+  <div class="phone">
+    <div class="bar"><span class="brand">お金の健康</span><span>診断結果</span></div>
+    <div class="scr">
+
+      <div class="sec">
+        <p class="eyebrow">はじめに</p>
+        <div class="scope">
+          <dl>
+            <dt>この診断で分かること</dt>
+            <dd>ご家族に必要な保障の額と、いまの保険の過不足</dd>
+            <dt>分からないこと</dt>
+            <dd>家計全体の見直しや、貯め方・増やし方。ここでは扱いません</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="sec tinted">
+        <span class="verdict v-good"><i class="ico">✓</i>備えは足りています</span>
+        <p class="hero-lead">もしものときも、<br>ご家族の生活は続きます。</p>
+        <p class="hero-sub">必要な分はすでにまかなえていて、<b>むしろ2,000万円の保障は多すぎます。</b></p>
+      </div>
+
+      <div class="sec">
+        <p class="eyebrow">なぜ大丈夫なのか</p>
+        <h2>入ってくるお金が、<br>出ていくお金を上回ります</h2>
+
+        <div class="bars">
+          <div class="brow">
+            <div class="bhead"><span>出ていくお金</span><b>7,949万円</b></div>
+            <div class="bar-track" style="width:75.1%">
+              <div class="seg" style="width:63.4%;background:var(--orange-800)"></div>
+              <div class="seg" style="width:22.6%;background:var(--orange-700)"></div>
+              <div class="seg" style="width:11.4%;background:var(--orange-600)"></div>
+              <div class="seg" style="width:2.6%;background:var(--orange-500)"></div>
+            </div>
+            <div class="blegend">
+              <span><i style="background:var(--orange-800)"></i>生活費（子育て期）<em>5,040</em></span>
+              <span><i style="background:var(--orange-700)"></i>生活費（独立後）<em>1,800</em></span>
+              <span><i style="background:var(--orange-600)"></i>教育費<em>909</em></span>
+              <span><i style="background:var(--orange-500)"></i>葬儀・予備費<em>200</em></span>
+            </div>
+          </div>
+          <div class="brow">
+            <div class="bhead"><span>入ってくるお金</span><b>10,578万円</b></div>
+            <div class="bar-track">
+              <div class="seg" style="width:16.5%;background:var(--blue-1000)"></div>
+              <div class="seg" style="width:14.6%;background:var(--blue-800)"></div>
+              <div class="seg" style="width:8.4%;background:var(--blue-600)"></div>
+              <div class="seg" style="width:56.7%;background:var(--blue-400)"></div>
+              <div class="seg" style="width:3.8%;background:var(--blue-200)"></div>
+            </div>
+            <div class="blegend">
+              <span><i style="background:var(--blue-1000)"></i>遺族基礎年金<em>1,746</em></span>
+              <span><i style="background:var(--blue-800)"></i>遺族厚生年金<em>1,542</em></span>
+              <span><i style="background:var(--blue-600)"></i>中高齢寡婦加算<em>890</em></span>
+              <span><i style="background:var(--blue-400)"></i>奥様の就労収入<em>6,000</em></span>
+              <span><i style="background:var(--blue-200)"></i>貯蓄<em>400</em></span>
+            </div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:14px">住宅ローンは団信で消え、遺族年金と奥様の収入が続きます。だから「何千万も足りない」は当てはまりません。</p>
+
+        <div class="credit">
+          <p class="credit-h">足りている理由の内わけ</p>
+          <div class="credit-row">
+            <b>ご自身が積み上げてきたもの</b>
+            <span>共働きを続けてこられたこと（20年で6,400万円）／貯蓄400万円</span>
+          </div>
+          <div class="credit-row">
+            <b>公的な制度が支えている分</b>
+            <span>遺族基礎年金・遺族厚生年金・中高齢寡婦加算で 4,178万円</span>
+          </div>
+          <div class="credit-row">
+            <b>住宅ローンについてくる保険</b>
+            <span>団体信用生命保険で、残りのローンは支払わなくてよくなります</span>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:12px;font-size:12.5px">半分以上は公的な制度が支えています。ご自身の手柄というより、<b>もともと備えは足りていた</b>ということです。</p>
+      </div>
+
+      <div class="sec tinted">
+        <p class="eyebrow">減らすと、どうなるか</p>
+        <div class="hero-num">年におよそ3<span class="hero-unit">万円</span></div>
+        <p class="hero-sub">保障を1,800万円ぶん減らすと、<br>月2,500円ほどが手元に残ります。</p>
+        <p class="muted" style="margin-top:14px">浮いたぶんをどう使うかは、ご自由に。この診断は保険を売っていないので、勧めることはありません。</p>
+      </div>
+
+      <div class="sec">
+        <p class="eyebrow">次の一歩</p>
+        <h2>いまの保険会社に、<br>減額を申し出てください</h2>
+        <div class="step"><span class="n">1</span><span class="t"><b>保険証券の「保険金額」欄を見る</b><span>2,000万円と書かれているはずです</span></span></div>
+        <div class="step"><span class="n">2</span><span class="t"><b>証券のコールセンターに電話する</b><span>「減額したい」と伝えれば手続きできます</span></span></div>
+        <div class="step"><span class="n">3</span><span class="t"><b>解約ではなく「減額」で相談する</b><span>まるごと解約する必要はありません</span></span></div>
+        <button class="cta ghost">前提を変えて計算し直す</button>
+      </div>
+
+      <p class="foot">
+        <b>これは「いまの前提での話」です。</b>転職・出産・住宅の買い替えなどがあれば変わります。<br>
+        制度が変わったときは、こちらからお知らせします。<br>
+        概算です。算定基準日 2026年8月17日／制度データ版 2026.08<br>
+        貯蓄性のある保険の場合は、解約返戻金の確認をおすすめします。
+      </p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /stage -->
+
+<!-- ============ 解説 ============ -->
+<div class="notes">
+  <h2>2つのデザインシステムを、どう混ぜたか</h2>
+  <p class="lead">色とアクセシビリティはデジタル庁、余白と形と階層は Apple。<strong>衝突したときはデジタル庁が勝つ</strong>という順序を決めてあります。</p>
+
+  <h3>Apple から取り入れたもの</h3>
+  <table>
+    <tr><th>取り入れたこと</th><th>元の考え方</th><th>このプロダクトで効く理由</th></tr>
+    <tr><td><strong>UIを引かせて、主役に語らせる</strong></td><td>写真が主役でUIは後退する</td><td>ここでの主役は<strong>数字と根拠</strong>。飾りが増えるほど「売り込み」に見える</td></tr>
+    <tr><td><strong>アクセント色は1つだけ</strong></td><td>操作要素はすべて同じ1色。第2のブランド色を作らない</td><td>色が増えるほど賑やかで営業的になる。中立の見え方に直結する</td></tr>
+    <tr><td><strong>罫線ではなく面の色で区切る</strong></td><td>明／暗のタイルを交互に置く</td><td>線が減って静かになる。長い結果画面のリズムが作れる</td></tr>
+    <tr><td><strong>影は1つだけ、主役にしか使わない</strong></td><td>影は製品写真だけ。UIには付けない</td><td>浮いた要素が減り、画面が落ち着く</td></tr>
+    <tr><td><strong>装飾のグラデーションを使わない</strong></td><td>雰囲気は写真から作る</td><td>「煽らない」という芯と一致する</td></tr>
+    <tr><td><strong>CTAはピル型（角丸9999px）＋押すと少し縮む</strong></td><td>すべてのCTAがカプセル形</td><td>触れる場所が一目で分かり、反応が返る</td></tr>
+    <tr><td><strong>大きな数字だけ字送りを詰める</strong></td><td>見出しに負の字送り</td><td>ヒーロー数字が締まって見える。<strong>和文の本文には掛けない</strong></td></tr>
+    <tr><td><strong>ウェイトは2つだけ（400と700）</strong></td><td>本文400・強調600。500を使わない</td><td>迷いが消える。中間ウェイトは和文で濁る</td></tr>
+    <tr><td><strong>8px基準の余白・セクション80px</strong></td><td>8pxベース、セクション上下80px</td><td>詰め込まないことが、そのまま落ち着いた印象になる</td></tr>
+    <tr><td><strong>スティッキーバーに背景ぼかし</strong></td><td>saturate(180%) blur(20px)</td><td>スクロール中も文脈が消えない。線を引かずに層を分けられる</td></tr>
+  </table>
+
+  <h3>あえて取り入れなかったもの</h3>
+  <table>
+    <tr><th>取り入れなかったこと</th><th>理由</th></tr>
+    <tr><td>Apple の Action Blue <code>#0066cc</code></td><td>白背景で5.57:1。デジタル庁 Blue-1000 <code>#00118F</code> は<strong>14.22:1</strong>。文字サイズを問わず余裕があるほうを採る。公共文脈との整合もある</td></tr>
+    <tr><td>ウェイト300の「軽い」表現</td><td>和文はウェイト300で細くなりすぎる。<strong>高齢の利用者や小さい画面で読めなくなる</strong></td></tr>
+    <tr><td>本文の負の字送り</td><td>和文は詰めると読みにくくなる。大きな数字と見出しにだけ掛ける</td></tr>
+    <tr><td>フォーカスリングを細い青の輪郭にする</td><td>デジタル庁DSは Yellow-300＋Black の2重構造を<strong>変更禁止</strong>と規定。どんな背景でも見えるほうが強い</td></tr>
+    <tr><td>表からも罫線をなくす</td><td>数字の表は罫線があるほうが追いやすい。面で区切るのはセクションまで</td></tr>
+  </table>
+
+  <h3>この画面で守っていること</h3>
+  <table>
+    <tr><th>ルール</th><th>この画面での現れ方</th></tr>
+    <tr><td>判定は「アイコン＋ラベル＋色」の3点で出す</td><td>「! 足りていません」「✓ 上乗せも要りません」</td></tr>
+    <tr><td>赤はシステムエラーだけ</td><td>不足はオレンジ。この画面に赤は1つもない</td></tr>
+    <tr><td>先に「分からないこと」を書く</td><td>冒頭に置き、家計全体は扱わないと明言する</td></tr>
+    <tr><td>金額はレンジで「約」を付ける</td><td>約2,100〜3,100万円</td></tr>
+    <tr><td>2本の帯は同じ物差し・同じ0始点</td><td>短いほうの帯は幅で表現し、目盛りを共有する</td></tr>
+    <tr><td>減らせる箇所は必ず言う</td><td>GT-01では「月2,500円・年3万円が浮く」を独立したセクションに</td></tr>
+    <tr><td>制度改正が該当しないなら、そう言う</td><td>「お子さんがいるので直撃しません」</td></tr>
+    <tr><td>算定基準日とデータ版を必ず出す</td><td>フッターに常時表示</td></tr>
+    <tr><td>前提を本人が動かせる</td><td>「生活費の前提はこちらで変えられます」</td></tr>
+    <tr><td>「もっと知りたい」を押したときだけ選び方を開く</td><td>既定では出さない。押下は記録する</td></tr>
+  </table>
+  <p style="margin-top:20px;font-size:12.5px;color:#767676">
+    ※ 数値は10世帯テスト（<code>算定テスト_10世帯.xlsx</code>）の実際の算定結果。年金額は令和8年度の報道値ベース（<code>verified: false</code>）で、一次情報での確定前。<br>
+    ※ 本資料はデジタル庁デザインシステムを参照して当社サービス向けに定義したものであり、公的機関が発行する資料ではありません。
+  </p>
+</div>
+
+</div>
+</body>
+</html>

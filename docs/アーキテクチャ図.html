@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI×お金の健康 ─ アーキテクチャ図 / システム設計図（MVP・2026-08-17）</title>
+<style>
+  :root{
+    --ink:#1a2332; --sub:#5b6675; --line:#d5dae2; --bg:#f7f8fa;
+    --core:#1f3864;  --core-bg:#e8edf7;   /* 事業の核＝作る */
+    --buy:#6b7280;   --buy-bg:#f1f3f5;    /* 買う・組む */
+    --stop:#b3261e;  --stop-bg:#fdeceb;   /* 停止・禁止 */
+    --ok:#1a6b46;    --ok-bg:#e6f4ec;     /* 許可・できる */
+    --note:#8a94a3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 24px 80px}
+  header.top{border-bottom:2px solid var(--core);padding-bottom:20px;margin-bottom:8px}
+  header.top h1{font-size:26px;margin:0 0 6px;letter-spacing:.01em}
+  header.top .meta{font-size:13px;color:var(--sub)}
+  section{background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:28px 30px 24px;margin-top:32px;box-shadow:0 1px 2px rgba(26,35,50,.04)}
+  .kicker{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--core);margin:0 0 6px}
+  h2{font-size:19px;margin:0 0 4px;line-height:1.45}
+  .lead{font-size:13.5px;color:var(--sub);margin:0 0 20px}
+  svg{display:block;width:100%;height:auto;margin:4px 0 14px}
+  .notes{font-size:12px;color:var(--note);border-top:1px dashed var(--line);padding-top:12px;margin:0}
+  .notes p{margin:4px 0}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--sub);margin:0 0 14px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:12px;height:12px;border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,.15)}
+  text{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif}
+  @media print{body{background:#fff}section{break-inside:avoid;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>AI × お金の健康 ─ アーキテクチャ図 / システム設計図</h1>
+  <div class="meta">MVP（Phase1）／ 2026-08-17 版 ／ 対象：社員向け「必要保障の見える化」診断フロー ／ 出典：要件定義書_MVP.md・機能仕様書_MVP.md・ADR.md</div>
+</header>
+
+<!-- ============ 図1 インフラ ============ -->
+<section>
+  <p class="kicker">図1 ─ インフラ構成</p>
+  <h2>インフラは3段階で移すが、事業の核（算定エンジン）は一度も書き直さない</h2>
+  <p class="lead">タイムアウト制約が解消したため、初期は構築の軽さを優先する。本番要件（国内保管・監査・鍵管理）が必要になった段階で GCP へ移す。</p>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--core-bg);border-color:var(--core)"></i>作る（事業の核）</span>
+    <span><i class="sw" style="background:var(--buy-bg);border-color:var(--buy)"></i>買う・組む（マネージド）</span>
+    <span><i class="sw" style="background:#fff;border-color:var(--line)"></i>外部サービス</span>
+  </div>
+
+<svg viewBox="0 0 1120 560" role="img" aria-label="Phase A・B・D の3段階インフラ構成図">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a94a3"/>
+    </marker>
+  </defs>
+  <!-- columns -->
+  <g>
+    <!-- A -->
+    <rect x="20" y="20" width="340" height="420" rx="8" fill="#fff" stroke="#c9d0da"/>
+    <rect x="20" y="20" width="340" height="46" rx="8" fill="#eef1f6"/>
+    <rect x="20" y="56" width="340" height="10" fill="#eef1f6"/>
+    <text x="40" y="42" font-size="15" font-weight="700" fill="#1f3864">Phase A ─ いま</text>
+    <text x="40" y="59" font-size="11.5" fill="#5b6675">n1インタビュー／スモーク検証　月額 0円</text>
+
+    <rect x="44" y="86" width="292" height="38" rx="5" fill="#fff" stroke="#c9d0da"/>
+    <text x="60" y="103" font-size="12.5" fill="#1a2332">入口：ブラウザ / LINE（LIFF）</text>
+    <text x="60" y="118" font-size="11" fill="#8a94a3">スマートフォン優先</text>
+
+    <rect x="44" y="140" width="292" height="150" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="60" y="160" font-size="12.5" font-weight="700" fill="#374151">Vercel（リージョン hnd1＝東京）</text>
+    <text x="60" y="177" font-size="11" fill="#6b7280">Next.js：画面 ＋ API Route（最大300秒）</text>
+    <rect x="60" y="190" width="260" height="52" rx="5" fill="#e8edf7" stroke="#1f3864" stroke-width="1.6"/>
+    <text x="74" y="210" font-size="12.5" font-weight="700" fill="#1f3864">★ 算定エンジン（純粋関数）</text>
+    <text x="74" y="228" font-size="11" fill="#1f3864">必要保障額・医療の過不足をここだけで作る</text>
+    <rect x="60" y="250" width="260" height="28" rx="5" fill="#fff" stroke="#c9d0da" stroke-dasharray="4 3"/>
+    <text x="74" y="269" font-size="11.5" fill="#6b7280">制度パラメータ（YAML・版管理）</text>
+
+    <rect x="44" y="306" width="292" height="38" rx="5" fill="#fff" stroke="#c9d0da"/>
+    <text x="60" y="323" font-size="12.5" fill="#1a2332">AI言語化：Anthropic / Gemini API</text>
+    <text x="60" y="338" font-size="11" fill="#8a94a3">ストリーミング。数値はプレースホルダ</text>
+
+    <rect x="44" y="360" width="292" height="34" rx="5" fill="#fff" stroke="#c9d0da" stroke-dasharray="4 3"/>
+    <text x="60" y="381" font-size="12.5" fill="#8a94a3">データベース：なし（保存しない）</text>
+
+    <text x="44" y="418" font-size="11" fill="#b3261e">保存しないので、開発の間隔が空いても止まらない</text>
+
+    <!-- B -->
+    <rect x="390" y="20" width="340" height="420" rx="8" fill="#fff" stroke="#c9d0da"/>
+    <rect x="390" y="20" width="340" height="46" rx="8" fill="#eef1f6"/>
+    <rect x="390" y="56" width="340" height="10" fill="#eef1f6"/>
+    <text x="410" y="42" font-size="15" font-weight="700" fill="#1f3864">Phase B ─ 保存が要る段階</text>
+    <text x="410" y="59" font-size="11.5" fill="#5b6675">パイロット配布　月額 0〜$25</text>
+
+    <rect x="414" y="86" width="292" height="38" rx="5" fill="#fff" stroke="#c9d0da"/>
+    <text x="430" y="103" font-size="12.5" fill="#1a2332">入口：ブラウザ / LINE（LIFF）</text>
+    <text x="430" y="118" font-size="11" fill="#8a94a3">招待リンクから認証</text>
+
+    <rect x="414" y="140" width="292" height="150" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="430" y="160" font-size="12.5" font-weight="700" fill="#374151">Vercel（hnd1＝東京）</text>
+    <text x="430" y="177" font-size="11" fill="#6b7280">Next.js：画面 ＋ API Route</text>
+    <rect x="430" y="190" width="260" height="52" rx="5" fill="#e8edf7" stroke="#1f3864" stroke-width="1.6"/>
+    <text x="444" y="210" font-size="12.5" font-weight="700" fill="#1f3864">★ 算定エンジン（同じコード）</text>
+    <text x="444" y="228" font-size="11" fill="#1f3864">Phase A から変更なし</text>
+    <rect x="430" y="250" width="260" height="28" rx="5" fill="#fff" stroke="#c9d0da" stroke-dasharray="4 3"/>
+    <text x="444" y="269" font-size="11.5" fill="#6b7280">制度パラメータ（YAML・版管理）</text>
+
+    <rect x="414" y="306" width="292" height="38" rx="5" fill="#fff" stroke="#c9d0da"/>
+    <text x="430" y="323" font-size="12.5" fill="#1a2332">AI言語化：Anthropic / Gemini API</text>
+    <text x="430" y="338" font-size="11" fill="#8a94a3">ストリーミング＋ガードレール</text>
+
+    <rect x="414" y="360" width="292" height="34" rx="5" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="430" y="381" font-size="12.5" fill="#374151">Supabase（Tokyo）：認証 ＋ Postgres</text>
+
+    <text x="414" y="418" font-size="11" fill="#b3261e">無料枠は1週間放置で自動停止。継続運用なら Pro</text>
+
+    <!-- D -->
+    <rect x="760" y="20" width="340" height="420" rx="8" fill="#fff" stroke="#c9d0da"/>
+    <rect x="760" y="20" width="340" height="46" rx="8" fill="#eef1f6"/>
+    <rect x="760" y="56" width="340" height="10" fill="#eef1f6"/>
+    <text x="780" y="42" font-size="15" font-weight="700" fill="#1f3864">Phase D ─ 本番</text>
+    <text x="780" y="59" font-size="11.5" fill="#5b6675">有償契約・機微データ　従量課金</text>
+
+    <rect x="784" y="86" width="292" height="38" rx="5" fill="#fff" stroke="#c9d0da"/>
+    <text x="800" y="103" font-size="12.5" fill="#1a2332">入口：LINE / Web ＋ 法人管理コンソール</text>
+    <text x="800" y="118" font-size="11" fill="#8a94a3">Identity Platform で認証</text>
+
+    <rect x="784" y="140" width="292" height="150" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="800" y="160" font-size="12.5" font-weight="700" fill="#374151">Cloud Run（asia-northeast1＝東京）</text>
+    <text x="800" y="177" font-size="11" fill="#6b7280">アプリ／API。タイムアウト最大60分</text>
+    <rect x="800" y="190" width="260" height="52" rx="5" fill="#e8edf7" stroke="#1f3864" stroke-width="1.6"/>
+    <text x="814" y="210" font-size="12.5" font-weight="700" fill="#1f3864">★ 算定エンジン（同じコード）</text>
+    <text x="814" y="228" font-size="11" fill="#1f3864">移行しても書き直さない</text>
+    <rect x="800" y="250" width="260" height="28" rx="5" fill="#fff" stroke="#c9d0da" stroke-dasharray="4 3"/>
+    <text x="814" y="269" font-size="11.5" fill="#6b7280">制度パラメータ（同じ YAML）</text>
+
+    <rect x="784" y="306" width="292" height="38" rx="5" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="800" y="323" font-size="12.5" fill="#374151">Vertex AI（Gemini）＋ Vector Search（RAG）</text>
+    <text x="800" y="338" font-size="11" fill="#6b7280">出典つきの根拠提示</text>
+
+    <rect x="784" y="360" width="292" height="34" rx="5" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="800" y="381" font-size="12.5" fill="#374151">Firestore → BigQuery → Looker Studio</text>
+
+    <text x="784" y="418" font-size="11" fill="#5b6675">IAM最小権限・CMEK・VPC-SC・監査ログ</text>
+  </g>
+
+  <!-- arrows between phases -->
+  <line x1="362" y1="230" x2="386" y2="230" stroke="#8a94a3" stroke-width="1.6" marker-end="url(#ar)"/>
+  <line x1="732" y1="230" x2="756" y2="230" stroke="#8a94a3" stroke-width="1.6" marker-end="url(#ar)"/>
+
+  <!-- bottom band -->
+  <rect x="20" y="462" width="1080" height="70" rx="8" fill="#e8edf7" stroke="#1f3864"/>
+  <text x="44" y="490" font-size="13.5" font-weight="700" fill="#1f3864">★ 算定エンジンは外部サービスに一切依存しない純粋関数として実装する（NFR-13）</text>
+  <text x="44" y="512" font-size="12" fill="#1f3864">だから A→B→D で移行しても、書き直すのはインフラ側だけ。金額を決めるロジックとゴールデンテスト（10世帯・70件）はそのまま動く。</text>
+</svg>
+
+  <p class="notes">
+    <p>※ Vercel Hobby の関数実行時間は Fluid compute 既定で最大300秒（旧Serverlessの10秒制限は該当しない）。Hobby は単一リージョンのみだが、その1つを hnd1（東京）に設定できる。</p>
+    <p>※ Vercel Hobby は非商用前提のため、法人から料金を受け取る段階で Pro が必要（Phase C）。</p>
+    <p>※ 金額は2026年8月時点の各社公表値にもとづく概算。実費は利用量で変動する。</p>
+  </p>
+</section>
+
+<!-- ============ 図2 処理フロー ============ -->
+<section>
+  <p class="kicker">図2 ─ システム設計（診断1回の処理フロー）</p>
+  <h2>数字は1秒で返し、文章はあとから流す ─ AIが遅くても、診断は成立する</h2>
+  <p class="lead">算定と言語化を分離してあるため、AIがタイムアウトしても金額と内訳は表示される。これは可用性の担保であると同時に、AIに数値を作らせない設計（ADR-003）の帰結でもある。</p>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--core-bg);border-color:var(--core)"></i>コードが担う（決定的）</span>
+    <span><i class="sw" style="background:#fff;border-color:var(--line)"></i>AI・外部が担う（非決定的）</span>
+    <span><i class="sw" style="background:var(--stop-bg);border-color:var(--stop)"></i>停止・フォールバック</span>
+  </div>
+
+<svg viewBox="0 0 1120 520" role="img" aria-label="診断1回の処理フローとユーザー画面の時間軸">
+  <defs>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6675"/>
+    </marker>
+    <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f3864"/>
+    </marker>
+    <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/>
+    </marker>
+  </defs>
+
+  <!-- lane labels -->
+  <text x="20" y="34" font-size="12" font-weight="700" fill="#5b6675">サーバー処理</text>
+  <text x="20" y="392" font-size="12" font-weight="700" fill="#5b6675">ユーザーが見る画面</text>
+
+  <!-- step boxes -->
+  <g font-size="11.5">
+    <rect x="20" y="50" width="150" height="62" rx="6" fill="#fff" stroke="#c9d0da"/>
+    <text x="34" y="72" font-weight="700" fill="#1a2332">① 入力を送信</text>
+    <text x="34" y="90" fill="#5b6675">S1〜S7（12問以内）</text>
+    <text x="34" y="105" fill="#8a94a3">レンジ選択が原則</text>
+
+    <rect x="190" y="50" width="160" height="62" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+    <text x="204" y="72" font-weight="700" fill="#1f3864">② パラメータ版を確認</text>
+    <text x="204" y="90" fill="#1f3864">有効期限をチェック</text>
+    <text x="204" y="105" fill="#3b5a8f">期限切れなら診断しない</text>
+
+    <rect x="370" y="50" width="170" height="62" rx="6" fill="#e8edf7" stroke="#1f3864" stroke-width="1.8"/>
+    <text x="384" y="72" font-weight="700" fill="#1f3864">③ 算定エンジン</text>
+    <text x="384" y="90" fill="#1f3864">純粋関数・1秒未満</text>
+    <text x="384" y="105" fill="#3b5a8f">金額を作る唯一の場所</text>
+
+    <rect x="560" y="50" width="160" height="62" rx="6" fill="#fff" stroke="#c9d0da"/>
+    <text x="574" y="72" font-weight="700" fill="#1a2332">④ RAG検索</text>
+    <text x="574" y="90" fill="#5b6675">公的制度の根拠を引く</text>
+    <text x="574" y="105" fill="#8a94a3">有効期間でフィルタ</text>
+
+    <rect x="740" y="50" width="170" height="62" rx="6" fill="#fff" stroke="#c9d0da"/>
+    <text x="754" y="72" font-weight="700" fill="#1a2332">⑤ AI言語化（逐次）</text>
+    <text x="754" y="90" fill="#5b6675">数値はプレースホルダで書く</text>
+    <text x="754" y="105" fill="#8a94a3">例：{{ necessaryAmount }}</text>
+
+    <rect x="930" y="50" width="170" height="62" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+    <text x="944" y="72" font-weight="700" fill="#1f3864">⑥ ガードレール</text>
+    <text x="944" y="90" fill="#1f3864">チャンクごとに検査</text>
+    <text x="944" y="105" fill="#3b5a8f">生の数値が来たら破棄</text>
+  </g>
+
+  <!-- flow arrows -->
+  <line x1="172" y1="81" x2="186" y2="81" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <line x1="352" y1="81" x2="366" y2="81" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <line x1="542" y1="81" x2="556" y2="81" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <line x1="722" y1="81" x2="736" y2="81" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <line x1="912" y1="81" x2="926" y2="81" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+  <!-- stop branch from 2 -->
+  <rect x="190" y="150" width="160" height="52" rx="6" fill="#fdeceb" stroke="#b3261e"/>
+  <text x="204" y="170" font-size="11.5" font-weight="700" fill="#b3261e">503 で診断を停止</text>
+  <text x="204" y="188" font-size="11" fill="#b3261e">「制度改正の反映中」</text>
+  <line x1="270" y1="114" x2="270" y2="146" stroke="#b3261e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arR)"/>
+  <text x="278" y="136" font-size="10.5" fill="#b3261e">期限切れ</text>
+
+  <!-- fallback from 6 -->
+  <rect x="930" y="150" width="170" height="52" rx="6" fill="#fdeceb" stroke="#b3261e"/>
+  <text x="944" y="170" font-size="11.5" font-weight="700" fill="#b3261e">テンプレート文に切替</text>
+  <text x="944" y="188" font-size="11" fill="#b3261e">＋ 運営レビューキューへ</text>
+  <line x1="1015" y1="114" x2="1015" y2="146" stroke="#b3261e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arR)"/>
+  <text x="1023" y="136" font-size="10.5" fill="#b3261e">2回失敗</text>
+
+  <!-- placeholder substitution -->
+  <rect x="560" y="230" width="540" height="56" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+  <text x="576" y="252" font-size="12" font-weight="700" fill="#1f3864">⑦ クライアントがプレースホルダに算定結果を差し込む</text>
+  <text x="576" y="272" font-size="11.5" fill="#1f3864">AI出力に生の数値が現れないので、金額が構造的に間違えようがない。ストリーミングと数値検査が両立する。</text>
+  <line x1="1015" y1="204" x2="1015" y2="226" stroke="#1f3864" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+  <!-- user lane -->
+  <line x1="20" y1="410" x2="1100" y2="410" stroke="#c9d0da" stroke-width="1"/>
+  <g>
+    <circle cx="455" cy="410" r="6" fill="#1f3864"/>
+    <line x1="455" y1="114" x2="455" y2="404" stroke="#1f3864" stroke-width="2" marker-end="url(#ar3)"/>
+    <rect x="330" y="424" width="250" height="58" rx="6" fill="#e8edf7" stroke="#1f3864" stroke-width="1.6"/>
+    <text x="346" y="445" font-size="12.5" font-weight="700" fill="#1f3864">約1秒 ─ 金額と内訳が出る</text>
+    <text x="346" y="464" font-size="11.5" fill="#1f3864">「足りている／足す／減らせる」＋計算の内訳</text>
+  </g>
+  <g>
+    <circle cx="900" cy="410" r="6" fill="#6b7280"/>
+    <line x1="900" y1="290" x2="900" y2="404" stroke="#6b7280" stroke-width="1.6" marker-end="url(#ar2)"/>
+    <rect x="790" y="424" width="290" height="58" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="806" y="445" font-size="12.5" font-weight="700" fill="#374151">〜15秒 ─ 説明の文章が流れて揃う</text>
+    <text x="806" y="464" font-size="11.5" fill="#6b7280">「なぜこの額か」＋出典＋減らせる箇所</text>
+  </g>
+  <text x="20" y="446" font-size="11.5" fill="#8a94a3">時間軸 →</text>
+  <text x="620" y="446" font-size="11" fill="#b3261e">AIが落ちてもここまでは必ず出る</text>
+</svg>
+
+  <p class="notes">
+    <p>※ 所要時間は目標値（NFR-01：算定1秒以内・AI言語化15秒以内）。実測ではない。</p>
+    <p>※ ⑦のプレースホルダ方式は、ストリーミング中に数値検査（G-1）ができないという矛盾を解くための設計。ADR-003「金額をAIに生成させない」を最後まで押し切った結果として得られる。</p>
+  </p>
+</section>
+
+<!-- ============ 図3 責務境界 ============ -->
+<section>
+  <p class="kicker">図3 ─ 責務境界</p>
+  <h2>金額を作るのはコードだけ。AIは翻訳しかしない ─ これが「正直さ」の実装</h2>
+  <p class="lead">「必要ないなら入らなくていい」と根拠つきで言い切れることが信頼の証明である以上、その根拠は後から再現できなければならない。だから数値は決定的な計算式で作り、AIには触らせない。</p>
+
+<svg viewBox="0 0 1120 430" role="img" aria-label="算定エンジンとAIの責務境界およびガードレール">
+  <defs>
+    <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f3864"/>
+    </marker>
+  </defs>
+
+  <!-- left: engine -->
+  <rect x="20" y="20" width="380" height="230" rx="8" fill="#e8edf7" stroke="#1f3864" stroke-width="1.8"/>
+  <text x="44" y="50" font-size="15" font-weight="700" fill="#1f3864">算定エンジン（コード）</text>
+  <text x="44" y="72" font-size="12" fill="#1f3864">役割：判断する。金額を作る唯一の場所</text>
+  <g font-size="11.5" fill="#1f3864">
+    <text x="44" y="102">・ 支出：遺族の生活費／教育費／住居費／葬儀・予備費</text>
+    <text x="44" y="124">・ 収入：遺族基礎年金／遺族厚生年金／中高齢寡婦加算</text>
+    <text x="44" y="146">　　　　／遺族の就労収入／金融資産</text>
+    <text x="44" y="168">・ 判定：不足／充足／余剰／不要　＋　現保障との過不足</text>
+    <text x="44" y="190">・ 医療：高額療養費の上限と資産から自己保険の可否</text>
+  </g>
+  <rect x="44" y="204" width="332" height="30" rx="5" fill="#fff" stroke="#1f3864" stroke-dasharray="4 3"/>
+  <text x="58" y="224" font-size="11.5" fill="#1f3864">同一入力・同一パラメータ版なら、必ず同一結果（AR-06）</text>
+
+  <!-- middle arrow -->
+  <line x1="404" y1="135" x2="452" y2="135" stroke="#1f3864" stroke-width="2" marker-end="url(#ar4)"/>
+  <text x="380" y="122" font-size="11" fill="#1f3864" text-anchor="start"></text>
+  <rect x="404" y="146" width="52" height="18" rx="3" fill="#fff"/>
+  <text x="410" y="159" font-size="10.5" fill="#1f3864">構造化データ</text>
+
+  <!-- right: AI -->
+  <rect x="460" y="20" width="380" height="230" rx="8" fill="#fff" stroke="#c9d0da" stroke-width="1.6"/>
+  <text x="484" y="50" font-size="15" font-weight="700" fill="#374151">AI（翻訳者）</text>
+  <text x="484" y="72" font-size="12" fill="#5b6675">役割：説明する。判断も計算もしない</text>
+  <g font-size="11.5" fill="#5b6675">
+    <text x="484" y="102">・ 「なぜこの額か」を世帯の事情に合わせて平易に言い換える</text>
+    <text x="484" y="124">・ 公的制度への言及には、RAGで引いた出典を必ず添える</text>
+    <text x="484" y="146">・ 減らせる箇所があれば必ず書く。無ければ「無い」と書く</text>
+    <text x="484" y="168">・ 数値は書かない。プレースホルダだけを置く</text>
+  </g>
+  <rect x="484" y="182" width="332" height="52" rx="5" fill="#f1f3f5" stroke="#c9d0da"/>
+  <text x="498" y="202" font-size="11" fill="#6b7280">出力例：「ご遺族には毎月 &#123;&#123;pensionMonthly&#125;&#125; の遺族年金が入るので、</text>
+  <text x="498" y="220" font-size="11" fill="#6b7280">　　　　　足りないのは &#123;&#123;shortage&#125;&#125; だけです」</text>
+
+  <!-- forbidden -->
+  <rect x="860" y="20" width="240" height="230" rx="8" fill="#fdeceb" stroke="#b3261e"/>
+  <text x="882" y="50" font-size="14" font-weight="700" fill="#b3261e">AIに渡さないもの</text>
+  <g font-size="11.5" fill="#b3261e">
+    <text x="882" y="80">・ DB書き込み・外部送信・削除</text>
+    <text x="882" y="102">　（副作用を一切持たせない）</text>
+    <text x="882" y="128">・ 氏名などの識別情報</text>
+    <text x="882" y="154">・ 保険商品の情報</text>
+    <text x="882" y="176">　（商品を語れる状態にしない）</text>
+  </g>
+  <rect x="882" y="192" width="196" height="42" rx="5" fill="#fff" stroke="#b3261e" stroke-dasharray="4 3"/>
+  <text x="894" y="210" font-size="11" fill="#b3261e">出力は文章だけなので、</text>
+  <text x="894" y="226" font-size="11" fill="#b3261e">不合格なら破棄するだけで済む</text>
+
+  <!-- guardrails -->
+  <rect x="20" y="272" width="1080" height="140" rx="8" fill="#f7f8fa" stroke="#c9d0da"/>
+  <text x="44" y="298" font-size="13.5" font-weight="700" fill="#1a2332">ガードレール ─ 「法令の立証のために置くもの」と「今のモデルの弱点を補うもの」を混ぜない</text>
+
+  <rect x="44" y="312" width="510" height="84" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+  <text x="60" y="332" font-size="12" font-weight="700" fill="#1f3864">恒久 ─ モデルが賢くなっても外さない</text>
+  <g font-size="11.5" fill="#1f3864">
+    <text x="60" y="354">G-1 数値照合：算定結果に無い数値が出たら破棄</text>
+    <text x="60" y="374">G-2 禁止語検査：商品名・勧誘表現・煽り表現</text>
+    <text x="60" y="390" font-size="11" fill="#3b5a8f">G-4 結論一致：AIの結論が算定の判定とずれたら再生成</text>
+  </g>
+
+  <rect x="570" y="312" width="510" height="84" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+  <text x="586" y="332" font-size="12" font-weight="700" fill="#374151">暫定 ─ モデル更新のたびに見直す</text>
+  <g font-size="11.5" fill="#5b6675">
+    <text x="586" y="354">再生成リトライ（最大2回）／ 全件の人手レビュー</text>
+    <text x="586" y="374">文体の指示・用語注釈の辞書</text>
+    <text x="586" y="390" font-size="11" fill="#8a94a3">見直し条件：違反率が2週連続0.5%未満なら抽出レビューへ</text>
+  </g>
+</svg>
+
+  <p class="notes">
+    <p>※ 恒久／暫定の区別は台帳（機能仕様書 §12）で管理する。混同すると、不要な処理を永久に抱えるか、外してはいけない処理を外す。</p>
+  </p>
+</section>
+
+<!-- ============ 図4 規制の線引き ============ -->
+<section>
+  <p class="kicker">図4 ─ 規制の線引き</p>
+  <h2>MVPは「募集の手前」に完全に留まる ─ 判断軸はWebか対面かではなく、募集行為に当たるか</h2>
+  <p class="lead">収益は法人からのPEPMで、保険成約手数料を取らない。したがって送客導線を持つ必要がなく、持たないことで規制からも芯からも最も安全な位置に立てる。</p>
+
+<svg viewBox="0 0 1120 420" role="img" aria-label="保険業法の線引きとMVPが返す次の一歩">
+  <!-- can -->
+  <rect x="20" y="20" width="530" height="200" rx="8" fill="#e6f4ec" stroke="#1a6b46"/>
+  <text x="44" y="50" font-size="14.5" font-weight="700" fill="#1a6b46">AIが担える（募集の手前）</text>
+  <g font-size="12" fill="#14603d">
+    <text x="44" y="82">・ 意向把握（世帯情報のヒアリング）</text>
+    <text x="44" y="108">・ 必要保障額の算出と、その言語化</text>
+    <text x="44" y="134">・ 公的制度の情報提供（出典つき）</text>
+    <text x="44" y="160">・ 現契約の過不足を、事実として示す</text>
+    <text x="44" y="186">・ 一般的な行動手順の提示（商品名なし）</text>
+  </g>
+
+  <!-- cannot -->
+  <rect x="570" y="20" width="530" height="200" rx="8" fill="#fdeceb" stroke="#b3261e"/>
+  <text x="594" y="50" font-size="14.5" font-weight="700" fill="#b3261e">MVPではやらない</text>
+  <g font-size="12" fill="#8f1d16">
+    <text x="594" y="82">・ 特定商品の推奨・勧誘・比較表・ランキング</text>
+    <text x="594" y="108">・ 保険会社名／商品名の表示</text>
+    <text x="594" y="134">・ 申込ページへの送客リンク</text>
+    <text x="594" y="160">・ 重要事項の最終説明、申込の確定</text>
+    <text x="594" y="186">・ 保険会社・代理店からの手数料収受</text>
+  </g>
+
+  <!-- next step -->
+  <rect x="20" y="244" width="1080" height="156" rx="8" fill="#fff" stroke="#1f3864" stroke-width="1.6"/>
+  <text x="44" y="272" font-size="13.5" font-weight="700" fill="#1f3864">では診断のあと、社員は何をするのか ─ 商品名を出さずに返す「次の一歩」</text>
+
+  <rect x="44" y="288" width="330" height="94" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+  <text x="60" y="310" font-size="12.5" font-weight="700" fill="#1f3864">減らせる側</text>
+  <text x="60" y="332" font-size="11.5" fill="#1f3864">現契約のコールセンターに減額を依頼する</text>
+  <text x="60" y="352" font-size="11.5" fill="#1f3864">証券のどこを見ればよいかまで示す</text>
+  <text x="60" y="372" font-size="11" fill="#3b5a8f">既存契約への行動なので商品名が要らない</text>
+
+  <rect x="392" y="288" width="330" height="94" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+  <text x="408" y="310" font-size="12.5" font-weight="700" fill="#1f3864">足りない側</text>
+  <text x="408" y="332" font-size="11.5" fill="#1f3864">まず勤務先の団体保険を確認してもらう</text>
+  <text x="408" y="352" font-size="11.5" fill="#1f3864">窓口・受付時期まで具体的に</text>
+  <text x="408" y="372" font-size="11" fill="#3b5a8f">契約主体は会社。福利厚生経由でしか出せない導線</text>
+
+  <rect x="740" y="288" width="336" height="94" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+  <text x="756" y="310" font-size="12.5" font-weight="700" fill="#374151">「もっと知りたい」を押したときだけ</text>
+  <text x="756" y="332" font-size="11.5" fill="#5b6675">選ぶ基準のチェックリストを開く</text>
+  <text x="756" y="352" font-size="11.5" fill="#5b6675">（保障期間は末子独立まで／終身は不要 など）</text>
+  <text x="756" y="372" font-size="11" fill="#8a94a3">押した＝本人の意向、という記録が残る</text>
+</svg>
+
+  <p class="notes">
+    <p>※ 本図の線引きは自社解釈である。パイロット開始前に保険業法に詳しい弁護士のレビューを受けること（OI-01）。特に「団体保険の減額・追加加入の示唆」と「世帯で見れば合計保険料を増やさずに解決できる」という表現が、既存契約の乗換募集に当たらないかを確認する。</p>
+  </p>
+</section>
+
+<!-- ============ 図5 パラメータ管理 ============ -->
+<section>
+  <p class="kicker">図5 ─ 制度パラメータの版管理</p>
+  <h2>制度改正への対応は「壊れたら止まる」設計にする ─ 静かに間違い続けるのが最悪だから</h2>
+  <p class="lead">このプロダクトは遺族年金額（毎年度改定）と高額療養費の自己負担上限（2026年8月・2027年8月に段階施行）に強く依存する。反映漏れはエラーを出さず、誤った金額を出し続ける形で現れる。</p>
+
+<svg viewBox="0 0 1120 380" role="img" aria-label="制度パラメータの版管理と有効化ゲート">
+  <defs>
+    <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6675"/>
+    </marker>
+    <marker id="arR2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/>
+    </marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a6b46"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="30" width="250" height="130" rx="6" fill="#fff" stroke="#c9d0da"/>
+  <text x="40" y="56" font-size="13" font-weight="700" fill="#1a2332">params/2026-08.yaml</text>
+  <g font-size="11.5" fill="#5b6675">
+    <text x="40" y="80">値 ／ 単位 ／ ラベル</text>
+    <text x="40" y="102">出典URL ／ 根拠年度</text>
+    <text x="40" y="124">有効期間 ／ 確認済みフラグ</text>
+    <text x="40" y="146" fill="#b3261e">verified: false は本番に出さない</text>
+  </g>
+
+  <line x1="274" y1="95" x2="308" y2="95" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar5)"/>
+
+  <rect x="312" y="30" width="210" height="130" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+  <text x="332" y="56" font-size="13" font-weight="700" fill="#1f3864">診断のたびに検査</text>
+  <g font-size="11.5" fill="#1f3864">
+    <text x="332" y="82">・ 有効期間内か</text>
+    <text x="332" y="104">・ 中核パラメータが</text>
+    <text x="332" y="122">　 期限切れでないか</text>
+  </g>
+
+  <!-- ok path -->
+  <line x1="526" y1="70" x2="574" y2="70" stroke="#1a6b46" stroke-width="1.6" marker-end="url(#arG)"/>
+  <text x="530" y="60" font-size="10.5" fill="#1a6b46">期限内</text>
+  <rect x="578" y="30" width="250" height="60" rx="6" fill="#e6f4ec" stroke="#1a6b46"/>
+  <text x="598" y="54" font-size="12.5" font-weight="700" fill="#14603d">診断を実行</text>
+  <text x="598" y="76" font-size="11.5" fill="#14603d">結果に版（2026.08）を刻印して保存</text>
+
+  <!-- stop path -->
+  <line x1="526" y1="122" x2="574" y2="122" stroke="#b3261e" stroke-width="1.6" marker-end="url(#arR2)"/>
+  <text x="528" y="112" font-size="10.5" fill="#b3261e">期限切れ</text>
+  <rect x="578" y="98" width="250" height="60" rx="6" fill="#fdeceb" stroke="#b3261e"/>
+  <text x="598" y="122" font-size="12.5" font-weight="700" fill="#b3261e">診断を停止する</text>
+  <text x="598" y="144" font-size="11.5" fill="#b3261e">「制度改正の反映中」を表示</text>
+
+  <rect x="852" y="30" width="248" height="128" rx="6" fill="#f7f8fa" stroke="#c9d0da"/>
+  <text x="872" y="54" font-size="12.5" font-weight="700" fill="#1a2332">結果に残るもの</text>
+  <g font-size="11.5" fill="#5b6675">
+    <text x="872" y="78">・ 使用したパラメータ版</text>
+    <text x="872" y="100">・ 算定基準日</text>
+    <text x="872" y="122">・ 推定で補った項目とその理由</text>
+    <text x="872" y="144" fill="#8a94a3">後から根拠を再現できる状態を保つ</text>
+  </g>
+
+  <!-- gate -->
+  <rect x="20" y="192" width="1080" height="164" rx="8" fill="#fff" stroke="#1f3864" stroke-width="1.6"/>
+  <text x="44" y="220" font-size="13.5" font-weight="700" fill="#1f3864">パラメータ版の有効化は「取り消せない操作」として扱う ─ 誤値を入れると以後すべての診断が静かに間違う</text>
+
+  <g>
+    <rect x="44" y="238" width="230" height="94" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="60" y="262" font-size="12" font-weight="700" fill="#374151">① 差分プレビュー</text>
+    <text x="60" y="284" font-size="11.5" fill="#5b6675">どの値がいくら変わるか</text>
+    <text x="60" y="304" font-size="11.5" fill="#5b6675">を先に見る</text>
+
+    <line x1="278" y1="285" x2="298" y2="285" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar5)"/>
+
+    <rect x="302" y="238" width="250" height="94" rx="6" fill="#e8edf7" stroke="#1f3864"/>
+    <text x="318" y="262" font-size="12" font-weight="700" fill="#1f3864">② ゴールデンテスト再実行</text>
+    <text x="318" y="284" font-size="11.5" fill="#1f3864">10世帯・70件が全て通ること</text>
+    <text x="318" y="304" font-size="11.5" fill="#1f3864">通らなければ有効化できない</text>
+
+    <line x1="556" y1="285" x2="576" y2="285" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar5)"/>
+
+    <rect x="580" y="238" width="230" height="94" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="596" y="262" font-size="12" font-weight="700" fill="#374151">③ 二人承認</text>
+    <text x="596" y="284" font-size="11.5" fill="#5b6675">実行者と承認者を分ける</text>
+    <text x="596" y="304" font-size="11" fill="#b3261e">2名体制での代替統制は未設計</text>
+
+    <line x1="814" y1="285" x2="834" y2="285" stroke="#5b6675" stroke-width="1.5" marker-end="url(#ar5)"/>
+
+    <rect x="838" y="238" width="238" height="94" rx="6" fill="#f1f3f5" stroke="#6b7280"/>
+    <text x="854" y="262" font-size="12" font-weight="700" fill="#374151">④ 監査ログ</text>
+    <text x="854" y="284" font-size="11.5" fill="#5b6675">誰が・いつ・どの版を</text>
+    <text x="854" y="304" font-size="11.5" fill="#5b6675">有効化したかを記録</text>
+  </g>
+</svg>
+
+  <p class="notes">
+    <p>※ 更新のきっかけは外部要因で毎年発生する（年金額改定：1月公表・4月適用／高額療養費：2026年8月・2027年8月）。カレンダー化して事前にタスクを立てる。</p>
+    <p>※ この仕組みは同時に、法人が翌年も払う理由（制度改正カレンダー連動の再診断）の土台にもなる。</p>
+  </p>
+</section>
+
+<footer style="margin-top:36px;font-size:12px;color:#8a94a3;border-top:1px solid #d5dae2;padding-top:16px">
+  AI × お金の健康 ／ 日下部 奈緒美 ／ 2026-08-17 作成。図の内容は要件定義書_MVP.md・機能仕様書_MVP.md・ADR.md に対応する。仕様を変更したら本図も更新すること。
+</footer>
+
+</div>
+</body>
+</html>

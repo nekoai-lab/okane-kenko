@@ -1,0 +1,26 @@
+{
+  "name": "okane-kenko-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI×お金の健康 — 必要保障額の算定エンジン（事業の核）",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "check": "biome check .",
+    "prepare": "git config core.hooksPath .githooks"
+  },
+  "dependencies": {
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "@biomejs/biome": "^2.0.0"
+  }
+}

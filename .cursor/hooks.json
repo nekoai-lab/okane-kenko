@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "node .claude/hooks/guard-shell.mjs",
+        "failClosed": true
+      }
+    ],
+    "beforeReadFile": [
+      {
+        "command": "node .claude/hooks/guard-read.mjs",
+        "failClosed": true
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "node .claude/hooks/format-edited.mjs"
+      }
+    ]
+  }
+}

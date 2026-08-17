@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+coverage/
+*.log
+
+# 秘密情報の実値は commit できないようにする。.env.example だけを Git に含める。
+.env
+.env.*
+!.env.example
+
+.claude/settings.local.json

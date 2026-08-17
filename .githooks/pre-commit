@@ -1,0 +1,17 @@
+#!/bin/sh
+# commit する前に走るもの（CLAUDE.md）。1つでも失敗したら commit を中止する。
+# Formatter は編集直後に走っているので、ここでは検査だけを行い、コードを書き換えない。
+set -e
+
+echo "pre-commit: Linter（biome lint）"
+npm run --silent lint
+
+echo "pre-commit: 型チェック（tsc --noEmit）"
+npm run --silent typecheck
+
+# 算定エンジンは事業の核なので、壊れたままコミットできないようにする。
+# 期待値が変わる変更のときは、テストを直す前に人間に確認を取ること。
+echo "pre-commit: ゴールデンテスト（npm test）"
+npm test --silent
+
+echo "pre-commit: OK"
