@@ -9,6 +9,7 @@ const full: WizardSelections = {
   spouseBirthYear: 1991,
   spouseEmployment: "none",
   childrenBirthYears: [2018],
+  educationPlan: "public",
   selfIncome: "lt600",
   spouseIncome: "none",
   assets: "lt500",
@@ -52,6 +53,11 @@ describe("toCompleteSelections", () => {
 
   it("配偶者ありで配偶者の保障額が未回答なら未完了", () => {
     const { coverageSpouse: _drop, ...rest } = full;
+    expect(isComplete(rest)).toBe(false);
+  });
+
+  it("子がいるのに進路が未回答なら未完了", () => {
+    const { educationPlan: _drop, ...rest } = full;
     expect(isComplete(rest)).toBe(false);
   });
 

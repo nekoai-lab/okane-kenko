@@ -19,6 +19,7 @@ const base: WizardSelections = {
   spouseBirthYear: 1991,
   spouseEmployment: "employee",
   childrenBirthYears: [2024],
+  educationPlan: "public",
   selfIncome: "lt600",
   spouseIncome: "lt400",
   assets: "lt500",
@@ -95,6 +96,30 @@ describe("normalize：生活費の年収推定（§4.2.1）", () => {
     // 世帯年収 500万+200万=700万 → 手取り ×0.80=560万 → ×0.75/12 = 350,000
     expect(input.monthlyLiving).toBe(350_000);
     expect(estimations.some((e) => e.reason === "estimated_from_income")).toBe(true);
+  });
+});
+
+describe("normalize：子の進路（S2）", () => {
+  it("private を選ぶとそのまま渡す", () => {
+    const { input } = normalize(P, { ...base, educationPlan: "private" }, AS_OF);
+    expect(input.educationPlan).toBe("private");
+  });
+
+  it("まだ決めていないは公立中心で仮置き＋推定フラグ", () => {
+    const { input, estimations } = normalize(P, { ...base, educationPlan: "undecided" }, AS_OF);
+    expect(input.educationPlan).toBe("public");
+    expect(estimations.some((e) => e.field === "educationPlan" && e.reason === "undecided")).toBe(
+      true,
+    );
+  });
+
+  it("子がいなければ進路フラグは立てない", () => {
+    const { estimations } = normalize(
+      P,
+      { ...base, childrenBirthYears: [], educationPlan: undefined },
+      AS_OF,
+    );
+    expect(estimations.some((e) => e.field === "educationPlan")).toBe(false);
   });
 });
 
