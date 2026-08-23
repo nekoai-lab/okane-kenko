@@ -79,3 +79,111 @@
 .link {
   color: var(--color-link);
 }
+
+.section {
+  margin: var(--space-7) 0;
+}
+
+.caseCard {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.caseTitle {
+  font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-2);
+}
+
+.amount {
+  font-size: var(--font-size-std-xl);
+  font-weight: var(--font-weight-bold);
+  margin: var(--space-2) 0;
+}
+
+.verdictLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--font-weight-bold);
+  margin: var(--space-2) 0;
+}
+.verdictLine.good {
+  color: var(--color-success-text);
+}
+.verdictLine.warn {
+  color: var(--color-warning-text);
+}
+
+.subhead {
+  font-size: var(--font-size-std-s);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.rows {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.rowLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.basis {
+  font-size: var(--font-size-std-xs);
+  color: var(--color-text-secondary);
+}
+
+.rowAmount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.total {
+  font-weight: var(--font-weight-bold);
+  border-bottom: none;
+  border-top: 2px solid var(--color-border);
+  margin-top: var(--space-1);
+}
+
+.reduce {
+  border-left: 6px solid var(--color-success);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-control);
+}
+.reduceNone {
+  border-left: 6px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+}
+
+.assumptions {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-5);
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+}
+
+.sources {
+  font-size: var(--font-size-std-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-3);
+}

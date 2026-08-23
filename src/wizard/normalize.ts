@@ -132,6 +132,22 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
   // 配偶者がいなければ coverageSpouse は渡さない（diagnose 側で配偶者ケースを作らない）。
   const coverageSpouse = spouse ? coverageValue(sel.coverageSpouse) : undefined;
 
+  // ---------- 子の進路（S2） ----------
+  // 「まだ決めていない」は公立中心で仮置き（必要額を過大にしない）＋推定フラグ。
+  // 子がいなければ進路は結果に影響しない（教育費0）ので public 固定でよい。
+  const educationPlan: DiagnoseInput["educationPlan"] =
+    sel.educationPlan && sel.educationPlan !== "undecided" ? sel.educationPlan : "public";
+  if (
+    children.length > 0 &&
+    (sel.educationPlan === "undecided" || sel.educationPlan === undefined)
+  ) {
+    estimations.push({
+      field: "educationPlan",
+      reason: "undecided",
+      note: "進路が未定のため公立中心で仮置きしました。私立にすると教育費が増えます。",
+    });
+  }
+
   const input: DiagnoseInput = {
     self,
     spouse,
@@ -139,7 +155,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
     housing,
     assets,
     monthlyLiving,
-    educationPlan: "public", // S2 の教育プランは MVP では public 固定（設問化は別チケット）
+    educationPlan,
     coverageSelf,
     ...(coverageSpouse !== undefined ? { coverageSpouse } : {}),
   };

@@ -14,6 +14,7 @@ const full: WizardSelections = {
   spouseBirthYear: 1991,
   spouseEmployment: "none",
   childrenBirthYears: [2018, 2021],
+  educationPlan: "mixed",
   selfIncome: "lt600",
   spouseIncome: "none",
   assets: "lt500",

@@ -9,6 +9,7 @@ import type {
   AssetCode,
   CoverageCode,
   DanshinChoice,
+  EducationPlanChoice,
   EmploymentChoice,
   HousingChoice,
   IncomeCode,
@@ -58,6 +59,7 @@ const COVERAGE: readonly CoverageCode[] = [
   "gte10000",
   "unknown",
 ];
+const EDUPLAN: readonly EducationPlanChoice[] = ["public", "mixed", "private", "undecided"];
 
 function pick<T extends string>(allowed: readonly T[], raw: string | null): T | undefined {
   return raw !== null && (allowed as readonly string[]).includes(raw) ? (raw as T) : undefined;
@@ -82,6 +84,7 @@ export function encodeSelections(sel: Partial<WizardSelections>): string {
   if (sel.childrenBirthYears !== undefined) {
     q.set("ch", sel.childrenBirthYears.join("-"));
   }
+  if (sel.educationPlan) q.set("edu", sel.educationPlan);
   if (sel.selfIncome) q.set("inc", sel.selfIncome);
   if (sel.spouseIncome) q.set("sinc", sel.spouseIncome);
   if (sel.assets) q.set("as", sel.assets);
@@ -137,5 +140,7 @@ export function decodeSelections(query: string | URLSearchParams): Partial<Wizar
   if (cvs) sel.coverageSelf = cvs;
   const cvsp = pick(COVERAGE, q.get("cvsp"));
   if (cvsp) sel.coverageSpouse = cvsp;
+  const edu = pick(EDUPLAN, q.get("edu"));
+  if (edu) sel.educationPlan = edu;
   return sel;
 }

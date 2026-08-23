@@ -15,6 +15,7 @@ import type {
   AssetCode,
   CoverageCode,
   DanshinChoice,
+  EducationPlanChoice,
   EmploymentChoice,
   HousingChoice,
   IncomeCode,
@@ -90,6 +91,13 @@ const COVERAGE: [CoverageCode, string][] = [
   ["m5000", "5000万円"],
   ["gte10000", "1億円以上"],
   ["unknown", "分からない"],
+];
+
+const EDU_PLAN: [EducationPlanChoice, string][] = [
+  ["public", "公立中心"],
+  ["mixed", "私立混在（高校・大学は私立など）"],
+  ["private", "私立中心"],
+  ["undecided", "まだ決めていない"],
 ];
 
 const STEP_TITLES = [
@@ -204,7 +212,8 @@ export default function WizardPage() {
           sel.hasSpouse !== undefined &&
           sel.childrenBirthYears !== undefined &&
           (!sel.hasSpouse ||
-            (sel.spouseBirthYear !== undefined && sel.spouseEmployment !== undefined))
+            (sel.spouseBirthYear !== undefined && sel.spouseEmployment !== undefined)) &&
+          (sel.childrenBirthYears.length === 0 || sel.educationPlan !== undefined)
         );
       case 2:
         return sel.selfIncome !== undefined && (!sel.hasSpouse || sel.spouseIncome !== undefined);
@@ -331,6 +340,15 @@ export default function WizardPage() {
               </div>
             )}
           </fieldset>
+          {childCount !== undefined && childCount > 0 && (
+            <RadioGroup
+              legend="お子さんの進路の見通し"
+              note="教育費の目安に使います。決めていなければ「まだ決めていない」で大丈夫です（公立中心で仮に計算します）。"
+              options={EDU_PLAN}
+              value={sel.educationPlan}
+              onChange={(v) => set({ educationPlan: v })}
+            />
+          )}
         </>
       )}
 

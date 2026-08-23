@@ -72,12 +72,17 @@ test("重い経路：配偶者あり・持ち家ローンあり・保障額あ�
   await page.getByRole("radio", { name: "会社員" }).check();
   await page.getByRole("button", { name: "次へ" }).click();
 
-  // S2 配偶者あり・子0人（子セレクトの曖昧さを避ける）
+  // S2 配偶者あり・子1人（進路設問まで出す）
   await page.getByRole("radio", { name: "いる" }).check();
-  await page.getByRole("combobox", { name: "生年" }).selectOption("1987"); // 配偶者生年
+  await page
+    .getByRole("group", { name: "配偶者の生まれた年" })
+    .getByRole("combobox")
+    .selectOption("1987");
   await groupRadio("配偶者の働き方", "専業主婦・主夫／無職").check();
-  await page.getByRole("combobox", { name: "人数" }).selectOption("0");
-  await expectNoHorizontalOverflow(page, "S2(配偶者あり)");
+  await page.getByRole("combobox", { name: "人数" }).selectOption("1");
+  await page.getByRole("combobox", { name: "お子さん1の生年" }).selectOption("2016");
+  await groupRadio("お子さんの進路の見通し", "まだ決めていない").check();
+  await expectNoHorizontalOverflow(page, "S2(配偶者・子あり・進路)");
   await page.getByRole("button", { name: "次へ" }).click();
 
   // S3

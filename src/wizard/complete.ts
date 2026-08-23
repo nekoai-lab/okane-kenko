@@ -12,6 +12,8 @@ export function toCompleteSelections(sel: Partial<WizardSelections>): WizardSele
   if (sel.selfEmployment === undefined) return null;
   if (sel.hasSpouse === undefined) return null;
   if (sel.childrenBirthYears === undefined) return null; // 「子の人数」に未回答（0人は空配列で回答済み）
+  // 子がいる世帯は進路が必須（教育費に直結）。子0人なら不要。
+  if (sel.childrenBirthYears.length > 0 && sel.educationPlan === undefined) return null;
   if (sel.selfIncome === undefined) return null;
   if (sel.assets === undefined) return null;
   if (sel.livingCost === undefined) return null;
