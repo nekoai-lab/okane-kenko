@@ -203,6 +203,13 @@ export default async function ResultPage({
         )}
       </div>
 
+      {/* 2028年の年金改正の該当/非該当（事実として中立に明示） */}
+      <div className={s.section}>
+        <div className={s.reformNote}>
+          <strong>2028年の年金改正について：</strong> {result.reform2028.reason}
+        </div>
+      </div>
+
       {/* 因数分解（本人・配偶者） */}
       <div className={s.section}>
         <CaseCard title="あなたが亡くなった場合" r={result.self} />
