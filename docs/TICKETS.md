@@ -38,17 +38,18 @@ T-01 算定エンジン ✅完了
 
 ---
 
-## T-02 ─ アプリの器とデプロイ
+## T-02 ─ アプリの器とデプロイ（コード側完了・Vercel接続待ち）
 
 **価値**：URLを開けば何かが表示される状態になる。以後すべての作業が「見える」ようになる。
 
-- [ ] Next.js（App Router / TypeScript）を作成し、`src/calc` と `src/params` をそのまま取り込む
-- [ ] `POST /api/diagnose` を作り、算定結果のJSONを返す（画面はまだ無くてよい）
-- [ ] Vercel に接続し、**リージョンを `hnd1`（東京）に設定**
-- [ ] DBは使わない（Phase A）
-- [ ] CIでテストを走らせる（GitHub Actions）
+- [x] Next.js（App Router / TypeScript）を作成し、`src/calc` と `src/params` をそのまま取り込む
+- [x] `POST /api/diagnose` を作り、算定結果のJSONを返す（zod で入力検証。画面はまだ無くてよい）
+- [~] Vercel に接続し、**リージョンを `hnd1`（東京）に設定** … `vercel.json` に `hnd1` を設定済み。**接続・デプロイは人間の作業**（`vercel link` 等）
+- [x] DBは使わない（Phase A）
+- [x] CIでテストを走らせる（GitHub Actions … `.github/workflows/ci.yml`）
 
 **完了条件**：デプロイ先URLに `curl` で世帯情報をPOSTすると、GT-01と同じ結果が返る。
+→ ローカル（`next dev`）では GT-01 と一致することを確認済み。デプロイ後に本番URLで再確認する。
 
 ---
 

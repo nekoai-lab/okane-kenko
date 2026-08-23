@@ -1,4 +1,4 @@
 import { defineConfig } from "vitest/config";
 export default defineConfig({
-  test: { include: ["src/**/*.test.ts"], reporters: ["verbose"] },
+  test: { include: ["src/**/*.test.ts", "app/**/*.test.ts"], reporters: ["verbose"] },
 });
