@@ -6,13 +6,40 @@
  *          就業状況の違いは、期間ではなく就労収入の控除額で連続的に反映する。
  * ADR-009：遺族の就労収入は全額差し引く。
  */
-import type { ParamSet } from "../params/index.js";
+import type { EducationParams, ParamSet } from "../params/index.js";
 import { v } from "../params/index.js";
 import { chukoreiKafuTotal, izokuKisoTotal, izokuKoseiAnnual, koseiYears } from "./pension.js";
-import type { Assumption, DeathResult, Household, Verdict } from "./types.js";
+import type { Assumption, DeathResult, EducationPlan, Household, Verdict } from "./types.js";
 
 function roundToUnit(x: number, unit: number): number {
   return Math.round(x / unit) * unit;
+}
+
+/**
+ * 教育費（§4.2.2・段階別）。子の現年齢から、残りの各年を段階に割り当てて実額を積む。
+ * 学習費総額ベース（塾・部活・行事・制服・寄付を含む）。高校は就学支援金を年ごとに控除する。
+ * 大学入学料は年額換算に含めて按分済み（4年総額÷4）。地域係数を最後に掛ける。
+ */
+function annualEducation(edu: EducationParams, plan: EducationPlan, age: number): number {
+  const preset = edu.presets[plan];
+  const s = edu.stages;
+  if (age >= s.kinder.fromAge && age <= s.kinder.toAge) return s.kinder[preset.kinder];
+  if (age >= s.primary.fromAge && age <= s.primary.toAge) return s.primary[preset.primary];
+  if (age >= s.junior.fromAge && age <= s.junior.toAge) return s.junior[preset.junior];
+  if (age >= s.high.fromAge && age <= s.high.toAge) {
+    const shien = preset.high === "public" ? edu.shien.publicHigh : edu.shien.privateHigh;
+    return Math.max(0, s.high[preset.high] - shien);
+  }
+  if (age >= edu.university.fromAge && age <= edu.university.toAge) {
+    return edu.university[preset.university];
+  }
+  return 0;
+}
+
+function educationRemaining(edu: EducationParams, plan: EducationPlan, currentAge: number): number {
+  let sum = 0;
+  for (let a = currentAge; a <= edu.university.toAge; a++) sum += annualEducation(edu, plan, a);
+  return sum * edu.regionFactor;
 }
 
 export function calcDeath(p: ParamSet, h: Household): DeathResult {
@@ -32,13 +59,8 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
   const livingChild = M * v(p, "survivorLivingRatioChild") * 12 * yDep;
   const livingAlone = M * v(p, "survivorLivingRatioAlone") * 12 * yAlone;
 
-  const eduUnit = {
-    public: v(p, "educationPublic"),
-    mixed: v(p, "educationMixed"),
-    private: v(p, "educationPrivate"),
-  }[h.educationPlan];
   const education = children.reduce(
-    (s, age) => s + (eduUnit * Math.max(0, indepAge - age)) / indepAge,
+    (s, age) => s + educationRemaining(p.education, h.educationPlan, age),
     0,
   );
 

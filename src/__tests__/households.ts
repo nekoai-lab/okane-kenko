@@ -62,7 +62,7 @@ export const GOLDEN: GoldenCase[] = [
       coverageSpouse: 0,
     },
     expect: {
-      self: { verdict: "shortage", low: 2100, high: 3100, gap: "shortage", gapAmount: 1100 },
+      self: { verdict: "shortage", low: 2000, high: 3000, gap: "shortage", gapAmount: 1000 },
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "self_insurable",
       reform2028: false,
@@ -152,7 +152,7 @@ export const GOLDEN: GoldenCase[] = [
       coverageSpouse: 0,
     },
     expect: {
-      self: { verdict: "shortage", low: 1600, high: 2400, gap: "shortage", gapAmount: 600 },
+      self: { verdict: "shortage", low: 1600, high: 2500, gap: "shortage", gapAmount: 600 },
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "self_insurable",
       reform2028: false,

@@ -40,6 +40,41 @@ export interface InputRanges {
   coverage: Record<string, number>;
 }
 
+/** 教育費（段階別）。学習費総額ベースで、子の年齢から残り段階の実額を積む（§4.2.2） */
+export type SchoolChoice = "public" | "private";
+export type UniversityChoice = "national" | "privateLiberal" | "privateScience";
+
+export interface EduStage {
+  fromAge: number;
+  toAge: number;
+  public: number;
+  private: number;
+}
+
+export interface EducationParams {
+  regionFactor: number;
+  stages: { kinder: EduStage; primary: EduStage; junior: EduStage; high: EduStage };
+  university: {
+    fromAge: number;
+    toAge: number;
+    national: number;
+    privateLiberal: number;
+    privateScience: number;
+    verified: boolean;
+  };
+  shien: { publicHigh: number; privateHigh: number; verified: boolean };
+  presets: Record<
+    "public" | "mixed" | "private",
+    {
+      kinder: SchoolChoice;
+      primary: SchoolChoice;
+      junior: SchoolChoice;
+      high: SchoolChoice;
+      university: UniversityChoice;
+    }
+  >;
+}
+
 export interface ParamSet {
   version: string;
   effectiveFrom: string;
@@ -55,6 +90,7 @@ export interface ParamSet {
   toBeSourced: Record<string, ParamEntry>;
   constants: Record<string, number>;
   inputRanges: InputRanges;
+  education: EducationParams;
 }
 
 export class ParamsExpiredError extends Error {
@@ -117,6 +153,9 @@ export function assertUsable(
     const unverified = [...Object.entries(p.public), ...Object.entries(p.toBeSourced)]
       .filter(([, e]) => e.verified === false)
       .map(([k]) => k);
+    // 教育費セクションの未確認値も本番に漏らさない（大学・就学支援金は二次情報のため）。
+    if (p.education.university.verified === false) unverified.push("education.university");
+    if (p.education.shien.verified === false) unverified.push("education.shien");
     if (unverified.length > 0) throw new ParamsUnverifiedError(unverified);
   }
 }
