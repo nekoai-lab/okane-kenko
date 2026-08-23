@@ -117,6 +117,29 @@
   color: var(--color-warning-text);
 }
 
+/* 子の年齢での時間軸（見落としの可視化）。事実として中立に出す */
+.timeline {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-subtle);
+  border-radius: var(--radius-control);
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-3) 0;
+}
+.timelineBar {
+  display: flex;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-top: var(--space-2);
+}
+.segDep {
+  background: var(--color-primary);
+}
+.segAlone {
+  background: var(--color-border);
+}
+
 .subhead {
   font-size: var(--font-size-std-s);
   font-weight: var(--font-weight-bold);

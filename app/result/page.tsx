@@ -81,6 +81,31 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
         <p className={s.meta}>いまの保障は、過不足なく足りています。</p>
       )}
 
+      {/* 子の年齢での時間軸（見落としの可視化） */}
+      {r.years.total > 0 && (
+        <div className={s.timeline}>
+          {r.years.dependent > 0 ? (
+            <>
+              お子さんが独立する約{r.years.dependent}年後まで（子育て期）と、その後
+              配偶者が65歳になるまでの約
+              {r.years.alone}年を見込んでいます。<strong>独立後は必要額が下がります。</strong>
+            </>
+          ) : (
+            <>配偶者が65歳になるまでの約{r.years.total}年を見込んでいます。</>
+          )}
+          <div className={s.timelineBar} aria-hidden="true">
+            <div
+              className={s.segDep}
+              style={{ width: `${(r.years.dependent / r.years.total) * 100}%` }}
+            />
+            <div
+              className={s.segAlone}
+              style={{ width: `${(r.years.alone / r.years.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* 因数分解：支出 */}
       <div className={s.subhead}>どうしてこの金額？ ─ 見込みの支出</div>
       <div className={s.rows}>
