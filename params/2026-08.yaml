@@ -147,24 +147,6 @@ toBeSourced:
     label: 葬儀・予備費
     source: TODO 民間の大規模調査に差し替える
     verified: false
-  educationPublic:
-    value: 10000000
-    unit: JPY/child
-    label: 教育費（公立中心・大学まで）
-    source: TODO 文科省 子供の学習費調査 ＋ 日本政策金融公庫 教育費負担の実態調査
-    verified: false
-  educationMixed:
-    value: 15000000
-    unit: JPY/child
-    label: 教育費（私立混在）
-    source: TODO 同上
-    verified: false
-  educationPrivate:
-    value: 20000000
-    unit: JPY/child
-    label: 教育費（私立中心）
-    source: TODO 同上
-    verified: false
   hospitalMonthsStd:
     value: 1
     unit: months
@@ -238,3 +220,34 @@ inputRanges:
     m3000: 30000000
     m5000: 50000000
     gte10000: 100000000 # 1億円以上。過大側は floor で控えめに（誤って「減らせる」と言わない側）
+
+# ============ 教育費（段階別・子供の学習費調査ベース） ============
+# 「学習費総額」＝授業料に加え、塾(補助学習費)・部活(教科外活動費)・行事・修学旅行・制服・寄付を含む実支出。
+# 子の現年齢から、残りの各年を段階に割り当てて実額を積む（§4.2.2）。就学支援金は別に控除する。
+# 出典: 文部科学省 令和5年度子供の学習費調査（2024-12公表）。幼小中高は本番前に公式PDFで照合すること。
+education:
+  # 地域係数（都会↑/地方↓）。当面は全国平均=1.0。将来 文科省「都市階級別」で係数化する。
+  regionFactor: 1.0
+  stages:
+    kinder: { fromAge: 3, toAge: 5, public: 184644, private: 347338 } # 幼稚園
+    primary: { fromAge: 6, toAge: 11, public: 336265, private: 1828112 } # 小学校
+    junior: { fromAge: 12, toAge: 14, public: 542475, private: 1560359 } # 中学校
+    high: { fromAge: 15, toAge: 17, public: 597752, private: 1030283 } # 高校(全日)
+  # 大学（18-21歳）は年額換算＝4年総額÷4。二次情報ベースなので一次情報（文科省 私立大学等授業料調査）で要確認。
+  university:
+    fromAge: 18
+    toAge: 21
+    national: 606300 # 国立: (入学料282,000＋授業料535,800×4)/4
+    privateLiberal: 1045000 # 私立文系: 約418万/4
+    privateScience: 1417500 # 私立理系: 約567万/4
+    verified: false
+  # 就学支援金（高校無償化・2026年度・所得制限なし）。年額。教育費から明示的に控除する。
+  shien:
+    publicHigh: 118800 # 公立高
+    privateHigh: 457000 # 私立高（私立平均授業料まで）
+    verified: false
+  # プリセット→段階パターン。「まだ決めていない」は normalize 側で public に仮置きし推定フラグを立てる。
+  presets:
+    public: { kinder: public, primary: public, junior: public, high: public, university: national }
+    mixed: { kinder: private, primary: public, junior: public, high: private, university: privateLiberal }
+    private: { kinder: private, primary: private, junior: private, high: private, university: privateScience }
