@@ -61,6 +61,8 @@ export interface DeathResult {
     education: number;
     housing: number;
     funeral: number;
+    /** 老後（配偶者65歳→平均寿命）の基本生活の不足（ADR-008見直し）。独身なら0 */
+    elderly: number;
     total: number;
   };
   /** 収入・資産見込 */
@@ -118,6 +120,11 @@ export interface HouseholdDiagnosis {
   medical: MedicalResult;
   /** 2028年改正の該当判定（FR-17） */
   reform2028: { applicable: boolean; reason: string };
+  /**
+   * 介護の目安（別レイヤー・点の必要額には含めない）。
+   * 分散が大きいので「備えるなら」の参考額としてのみ提示する。配偶者がいなければ0。
+   */
+  elderlyCareEstimate: number;
   /** 世帯としての結論（FR-25）。self / spouse を1行に畳んだもの */
   householdHeadline: HouseholdHeadline;
 }

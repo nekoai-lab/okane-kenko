@@ -40,6 +40,11 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
     { label: "ご家族の生活費（末子独立後）", amount: r.expense.livingAlone, basis: "当社基準" },
     { label: "教育費", amount: r.expense.education, basis: "文科省 子供の学習費調査" },
     { label: "住居費（団信なしのローン残高）", amount: r.expense.housing, basis: "" },
+    {
+      label: "老後の生活の不足（65歳以降）",
+      amount: r.expense.elderly,
+      basis: "家計調査 ※仮・専門家レビュー前",
+    },
     { label: "葬儀・予備費", amount: r.expense.funeral, basis: "当社基準" },
   ].filter((x) => x.amount > 0);
   const incomeItems = [
@@ -240,6 +245,19 @@ export default async function ResultPage({
         <CaseCard title="あなたが亡くなった場合" r={result.self} />
         {result.spouse && <CaseCard title="配偶者が亡くなった場合" r={result.spouse} />}
       </div>
+
+      {/* 介護は別レイヤー（点の必要額には入れない・分散が大きい）※仮 */}
+      {result.elderlyCareEstimate > 0 && (
+        <div className={s.section}>
+          <div className={s.reformNote}>
+            <strong>介護に備えるなら（参考）：</strong> 上の必要額とは別に、介護には目安で約
+            {money(result.elderlyCareEstimate)}
+            かかるとされています（在宅ベース。施設だとさらに）。費用は人により大きく違うため、点の必要額には含めていません。
+            <br />
+            <span className={s.basis}>根拠：生命保険文化センター 2024 ※仮・専門家レビュー前</span>
+          </div>
+        </div>
+      )}
 
       <p className={s.sources}>
         出典：遺族年金は日本年金機構・厚生年金保険法（令和8年度の年金額は報道値ベースで確定前）、教育費は文部科学省

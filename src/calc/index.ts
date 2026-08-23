@@ -86,12 +86,18 @@ export function diagnose(
           "遺族厚生年金の5年有期化（2028年4月〜）は、子のいない配偶者が対象です。この世帯は該当します。",
       };
 
+  // 介護の目安（別レイヤー）。点の必要額には入れず、「備えるなら」の参考額として返す。
+  // 配偶者がいる世帯だけ（遺されて介護を要する側がいる場合）に出す。分散が大きい旨は表示側で明示する。
+  const care = p.elderly.care;
+  const elderlyCareEstimate = input.spouse ? care.oneTime + care.monthly * care.months : 0;
+
   return {
     paramVersion: p.version,
     self,
     spouse,
     medical,
     reform2028,
+    elderlyCareEstimate,
     householdHeadline: headline(self, spouse),
   };
 }
