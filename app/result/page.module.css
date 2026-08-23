@@ -8,36 +8,52 @@
   line-height: var(--line-height-body);
 }
 
+/* 判定は「アイコン＋ラベル＋色」の3点で出す。ただし色は左ボーダーとアイコンに置き、
+   文字は高コントラストの本文色にする（オレンジ地にオレンジ文字＝低コントラストを避ける）。
+   大きな原色ブロックは煽りになるので、地は中立トーンにとどめる。 */
 .headline {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-5);
   border-radius: var(--radius-card);
+  border-left: 6px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
   font-size: var(--font-size-std-l);
   font-weight: var(--font-weight-bold);
   margin-bottom: var(--space-5);
 }
 
+/* 減らせる・足りている＝良い知らせ（グリーン） */
 .good {
-  background: var(--color-success);
-  color: var(--color-success-text);
+  border-left-color: var(--color-success);
+}
+.good .icon {
+  color: var(--color-success);
 }
 
+/* 不足はエラーではないので赤にしない。Warning（オレンジ） */
 .warn {
-  background: var(--color-warning);
-  color: var(--color-warning-text);
+  border-left-color: var(--color-warning);
+}
+.warn .icon {
+  color: var(--color-warning);
 }
 
 /* 保留（過不足を出していない）。良し悪しの色を付けず中立に出す */
 .pending {
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
+  border-left-color: var(--color-text-muted);
   font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-normal);
+}
+.pending .icon {
+  color: var(--color-text-muted);
 }
 
 .icon {
   font-size: 1.4em;
+  line-height: 1;
 }
 
 .meta {

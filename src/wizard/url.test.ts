@@ -35,6 +35,15 @@ describe("URL 状態の往復", () => {
     expect(decodeSelections(encodeSelections(partial))).toEqual(partial);
   });
 
+  it("子0人（回答済み）と未回答を区別する", () => {
+    // 0人は空配列として復元される（undefined にしない）
+    expect(decodeSelections(encodeSelections({ childrenBirthYears: [] }))).toEqual({
+      childrenBirthYears: [],
+    });
+    // ch を載せなければ未回答のまま
+    expect(decodeSelections("v=1").childrenBirthYears).toBeUndefined();
+  });
+
   it("実額はURLに載らない（区分コードのみ）", () => {
     const s = encodeSelections(full);
     expect(s).not.toMatch(/\d{6,}/); // 5,000,000 のような実額が出ない
