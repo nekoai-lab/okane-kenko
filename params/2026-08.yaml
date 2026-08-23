@@ -251,3 +251,21 @@ education:
     public: { kinder: public, primary: public, junior: public, high: public, university: national }
     mixed: { kinder: private, primary: public, junior: public, high: private, university: privateLiberal }
     private: { kinder: private, primary: private, junior: private, high: private, university: privateScience }
+
+# ============ 老後（遺された配偶者の65歳以降） ============
+# ADR-008 の見直し。65歳で打ち切らず、平均寿命まで「老後の基本生活の不足」を連続的に算定する。
+# 年金が単身分に減った後、基本生活費に対して構造的に不足が出る（家計調査 単身高齢無職ベース）。
+# 介護・老人ホームは分散が極端に大きいので、点の必要額には入れず「入れる場合の試算」として別に出す。
+elderly:
+  # 老後の想定終了年齢（平均寿命の概算ブレンド。男81/女87。性別は集めないため単一値。将来 性別別に）。
+  lifeExpectancy: 85
+  # 老後の基本生活の年間不足＝消費支出 約15.5万/月 − 年金収入 約12.7万/月 ≒ 月2.8万 の年額。
+  # 出典: 総務省 家計調査（65歳以上・単身無職世帯）。消費支出の確定は本番前に一次情報で。
+  annualDeficit: 336000
+  verified: false
+  # 介護（別レイヤー・点の必要額に入れない）。出典: 生命保険文化センター 2024 生命保険に関する全国実態調査。
+  care:
+    oneTime: 472000 # 一時費用 平均
+    monthly: 90000 # 月額 平均（在宅5.3万/施設13.8万の全体平均）
+    months: 55 # 介護期間 平均（4年7か月）
+    verified: false

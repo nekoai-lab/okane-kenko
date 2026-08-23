@@ -75,6 +75,14 @@ export interface EducationParams {
   >;
 }
 
+/** 老後（配偶者65歳→平均寿命）。基本生活の不足を連続算定。介護は別レイヤー（ADR-008見直し） */
+export interface ElderlyParams {
+  lifeExpectancy: number;
+  annualDeficit: number;
+  verified: boolean;
+  care: { oneTime: number; monthly: number; months: number; verified: boolean };
+}
+
 export interface ParamSet {
   version: string;
   effectiveFrom: string;
@@ -91,6 +99,7 @@ export interface ParamSet {
   constants: Record<string, number>;
   inputRanges: InputRanges;
   education: EducationParams;
+  elderly: ElderlyParams;
 }
 
 export class ParamsExpiredError extends Error {
@@ -156,6 +165,9 @@ export function assertUsable(
     // 教育費セクションの未確認値も本番に漏らさない（大学・就学支援金は二次情報のため）。
     if (p.education.university.verified === false) unverified.push("education.university");
     if (p.education.shien.verified === false) unverified.push("education.shien");
+    // 老後（家計調査ベースの不足・介護費用）も未確認なら本番に出さない。
+    if (p.elderly.verified === false) unverified.push("elderly");
+    if (p.elderly.care.verified === false) unverified.push("elderly.care");
     if (unverified.length > 0) throw new ParamsUnverifiedError(unverified);
   }
 }

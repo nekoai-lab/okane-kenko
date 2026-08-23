@@ -54,7 +54,7 @@ describe("ゴールデンテスト：10世帯・19の死亡ケース", () => {
       it("支出計と収入計が内訳の合計と一致する（内部整合）", () => {
         const e = r.self.expense;
         expect(e.total).toBeCloseTo(
-          e.livingChild + e.livingAlone + e.education + e.housing + e.funeral,
+          e.livingChild + e.livingAlone + e.education + e.housing + e.funeral + e.elderly,
           0,
         );
         const i = r.self.income;
