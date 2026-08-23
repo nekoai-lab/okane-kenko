@@ -1,0 +1,144 @@
+/* ウィザードの見た目。tokens.css のセマンティックトークンだけを参照する（プリミティブ禁止）。
+   フォーカスリングは tokens.css のグローバル :focus-visible に任せ、ここでは上書きしない。 */
+
+.page {
+  max-width: var(--layout-content-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--layout-margin-mobile) var(--space-9);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.progress {
+  margin-bottom: var(--space-5);
+}
+
+.progressText {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.bar {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-subtle);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-pill);
+  transition: width 0.2s ease;
+}
+
+.stepTitle {
+  font-size: var(--font-size-std-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-5);
+}
+
+.field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-6);
+}
+
+.legend {
+  font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-bold);
+  padding: 0;
+  margin-bottom: var(--space-3);
+}
+
+.note {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-3);
+}
+
+.choices {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 選択は色だけに頼らない：ネイティブのラジオのドットでも伝わる */
+.choice:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-surface-subtle);
+  font-weight: var(--font-weight-bold);
+}
+
+.selectRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.select {
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}
+
+.primary,
+.secondary {
+  min-height: var(--target-min);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.primary {
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-on-inverse);
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary {
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.helper {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+}

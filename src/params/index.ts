@@ -27,6 +27,17 @@ export interface KogakuBracket {
   rate: number;
 }
 
+/**
+ * レンジ選択→代表値の写像（DR-02）。制度パラメータではなく入力の正規化前提（当社基準）。
+ * 値は円単位の整数。期限切れ・verified ゲートの対象外なので public/toBeSourced とは別に持つ。
+ */
+export interface InputRanges {
+  income: Record<string, number>;
+  assets: Record<string, number>;
+  monthlyLiving: Record<string, number>;
+  loan: Record<string, number>;
+}
+
 export interface ParamSet {
   version: string;
   effectiveFrom: string;
@@ -41,6 +52,7 @@ export interface ParamSet {
   ownStandard: Record<string, ParamEntry>;
   toBeSourced: Record<string, ParamEntry>;
   constants: Record<string, number>;
+  inputRanges: InputRanges;
 }
 
 export class ParamsExpiredError extends Error {
