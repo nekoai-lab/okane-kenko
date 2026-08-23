@@ -16,12 +16,14 @@ export function toCompleteSelections(sel: Partial<WizardSelections>): WizardSele
   if (sel.assets === undefined) return null;
   if (sel.livingCost === undefined) return null;
   if (sel.housing === undefined) return null;
+  if (sel.coverageSelf === undefined) return null; // S6 本人の保障額（分からない=unknown も回答済み）
 
-  // 配偶者ありなら配偶者の3項目が必須
+  // 配偶者ありなら配偶者の3項目＋保障額が必須
   if (sel.hasSpouse) {
     if (sel.spouseBirthYear === undefined) return null;
     if (sel.spouseEmployment === undefined) return null;
     if (sel.spouseIncome === undefined) return null;
+    if (sel.coverageSpouse === undefined) return null;
   }
 
   // 持ち家・ローンありなら残高と団信が必須

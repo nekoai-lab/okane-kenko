@@ -47,16 +47,31 @@ export default async function ResultPage({
   const params = loadParams();
   const { input, estimations } = normalize(params, complete, new Date());
   const result = diagnose(params, input);
-  const h = HEADLINE[result.householdHeadline.kind] ?? HEADLINE.shortage;
+
+  // いまの保険が分からない側があると過不足は保留（pending）。
+  // このとき householdHeadline は「足りている」に潰れて見えるので、保留として正直に出す。
+  const anyPending = [result.self.gap, result.spouse?.gap].some((g) => g?.kind === "pending");
+  const h = anyPending ? null : (HEADLINE[result.householdHeadline.kind] ?? HEADLINE.shortage);
 
   return (
     <main className={s.page}>
-      <div className={`${s.headline} ${h.tone === "good" ? s.good : s.warn}`}>
-        <span className={s.icon} aria-hidden="true">
-          {h.icon}
-        </span>
-        <span>{h.label}</span>
-      </div>
+      {h ? (
+        <div className={`${s.headline} ${h.tone === "good" ? s.good : s.warn}`}>
+          <span className={s.icon} aria-hidden="true">
+            {h.icon}
+          </span>
+          <span>{h.label}</span>
+        </div>
+      ) : (
+        <div className={`${s.headline} ${s.pending}`}>
+          <span className={s.icon} aria-hidden="true">
+            ℹ
+          </span>
+          <span>
+            いまの保険内容が分からないので、過不足はまだ出していません。必要な保障額の目安だけお見せします。証券が見つかったら再診断できます。
+          </span>
+        </div>
+      )}
 
       <p className={s.meta}>
         これは<strong>概算・要精査</strong>です／算定基準日：{new Date().toISOString().slice(0, 10)}

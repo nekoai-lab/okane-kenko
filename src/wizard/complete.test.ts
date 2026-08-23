@@ -16,6 +16,8 @@ const full: WizardSelections = {
   housing: "own_loan",
   loan: "lt3000",
   danshin: "yes",
+  coverageSelf: "m1000",
+  coverageSpouse: "none",
 };
 
 describe("toCompleteSelections", () => {
@@ -38,8 +40,19 @@ describe("toCompleteSelections", () => {
       assets: "lt100",
       livingCost: "lt20",
       housing: "rent",
+      coverageSelf: "unknown",
     };
     expect(isComplete(single)).toBe(true);
+  });
+
+  it("本人の保障額が未回答なら未完了", () => {
+    const { coverageSelf: _drop, ...rest } = full;
+    expect(isComplete(rest)).toBe(false);
+  });
+
+  it("配偶者ありで配偶者の保障額が未回答なら未完了", () => {
+    const { coverageSpouse: _drop, ...rest } = full;
+    expect(isComplete(rest)).toBe(false);
   });
 
   it("持ち家ローンありで団信未回答なら未完了", () => {

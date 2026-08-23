@@ -21,6 +21,8 @@ const full: WizardSelections = {
   housing: "own_loan",
   loan: "lt3000",
   danshin: "unknown",
+  coverageSelf: "m2000",
+  coverageSpouse: "unknown",
 };
 
 describe("URL 状態の往復", () => {

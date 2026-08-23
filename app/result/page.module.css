@@ -29,6 +29,13 @@
   color: var(--color-warning-text);
 }
 
+/* 保留（過不足を出していない）。良し悪しの色を付けず中立に出す */
+.pending {
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+  font-size: var(--font-size-std-m);
+}
+
 .icon {
   font-size: 1.4em;
 }

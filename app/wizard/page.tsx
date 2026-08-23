@@ -13,6 +13,7 @@ import { decodeSelections, encodeSelections } from "../../src/wizard/url.js";
 import { isComplete } from "../../src/wizard/complete.js";
 import type {
   AssetCode,
+  CoverageCode,
   DanshinChoice,
   EmploymentChoice,
   HousingChoice,
@@ -78,8 +79,27 @@ const DANSHIN: [DanshinChoice, string][] = [
   ["no", "入っていない"],
   ["unknown", "分からない"],
 ];
+const COVERAGE: [CoverageCode, string][] = [
+  ["none", "加入していない"],
+  ["m300", "300万円"],
+  ["m500", "500万円"],
+  ["m1000", "1000万円"],
+  ["m1500", "1500万円"],
+  ["m2000", "2000万円"],
+  ["m3000", "3000万円"],
+  ["m5000", "5000万円"],
+  ["gte10000", "1億円以上"],
+  ["unknown", "分からない"],
+];
 
-const STEP_TITLES = ["あなたのこと", "ご家族のこと", "収入のこと", "資産と暮らし", "住まいのこと"];
+const STEP_TITLES = [
+  "あなたのこと",
+  "ご家族のこと",
+  "収入のこと",
+  "資産と暮らし",
+  "住まいのこと",
+  "保険のこと",
+];
 const TOTAL = STEP_TITLES.length;
 
 function RadioGroup<T extends string>(props: {
@@ -194,6 +214,10 @@ export default function WizardPage() {
         return (
           sel.housing !== undefined &&
           (sel.housing !== "own_loan" || (sel.loan !== undefined && sel.danshin !== undefined))
+        );
+      case 5:
+        return (
+          sel.coverageSelf !== undefined && (!sel.hasSpouse || sel.coverageSpouse !== undefined)
         );
       default:
         return false;
@@ -372,6 +396,30 @@ export default function WizardPage() {
               />
             </>
           )}
+        </>
+      )}
+
+      {step === 5 && (
+        <>
+          <RadioGroup
+            legend="あなたが亡くなったときに受け取れる死亡保険金（合計）"
+            note="いま入っている生命保険で、あなたを対象（被保険者）にしている保障額の合計です。分からなければ「分からない」で進めます。"
+            options={COVERAGE}
+            value={sel.coverageSelf}
+            onChange={(v) => set({ coverageSelf: v })}
+          />
+          {sel.hasSpouse && (
+            <RadioGroup
+              legend="配偶者が亡くなったときに受け取れる死亡保険金（合計）"
+              note="配偶者を対象（被保険者）にしている保障額の合計です。本人の分と混ぜないよう、分けてお聞きしています。"
+              options={COVERAGE}
+              value={sel.coverageSpouse}
+              onChange={(v) => set({ coverageSpouse: v })}
+            />
+          )}
+          <p className={s.helper}>
+            保険証券の写真から自動で読み取る入力は準備中です。いまは金額を選んでお答えください。
+          </p>
         </>
       )}
 
