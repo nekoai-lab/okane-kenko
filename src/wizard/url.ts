@@ -78,7 +78,8 @@ export function encodeSelections(sel: Partial<WizardSelections>): string {
   if (sel.hasSpouse !== undefined) q.set("sp", sel.hasSpouse ? "1" : "0");
   if (sel.spouseBirthYear !== undefined) q.set("spb", String(sel.spouseBirthYear));
   if (sel.spouseEmployment) q.set("spe", sel.spouseEmployment);
-  if (sel.childrenBirthYears && sel.childrenBirthYears.length > 0) {
+  // 「子0人（回答済み）」と「未回答」を区別する。0人は ch="" として載せる。
+  if (sel.childrenBirthYears !== undefined) {
     q.set("ch", sel.childrenBirthYears.join("-"));
   }
   if (sel.selfIncome) q.set("inc", sel.selfIncome);
@@ -110,9 +111,13 @@ export function decodeSelections(query: string | URLSearchParams): Partial<Wizar
   const spe = pick(SPOUSE_EMPLOYMENT, q.get("spe"));
   if (spe) sel.spouseEmployment = spe;
   const ch = q.get("ch");
-  if (ch !== null && ch !== "") {
-    const years = ch.split("-").map((s) => year(s));
-    if (years.every((y): y is number => y !== undefined)) sel.childrenBirthYears = years;
+  if (ch !== null) {
+    if (ch === "") {
+      sel.childrenBirthYears = []; // 子0人（回答済み）
+    } else {
+      const years = ch.split("-").map((s) => year(s));
+      if (years.every((y): y is number => y !== undefined)) sel.childrenBirthYears = years;
+    }
   }
   const inc = pick(INCOME, q.get("inc"));
   if (inc) sel.selfIncome = inc;
