@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
 import type { DeathResult } from "../../src/calc/types.js";
-import { loadParams } from "../../src/params/index.js";
+import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
 import { normalize } from "../../src/wizard/normalize.js";
@@ -38,7 +38,11 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
   const expenseItems = [
     { label: "ご家族の生活費（子育て期）", amount: r.expense.livingChild, basis: "当社基準" },
     { label: "ご家族の生活費（末子独立後）", amount: r.expense.livingAlone, basis: "当社基準" },
-    { label: "教育費", amount: r.expense.education, basis: "文科省 子供の学習費調査" },
+    {
+      label: "教育費",
+      amount: r.expense.education,
+      basis: "文科省 子供の学習費調査（塾・部活・行事・制服も含む実支出）",
+    },
     { label: "住居費（団信なしのローン残高）", amount: r.expense.housing, basis: "" },
     { label: "葬儀・予備費", amount: r.expense.funeral, basis: "当社基準" },
   ].filter((x) => x.amount > 0);
@@ -239,6 +243,18 @@ export default async function ResultPage({
       <div className={s.section}>
         <CaseCard title="あなたが亡くなった場合" r={result.self} />
         {result.spouse && <CaseCard title="配偶者が亡くなった場合" r={result.spouse} />}
+      </div>
+
+      {/* 平均の中立併記（社会的証明＝煽りにしない。平均は目標ではない） */}
+      <div className={s.section}>
+        <div className={s.reformNote}>
+          <strong>ご参考：</strong> 世帯の死亡保険金額の平均は約
+          {formatMan(v(params, "householdDeathCoverageAvg"))}
+          です（生命保険文化センター）。ただし
+          <strong>平均は目標ではありません</strong>
+          。必要な額は世帯の前提で大きく変わります。額の大小ではなく、
+          <strong>あなたの前提での必要額（上の目安）</strong>で見てください。
+        </div>
       </div>
 
       <p className={s.sources}>

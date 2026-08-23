@@ -165,6 +165,12 @@ toBeSourced:
     label: 保険外費用（差額ベッド・食事・雑費）
     source: TODO 民間調査に差し替える
     verified: false
+  householdDeathCoverageAvg:
+    value: 19360000
+    unit: JPY
+    label: 参考：世帯の死亡保険金額の平均（2人以上世帯）。目標ではなく文脈用
+    source: 生命保険文化センター 2024 生命保険に関する全国実態調査（速報）
+    verified: false # 速報値。確報で確定させること
 
 # ============ 固定値 ============
 constants:
