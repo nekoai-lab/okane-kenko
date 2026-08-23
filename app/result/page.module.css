@@ -187,3 +187,12 @@
   color: var(--color-text-secondary);
   margin-top: var(--space-3);
 }
+
+/* 制度改正（2028）の該当/非該当。事実として中立に出す（煽らない） */
+.reformNote {
+  border-left: 6px solid var(--color-text-muted);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-std-s);
+}
