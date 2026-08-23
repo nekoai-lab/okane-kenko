@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "../src/design/tokens.css";
 
 export const metadata = {
   title: "お金の健康診断",
