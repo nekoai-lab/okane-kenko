@@ -7,6 +7,7 @@
  */
 import type {
   AssetCode,
+  CoverageCode,
   DanshinChoice,
   EmploymentChoice,
   HousingChoice,
@@ -45,6 +46,18 @@ const LOAN: readonly LoanCode[] = [
   "unknown",
 ];
 const DANSHIN: readonly DanshinChoice[] = ["yes", "no", "unknown"];
+const COVERAGE: readonly CoverageCode[] = [
+  "none",
+  "m300",
+  "m500",
+  "m1000",
+  "m1500",
+  "m2000",
+  "m3000",
+  "m5000",
+  "gte10000",
+  "unknown",
+];
 
 function pick<T extends string>(allowed: readonly T[], raw: string | null): T | undefined {
   return raw !== null && (allowed as readonly string[]).includes(raw) ? (raw as T) : undefined;
@@ -75,6 +88,8 @@ export function encodeSelections(sel: Partial<WizardSelections>): string {
   if (sel.housing) q.set("ho", sel.housing);
   if (sel.loan) q.set("loan", sel.loan);
   if (sel.danshin) q.set("dan", sel.danshin);
+  if (sel.coverageSelf) q.set("cvs", sel.coverageSelf);
+  if (sel.coverageSpouse) q.set("cvsp", sel.coverageSpouse);
   return q.toString();
 }
 
@@ -113,5 +128,9 @@ export function decodeSelections(query: string | URLSearchParams): Partial<Wizar
   if (loan) sel.loan = loan;
   const dan = pick(DANSHIN, q.get("dan"));
   if (dan) sel.danshin = dan;
+  const cvs = pick(COVERAGE, q.get("cvs"));
+  if (cvs) sel.coverageSelf = cvs;
+  const cvsp = pick(COVERAGE, q.get("cvsp"));
+  if (cvsp) sel.coverageSpouse = cvsp;
   return sel;
 }

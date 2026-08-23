@@ -15,6 +15,18 @@ export type LivingCode = "lt20" | "lt25" | "lt30" | "lt35" | "gte35" | "estimate
 export type HousingChoice = "own_loan" | "own_noloan" | "rent";
 export type LoanCode = "lt500" | "lt1000" | "lt1500" | "lt2000" | "lt3000" | "gte3000" | "unknown";
 export type DanshinChoice = "yes" | "no" | "unknown";
+/** S6 現在の死亡保障額（被保険者ごと）。unknown は過不足を保留（pending）にする */
+export type CoverageCode =
+  | "none"
+  | "m300"
+  | "m500"
+  | "m1000"
+  | "m1500"
+  | "m2000"
+  | "m3000"
+  | "m5000"
+  | "gte10000"
+  | "unknown";
 
 export interface WizardSelections {
   /** S1 本人の生年（性別は集めない） */
@@ -37,6 +49,10 @@ export interface WizardSelections {
   housing: HousingChoice;
   loan?: LoanCode;
   danshin?: DanshinChoice;
+  /** S6 現在の保険：本人が被保険者の死亡保障額（合計）。unknown=分からない→過不足 pending */
+  coverageSelf?: CoverageCode;
+  /** S6 現在の保険：配偶者が被保険者の死亡保障額（合計）。配偶者ありなら必須 */
+  coverageSpouse?: CoverageCode;
 }
 
 /** 「答えたくない／分からない／推定」で補った項目の記録（DR-03） */

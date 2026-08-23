@@ -26,6 +26,8 @@ const base: WizardSelections = {
   housing: "own_loan",
   loan: "lt3000",
   danshin: "yes",
+  coverageSelf: "m1000",
+  coverageSpouse: "none",
 };
 
 describe("normalize：レンジ→代表値の写像", () => {
@@ -37,8 +39,23 @@ describe("normalize：レンジ→代表値の写像", () => {
     expect(input.assets).toBe(4_000_000);
     expect(input.monthlyLiving).toBe(275_000);
     expect(input.housing).toEqual({ type: "own", loan: 25_000_000, danshin: true });
-    expect(input.coverageSelf).toBeNull(); // 保険は T-04
+    expect(input.coverageSelf).toBe(10_000_000); // m1000
+    expect(input.coverageSpouse).toBe(0); // none = 加入していない
     expect(estimations).toEqual([]);
+  });
+
+  it("保険が分からないなら coverage は null（過不足を pending にする）", () => {
+    const { input } = normalize(P, { ...base, coverageSelf: "unknown" }, AS_OF);
+    expect(input.coverageSelf).toBeNull();
+  });
+
+  it("配偶者なしなら coverageSpouse は渡さない（配偶者ケースを作らない）", () => {
+    const { input } = normalize(
+      P,
+      { ...base, hasSpouse: false, spouseBirthYear: undefined, coverageSpouse: undefined },
+      AS_OF,
+    );
+    expect(input.coverageSpouse).toBeUndefined();
   });
 
   it("公務員は employee、自営は self、専業は none に写像する", () => {

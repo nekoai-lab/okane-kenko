@@ -36,6 +36,8 @@ export interface InputRanges {
   assets: Record<string, number>;
   monthlyLiving: Record<string, number>;
   loan: Record<string, number>;
+  /** 現在の死亡保障額（被保険者ごと）。証券記載の具体額なので中央値ではない */
+  coverage: Record<string, number>;
 }
 
 export interface ParamSet {

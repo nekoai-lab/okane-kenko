@@ -9,6 +9,7 @@ import type { DiagnoseInput, Employment, Person } from "../calc/index.js";
 import type { ParamSet } from "../params/index.js";
 import { v } from "../params/index.js";
 import type {
+  CoverageCode,
   EmploymentChoice,
   Estimation,
   NormalizedInput,
@@ -119,6 +120,18 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
     housing = { type: "own", loan, danshin };
   }
 
+  // ---------- 現在の保険（S6） ----------
+  // 被保険者ごとに聞く（本人と配偶者を混ぜて「減らせる」と誤判定しないため）。
+  // 「分からない」は null にして過不足を pending にする（AIに金額を作らせない・FR-14）。
+  const coverageValue = (code: CoverageCode | undefined): number | null =>
+    code === undefined || code === "unknown"
+      ? null
+      : lookup(p.inputRanges.coverage, code, "保障額");
+
+  const coverageSelf = coverageValue(sel.coverageSelf);
+  // 配偶者がいなければ coverageSpouse は渡さない（diagnose 側で配偶者ケースを作らない）。
+  const coverageSpouse = spouse ? coverageValue(sel.coverageSpouse) : undefined;
+
   const input: DiagnoseInput = {
     self,
     spouse,
@@ -127,7 +140,8 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
     assets,
     monthlyLiving,
     educationPlan: "public", // S2 の教育プランは MVP では public 固定（設問化は別チケット）
-    coverageSelf: null, // 保険は S6=T-04。ここでは過不足を保留にする
+    coverageSelf,
+    ...(coverageSpouse !== undefined ? { coverageSpouse } : {}),
   };
 
   return { input, estimations };
