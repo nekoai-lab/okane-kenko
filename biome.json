@@ -2,7 +2,16 @@
   "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
-    "includes": ["src/**/*.ts", "src/**/*.tsx", ".claude/hooks/*.mjs", "*.json", "*.ts"]
+    "includes": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "app/**/*.ts",
+      "app/**/*.tsx",
+      ".claude/hooks/*.mjs",
+      "*.json",
+      "*.ts",
+      "*.mjs"
+    ]
   },
   "formatter": {
     "enabled": true,

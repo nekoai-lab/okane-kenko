@@ -3,6 +3,12 @@ node_modules/
 coverage/
 *.log
 
+# Next.js / Vercel
+.next/
+next-env.d.ts
+.vercel
+*.tsbuildinfo
+
 # 秘密情報の実値は commit できないようにする。.env.example だけを Git に含める。
 .env
 .env.*

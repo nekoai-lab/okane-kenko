@@ -5,6 +5,9 @@
   "type": "module",
   "description": "AI×お金の健康 — 必要保障額の算定エンジン（事業の核）",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -15,10 +18,16 @@
     "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
-    "yaml": "^2.6.0"
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "yaml": "^2.6.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0",
     "@biomejs/biome": "^2.0.0"
