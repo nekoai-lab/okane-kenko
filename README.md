@@ -32,9 +32,9 @@ cp .env.example .env.local
 
 | タイミング | 内容 | 失敗したら |
 |---|---|---|
-| Claude Code がコードを編集・作成した直後 | Formatter（Biome）が対象ファイルを整形 | 止めない |
-| `git commit` の前 | Linter（Biome）→ 型チェック（tsc） | **commit を中止** |
-| Claude Code が Bash を実行する前 | 取り消せない Git 操作・`main` への直接 push・`.env` の読み取りをブロック | **実行しない** |
+| Claude Code / Cursor がコードを編集・作成した直後 | Formatter（Biome）が対象ファイルを整形 | 止めない |
+| `git commit` の前 | Linter（Biome）→ 型チェック（tsc）→ ゴールデンテスト（`npm test`） | **commit を中止** |
+| Claude Code / Cursor が Bash を実行する前 | 取り消せない Git 操作・`main` への直接 push・`.env` の読み取りをブロック | **実行しない** |
 
 ブランチ運用は **`main` への直接 push 禁止**。`git switch -c feat/<内容>` で作業ブランチを切る。詳細は [`CLAUDE.md`](./CLAUDE.md)。
 
@@ -66,6 +66,11 @@ Vercel → Cloud Run とインフラを移しても、金額を決めるロジ�
 | [`docs/要件定義書_MVP.md`](./docs/要件定義書_MVP.md) | 要件（FR / NFR / CR / DR / AR / PR・受入基準・GO/STOP） |
 | [`docs/機能仕様書_MVP.md`](./docs/機能仕様書_MVP.md) | 画面・算定式・ガードレール・データモデル・API・テスト |
 | [`docs/アーキテクチャ図.html`](./docs/アーキテクチャ図.html) | アーキテクチャ図・システム設計図（5枚） |
+| [`docs/デザイン方針.md`](./docs/デザイン方針.md) | なぜデジタル庁DSを使うか・色に持たせた意味・グラフの設計 |
+| [`docs/デザイン仕様.html`](./docs/デザイン仕様.html) | デジタル庁DS v2.17.0 を適用したコンポーネント仕様 |
+| [`docs/結果画面モックアップ.html`](./docs/結果画面モックアップ.html) | 結果画面のモックアップ（デザイン方針の適用例） |
+| [`docs/算定テスト_10世帯.xlsx`](./docs/算定テスト_10世帯.xlsx) | 10世帯・19死亡ケースの検算。**ゴールデンテストの期待値の正本** |
+| [`docs/calc-reference.py`](./docs/calc-reference.py) | 算定エンジンの参照実装（TypeScript 化前の Python 版） |
 
 ## 未確定であることを忘れない
 
