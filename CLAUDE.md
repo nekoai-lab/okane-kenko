@@ -187,3 +187,15 @@ AIが無くても価値が届くかをここで確認できるので、AI実装�
 - 遺族生活費率0.70・手取り率0.80・末子独立後の最低就労推定100万円は**公的出典のない当社基準**
 - 保険業法の線引きは**自社解釈**。弁護士レビュー前に実装を確定させない
 - 10世帯のテストケースは**架空の世帯**。実在世帯で未検証
+
+## Agent skills
+
+Matt Pocock のエンジニアリングスキル（`to-tickets` / `to-spec` / `domain-modeling` など）が参照する設定。
+
+### Issue tracker
+
+課題は GitHub Issues ではなく **`docs/TICKETS.md`（T-01〜T-12 の縦切り）** と **`docs/SPEC.md`（仕様）** で管理する。GitHub は PR とレビューだけに使う。`.scratch/` に別のチケット置き場を作らない。詳細は `docs/agents/issue-tracker.md`。
+
+### Domain docs
+
+single-context。用語集は `docs/CONTEXT.md`、決定の記録は単一ファイルの `docs/ADR.md`。ルートの `CONTEXT.md` と `docs/adr/` は作らない。詳細は `docs/agents/domain.md`。
