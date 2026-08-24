@@ -16,7 +16,8 @@
     "format:check": "biome format .",
     "lint": "biome lint .",
     "check": "biome check .",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git config core.hooksPath .githooks",
+    "bakeoff": "vitest run --config vitest.bakeoff.config.ts"
   },
   "dependencies": {
     "next": "^15.1.0",
