@@ -7,7 +7,8 @@
  */
 import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
-import type { DeathResult } from "../../src/calc/types.js";
+import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
+import { LivingCostSlider } from "./LivingCostSlider.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
@@ -195,6 +196,24 @@ export default async function ResultPage({
   // 減らせる箇所（無ければ「見つかりませんでした」と明示する＝沈黙で誤解させない）
   const totalExcess = result.householdHeadline.totalExcess;
 
+  // 進路 what-if（子がいる世帯だけ）：公立/私立で必要額（あなた）がどう変わるか
+  const eduWhatIf =
+    input.children.length > 0
+      ? (
+          [
+            ["public", "公立中心"],
+            ["mixed", "私立混在"],
+            ["private", "私立中心"],
+          ] as [EducationPlan, string][]
+        ).map(([plan, label]) => {
+          // 進路で直接変わるのは教育費。必要額のレンジは verdict で意味が変わり
+          // 単純比較できない（sufficient=上乗せ目安 / shortage=不足額）ので、
+          // ここでは比較可能な「教育費」を並べる。
+          const r = diagnose(params, { ...input, educationPlan: plan });
+          return { label, education: r.self.expense.education };
+        })
+      : [];
+
   return (
     <main className={s.page}>
       {h ? (
@@ -244,6 +263,34 @@ export default async function ResultPage({
         <CaseCard title="あなたが亡くなった場合" r={result.self} />
         {result.spouse && <CaseCard title="配偶者が亡くなった場合" r={result.spouse} />}
       </div>
+
+      {/* 前提を動かす：生活費スライダー（当社基準・ADR-014） */}
+      <div className={s.section}>
+        <LivingCostSlider
+          input={input}
+          initialLow={result.self.range.low}
+          initialHigh={result.self.range.high}
+        />
+      </div>
+
+      {/* 進路 what-if（子がいる世帯だけ） */}
+      {eduWhatIf.length > 0 && (
+        <div className={s.section}>
+          <div className={s.subhead}>進路で教育費はこう変わる（お子さん合計）</div>
+          <div className={s.rows}>
+            {eduWhatIf.map((w) => (
+              <div className={s.row} key={w.label}>
+                <span className={s.rowLabel}>{w.label}</span>
+                <span className={s.rowAmount}>{money(w.education)}</span>
+              </div>
+            ))}
+          </div>
+          <p className={s.basis}>
+            ※ 進路が未定なら公立中心で計算しています。私立にするほど教育費が増え、その分
+            必要な保障額も上がります。
+          </p>
+        </div>
+      )}
 
       {/* 平均の中立併記（社会的証明＝煽りにしない。平均は目標ではない） */}
       <div className={s.section}>
