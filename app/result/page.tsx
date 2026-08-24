@@ -239,6 +239,20 @@ export default async function ResultPage({
         ／使用パラメータ版：{result.paramVersion}
       </p>
 
+      {/* この診断で分かること／分からないこと（先に線を引く・T-06） */}
+      <div className={s.section}>
+        <div className={s.scope}>
+          <p>
+            <strong>この診断で分かること：</strong>{" "}
+            あなたに万一のとき、遺されたご家族の生活・教育・住まいに必要なお金と、いまの保険との過不足の目安です。
+          </p>
+          <p>
+            <strong>この診断で分からないこと（扱いません）：</strong>{" "}
+            家計全体の最適化、就業不能・介護・学資などの個別の備え、具体的な保険商品の良し悪し。ここは線を引いています。
+          </p>
+        </div>
+      </div>
+
       {/* 減らせる箇所 */}
       <div className={s.section}>
         {totalExcess > 0 ? (
@@ -304,13 +318,73 @@ export default async function ResultPage({
         </div>
       </div>
 
+      {/* 次の一歩（T-06）。足りない側の具体誘導・選ぶ基準は OI-01 弁護士レビュー前のため出さない */}
+      <div className={s.section}>
+        <div className={s.subhead}>次の一歩</div>
+        {(result.householdHeadline.kind === "reducible" ||
+          result.householdHeadline.kind === "rebalanceable") && (
+          <p className={s.meta}>
+            いまの保険は減らせる余地がありそうです。契約している保険会社・代理店の窓口で「減額（保障を下げる）」の相談ができます。
+            <br />
+            <span className={s.basis}>
+              ※ このサービスは特定の商品を勧めたり、申込みへ誘導したりしません。
+            </span>
+          </p>
+        )}
+        {result.householdHeadline.kind === "shortage" && (
+          <p className={s.meta}>
+            足りない可能性があります。具体的な進め方（勤務先の団体保険の確認など）は、保険業法の観点で専門家レビューを通してからお出しします。〔準備中〕
+          </p>
+        )}
+        {result.householdHeadline.kind === "all_covered" && (
+          <p className={s.meta}>いまの前提では、特に手続きは必要ありません。</p>
+        )}
+      </div>
+
+      {/* 参考リンク（公的機関のみ・商品導線は置かない＝受入基準A-4） */}
+      <div className={s.section}>
+        <div className={s.subhead}>参考（公的機関）</div>
+        <ul className={s.list}>
+          <li>
+            <a
+              className={s.link}
+              href="https://www.nenkin.go.jp/service/jukyu/izoku.html"
+              rel="noreferrer"
+              target="_blank"
+            >
+              遺族年金（日本年金機構）
+            </a>
+          </li>
+          <li>
+            <a
+              className={s.link}
+              href="https://www.kyoukaikenpo.or.jp/g3/cat310/sb3030/"
+              rel="noreferrer"
+              target="_blank"
+            >
+              高額療養費（全国健康保険協会）
+            </a>
+          </li>
+          <li>
+            <a
+              className={s.link}
+              href="https://www.mext.go.jp/a_menu/shotou/mushouka/index.htm"
+              rel="noreferrer"
+              target="_blank"
+            >
+              高校生等への就学支援（文部科学省）
+            </a>
+          </li>
+        </ul>
+      </div>
+
       <p className={s.sources}>
         出典：遺族年金は日本年金機構・厚生年金保険法（令和8年度の年金額は報道値ベースで確定前）、教育費は文部科学省
         子供の学習費調査。生活費率・就労推定などの「当社基準」は公的出典のない当社の見立てです。
       </p>
 
       <div className={s.draftNote}>
-        平均との比較・前提を動かすスライダー・進路による増減などは準備中です（T-05b）。
+        足りない側の具体的な進め方（勤務先の団体保険の確認・選ぶ基準）は、保険業法の専門家レビュー後に追加します。
         <br />
         <Link className={s.link} href={`/wizard?${q.toString()}`}>
           入力をやり直す
