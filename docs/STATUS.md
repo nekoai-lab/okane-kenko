@@ -13,7 +13,7 @@
 ## 現在地
 **AIなしで「入力 → 算定 → 結果」が動く“仮の検証ビルド”が `main` で完成。** ユーザーインタビュー（n1）と社内検証がすぐ回せる。
 仮の値はすべて `verified:false` ＝ **本番では診断が止まる**設計なので、仮のまま本番に漏れない。
-**テスト：102 ユニット ＋ 3 E2E（モバイル）green。**
+**テスト：111 ユニット ＋ 3 E2E（モバイル）green。**
 
 ## ざっくり進捗（詳細 → [`docs/TICKETS.md`](./TICKETS.md)）
 
@@ -51,6 +51,7 @@
 - 決定の記録：[`docs/ADR.md`](./ADR.md)（ADR-015 教育費／ADR-016 老後）
 - 用語集：[`docs/CONTEXT.md`](./CONTEXT.md)
 - 仕様：[`docs/SPEC.md`](./SPEC.md)／[`docs/機能仕様書_MVP.md`](./機能仕様書_MVP.md)
+- レポート品質の物差し：[`docs/レポート品質_評価基準.md`](./レポート品質_評価基準.md)（T-07 のモデル選定・プロンプト改訂の判定に使う）
 - 直近の申し送り：[`docs/handoff/2026-08-24_mvp-provisional-build.md`](./handoff/2026-08-24_mvp-provisional-build.md)
 
 ## ⚠️ 触るときの鉄則（詳細は [`CLAUDE.md`](../CLAUDE.md)）
