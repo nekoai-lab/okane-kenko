@@ -201,6 +201,21 @@ async function callGemini(model: string, apiKey: string, user: string): Promise<
   }
 }
 
+/**
+ * 鍵の「形」だけを検査する。**値そのものは決して出さない。**
+ *
+ * Google は取り違えの理由を返さず `400 API key not valid` としか言わないので、
+ * 引用符や空白の混入のような、よくある貼り付け事故を呼び出す前にここで潰す。
+ * 10回分の課金を無駄にしてから気づく形にしないため。
+ */
+function apiKeyProblem(key: string): string | null {
+  if (/^["']|["']$/.test(key)) return "引用符が含まれている（.env.local に引用符は不要）";
+  if (/\s/.test(key)) return "空白または改行が混ざっている";
+  if (!key.startsWith("AIza")) return "AIza で始まっていない（AI Studio のキーではない可能性）";
+  if (key.length < 30) return `短すぎる（${key.length}文字）。貼り付けが途中で切れている可能性`;
+  return null;
+}
+
 /** テンプレに、こちらが差し込めないプレースホルダが混ざっていないか。 */
 const KNOWN_PLACEHOLDERS = ["conclusion", "selfRange", "gapAmount"];
 function unknownPlaceholders(template: string): string[] {
@@ -277,6 +292,17 @@ describe("レポート品質ベイクオフ（T-07 モデル選定）", () => {
 
   it.skipIf(!apiKey)("各モデルでレポートを生成し、盲検用の一式を書き出す", async () => {
     if (!apiKey) return;
+
+    // 課金を伴う呼び出しの前に、鍵の形だけ確かめる
+    const problem = apiKeyProblem(apiKey);
+    if (problem) {
+      throw new Error(
+        `.env.local の GEMINI_API_KEY の形がおかしい：${problem}\n` +
+          "正しい形は次の1行のみ（引用符なし・スペースなし）：\n" +
+          "GEMINI_API_KEY=AIza...",
+      );
+    }
+
     const rows: Row[] = [];
 
     for (const m of MODELS) {
@@ -384,6 +410,11 @@ describe("レポート品質ベイクオフ（T-07 モデル選定）", () => {
     console.log(`\n盲検シート → ${OUT_DIR}/blind.md（採点が終わるまで key.json を開かない）`);
 
     // 呼び出しが全滅していないことだけを機械で確かめる。品質の判定は人がする。
-    expect(rows.filter((r) => r.status !== "error").length).toBeGreaterThan(0);
+    // 全滅時は API の言い分をそのまま出す（「0 が 0 より大きくない」では原因が分からない）。
+    const alive = rows.filter((r) => r.status !== "error").length;
+    expect(
+      alive,
+      `全 ${rows.length} 件が失敗しました。最初のエラー：\n${rows[0]?.reason ?? "不明"}`,
+    ).toBeGreaterThan(0);
   });
 });
