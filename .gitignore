@@ -21,3 +21,6 @@ playwright/.cache/
 !.env.example
 
 .claude/settings.local.json
+
+# ベイクオフの生成物（採点材料）。結論だけを docs/レポート品質_評価基準.md §7 に残す。
+bakeoff-out/
