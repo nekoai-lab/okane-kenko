@@ -10,6 +10,7 @@
  */
 import type { HouseholdDiagnosis } from "../calc/types.js";
 import { formatMan, formatRange } from "../design/tokens.js";
+import { checkGuardrails } from "./guard.js";
 
 const CONCLUSION: Record<string, string> = {
   all_covered: "足りています",
@@ -70,11 +71,17 @@ const FALLBACK: Record<string, string> = {
   shortage: "いまの前提では、必要な保障の目安は {{selfRange}} で、足りない可能性があります。",
 };
 
+function fallback(d: HouseholdDiagnosis): Narration {
+  const fb = FALLBACK[d.householdHeadline.kind] ?? FALLBACK.shortage;
+  return { text: fillPlaceholders(fb, d), source: "fallback" };
+}
+
 export function narrate(d: HouseholdDiagnosis): Narration {
   const template = narrateStub(d);
-  if (!hasNoRawNumbers(template)) {
-    const fb = FALLBACK[d.householdHeadline.kind] ?? FALLBACK.shortage;
-    return { text: fillPlaceholders(fb, d), source: "fallback" };
-  }
-  return { text: fillPlaceholders(template, d), source: "ai-stub" };
+  // G-1：生の数字が混ざったテンプレはフォールバック（差し込み前に検査）
+  if (!hasNoRawNumbers(template)) return fallback(d);
+  const text = fillPlaceholders(template, d);
+  // G-2/G-4/G-6：差し込み済みテキストを検査。落ちたらフォールバック（本番は再生成→2回で退避）。
+  if (!checkGuardrails(text, d).passed) return fallback(d);
+  return { text, source: "ai-stub" };
 }
