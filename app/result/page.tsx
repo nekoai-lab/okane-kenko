@@ -318,27 +318,47 @@ export default async function ResultPage({
         </div>
       </div>
 
-      {/* 次の一歩（T-06）。足りない側の具体誘導・選ぶ基準は OI-01 弁護士レビュー前のため出さない */}
+      {/* 次の一歩（T-06）。文面は保険業法の自己診断サンプル（正式レビュー前） */}
       <div className={s.section}>
         <div className={s.subhead}>次の一歩</div>
         {(result.householdHeadline.kind === "reducible" ||
           result.householdHeadline.kind === "rebalanceable") && (
           <p className={s.meta}>
             いまの保険は減らせる余地がありそうです。契約している保険会社・代理店の窓口で「減額（保障を下げる）」の相談ができます。
-            <br />
-            <span className={s.basis}>
-              ※ このサービスは特定の商品を勧めたり、申込みへ誘導したりしません。
-            </span>
           </p>
         )}
         {result.householdHeadline.kind === "shortage" && (
           <p className={s.meta}>
-            足りない可能性があります。具体的な進め方（勤務先の団体保険の確認など）は、保険業法の観点で専門家レビューを通してからお出しします。〔準備中〕
+            足りない可能性があります。まず、お勤め先に
+            <strong>団体保険（会社を通じて入れる保険）</strong>
+            があるかを、総務・人事の窓口で確認してみてください。受付時期は勤務先により異なります。
           </p>
         )}
         {result.householdHeadline.kind === "all_covered" && (
           <p className={s.meta}>いまの前提では、特に手続きは必要ありません。</p>
         )}
+
+        {/* 選ぶ基準（もっと知りたい）。押したときだけ開く。押下記録は T-09（計測）で対応 */}
+        {result.householdHeadline.kind !== "all_covered" && (
+          <details className={s.criteria}>
+            <summary>もっと知りたい：保険を選ぶときの基準</summary>
+            <ul className={s.list}>
+              <li>いくらの保障が必要か（この診断の目安）</li>
+              <li>いつまで必要か（末子の独立・配偶者の年齢）</li>
+              <li>毎月の保険料に無理がないか</li>
+              <li>誰が被保険者か（本人／配偶者）</li>
+            </ul>
+            <p className={s.basis}>
+              ※
+              具体的な商品名・会社名・ランキングは出しません。判断はご本人と、契約する保険会社・窓口で。
+            </p>
+          </details>
+        )}
+
+        <p className={s.basis}>
+          ※ このサービスは特定の商品を勧めたり、申込みへ誘導したりしません（制度・一般情報の提供）。
+          次の一歩の案内は専門家レビュー前のサンプルです。
+        </p>
       </div>
 
       {/* 参考リンク（公的機関のみ・商品導線は置かない＝受入基準A-4） */}
@@ -384,7 +404,7 @@ export default async function ResultPage({
       </p>
 
       <div className={s.draftNote}>
-        足りない側の具体的な進め方（勤務先の団体保険の確認・選ぶ基準）は、保険業法の専門家レビュー後に追加します。
+        次の一歩・選ぶ基準の文面は、保険業法の正式な弁護士レビュー（OI-01）後に確定します（現在はサンプル）。
         <br />
         <Link className={s.link} href={`/wizard?${q.toString()}`}>
           入力をやり直す
