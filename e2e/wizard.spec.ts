@@ -54,7 +54,7 @@ test("最短経路：独身・子なし・賃貸・保険分からない → pen
 
   // 結果ページ：pending を中立に表示、崩れない
   await expect(page).toHaveURL(/\/result/);
-  await expect(page.getByText("過不足はまだ出していません")).toBeVisible();
+  await expect(page.getByText("過不足はまだ出していません").first()).toBeVisible();
   await expectNoHorizontalOverflow(page, "result(pending)");
   await page.screenshot({ path: "test-results/result-pending.png", fullPage: true });
 });

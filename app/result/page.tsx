@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
+import { narrate } from "../../src/narrate/narrate.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
@@ -238,6 +239,15 @@ export default async function ResultPage({
         これは<strong>概算・要精査</strong>です／算定基準日：{new Date().toISOString().slice(0, 10)}
         ／使用パラメータ版：{result.paramVersion}
       </p>
+
+      {/* やさしい説明（T-07・AI言語化のスタブ）。数値はAIに書かせず算定結果を差し込む */}
+      <div className={s.section}>
+        <div className={s.narration}>{narrate(result).text}</div>
+        <p className={s.basis}>
+          ※ この「やさしい説明」はサンプルです（本番は AI が個別に言い換えます。数値は AI
+          に作らせず、算定結果を差し込みます）。
+        </p>
+      </div>
 
       {/* この診断で分かること／分からないこと（先に線を引く・T-06） */}
       <div className={s.section}>
