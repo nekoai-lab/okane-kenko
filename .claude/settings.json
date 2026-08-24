@@ -1,6 +1,21 @@
 {
   "permissions": {
-    "deny": ["Read(.env)", "Read(.env.local)"]
+    "ask": [
+      "Edit(src/__tests__/households.ts)",
+      "Write(src/__tests__/households.ts)",
+      "Edit(docs/ADR.md)",
+      "Write(docs/ADR.md)",
+      "Edit(docs/CONTEXT.md)",
+      "Write(docs/CONTEXT.md)",
+      "Edit(params/**)",
+      "Write(params/**)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.local)",
+      "Write(CONTEXT.md)",
+      "Write(docs/adr/**)"
+    ]
   },
   "hooks": {
     "PreToolUse": [
