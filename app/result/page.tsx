@@ -8,8 +8,9 @@
 import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
-import { narrate } from "../../src/narrate/narrate.js";
+import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
+import { Narration } from "./Narration.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
@@ -240,14 +241,14 @@ export default async function ResultPage({
         ／使用パラメータ版：{result.paramVersion}
       </p>
 
-      {/* やさしい説明（T-07・AI言語化のスタブ）。数値はAIに書かせず算定結果を差し込む */}
-      <div className={s.section}>
-        <div className={s.narration}>{narrate(result).text}</div>
-        <p className={s.basis}>
-          ※ この「やさしい説明」はサンプルです（本番は AI が個別に言い換えます。数値は AI
-          に作らせず、算定結果を差し込みます）。
-        </p>
-      </div>
+      {/* やさしい説明（T-07）。数値はAIに書かせず算定結果を差し込む。
+          鍵が無ければ AI を呼ばず、テンプレのまま出す（AIを止めても成立する） */}
+      <Narration
+        aiEnabled={Boolean(process.env.GEMINI_API_KEY)}
+        initialText={narrate(result).text}
+        query={q.toString()}
+        values={placeholderValues(result)}
+      />
 
       {/* この診断で分かること／分からないこと（先に線を引く・T-06） */}
       <div className={s.section}>

@@ -11,6 +11,7 @@
 import type { HouseholdDiagnosis } from "../calc/types.js";
 import { formatMan, formatRange } from "../design/tokens.js";
 import { checkGuardrails } from "./guard.js";
+import type { PlaceholderValues } from "./stream.js";
 
 const CONCLUSION: Record<string, string> = {
   all_covered: "足りています",
@@ -19,13 +20,21 @@ const CONCLUSION: Record<string, string> = {
   shortage: "足りない可能性があります",
 };
 
-/** テンプレに差し込む値（数値はここでだけ作る＝算定結果由来） */
-export function fillPlaceholders(template: string, d: HouseholdDiagnosis): string {
-  const map: Record<string, string> = {
+/**
+ * テンプレに差し込む値（数値はここでだけ作る＝算定結果由来）。
+ * ストリーミング表示ではクライアント側が1文字ずつ差し込むので、この map だけを渡す。
+ */
+export function placeholderValues(d: HouseholdDiagnosis): PlaceholderValues {
+  return {
     conclusion: CONCLUSION[d.householdHeadline.kind] ?? "",
     selfRange: formatRange(d.self.range.low, d.self.range.high),
     gapAmount: formatMan(d.self.gap.amount),
   };
+}
+
+/** テンプレに差し込む（一括生成のとき用） */
+export function fillPlaceholders(template: string, d: HouseholdDiagnosis): string {
+  const map = placeholderValues(d);
   return template.replace(/\{\{([a-zA-Z]+)\}\}/g, (_, k: string) => map[k] ?? "");
 }
 
@@ -58,8 +67,8 @@ export function narrateStub(d: HouseholdDiagnosis): string {
 
 export interface Narration {
   text: string;
-  /** ai-stub=スタブ生成が G-1 を通った / fallback=生数字混入などでテンプレに退避 */
-  source: "ai-stub" | "fallback";
+  /** ai=実LLM生成が検査を通った / ai-stub=スタブ生成が通った / fallback=生数字混入などでテンプレに退避 */
+  source: "ai" | "ai-stub" | "fallback";
 }
 
 const FALLBACK: Record<string, string> = {
@@ -71,7 +80,8 @@ const FALLBACK: Record<string, string> = {
   shortage: "いまの前提では、必要な保障の目安は {{selfRange}} で、足りない可能性があります。",
 };
 
-function fallback(d: HouseholdDiagnosis): Narration {
+/** 検査に落ちたとき・AIを止めたときの退避文（実LLM側からも使う） */
+export function fallbackNarration(d: HouseholdDiagnosis): Narration {
   const fb = FALLBACK[d.householdHeadline.kind] ?? FALLBACK.shortage;
   return { text: fillPlaceholders(fb, d), source: "fallback" };
 }
@@ -79,9 +89,9 @@ function fallback(d: HouseholdDiagnosis): Narration {
 export function narrate(d: HouseholdDiagnosis): Narration {
   const template = narrateStub(d);
   // G-1：生の数字が混ざったテンプレはフォールバック（差し込み前に検査）
-  if (!hasNoRawNumbers(template)) return fallback(d);
+  if (!hasNoRawNumbers(template)) return fallbackNarration(d);
   const text = fillPlaceholders(template, d);
   // G-2/G-4/G-6：差し込み済みテキストを検査。落ちたらフォールバック（本番は再生成→2回で退避）。
-  if (!checkGuardrails(text, d).passed) return fallback(d);
+  if (!checkGuardrails(text, d).passed) return fallbackNarration(d);
   return { text, source: "ai-stub" };
 }

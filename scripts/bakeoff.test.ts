@@ -21,6 +21,11 @@ import { diagnose } from "../src/calc/index.js";
 import { GOLDEN } from "../src/__tests__/households.js";
 import { fillPlaceholders, hasNoRawNumbers } from "../src/narrate/narrate.js";
 import { checkGuardrails } from "../src/narrate/guard.js";
+// プロンプトは本番（app/api/narrate）と同じものを使う。ここでコピーを持つと、
+// 採点したプロンプトと本番のプロンプトがズレる。
+import { buildUserContent, systemPrompt } from "../src/narrate/prompt.js";
+// 鍵の形の検査も本番と共通（呼び出す前に貼り付け事故を潰す。10回分の課金を無駄にしないため）
+import { apiKeyProblem } from "../src/narrate/gemini.js";
 import { loadParams } from "../src/params/index.js";
 
 const P = loadParams("2026-08");
@@ -95,48 +100,6 @@ function buildCases(): Case[] {
   return cases;
 }
 
-/**
- * システムプロンプト（静）。機能仕様書 §5.5 の骨子を、いまの narrate の枠
- * （プレースホルダだけを書かせ、差し込みはこちら側）に合わせたもの。
- * §5.4 の「静的→動的」の順序に従い、変わらないものを前に置く。
- */
-const SYSTEM_PROMPT = `あなたは公的保障と家計の「翻訳者」です。判断者ではありません。
-
-# 絶対規則
-1. 金額・年数・割合を、あなた自身が書いてはいけません。数字は下記のプレースホルダだけで表します。算用数字も漢数字も本文に書かないでください。
-2. 保険商品の名称・保険会社名を出さない。加入や申し込みを勧める表現を使わない。
-3. 不安を煽らない。「大変なことになる」「今すぐ」「絶対」のような圧をかける言い方をしない。
-4. 断定的な将来予測をしない。「概算」「目安」であることを保つ。
-5. 家計全体の最適化や投資の助言はしない。
-6. 算定結果に「減らせる余地」があるときは必ず触れる。無いのに「ある」と書かない。
-
-# 使えるプレースホルダ（これ以外は使用禁止）
-{{conclusion}} … 結論のことば
-{{selfRange}}  … 遺されたご家族に必要な保障の目安（レンジ）
-{{gapAmount}}  … いまの保険との差額
-
-# 文体
-中学生が読める語彙で書く。専門用語（団信・遺族厚生年金・高額療養費）は初出で1行の注釈を添える。
-「あなたの世帯では」の視点で書き、一般論を語らない。
-「いまの前提では」を必ず添える。
-褒めるときは状態を褒める。本人の選択に帰属できるものだけを本人のものとして書き、制度のおかげは制度のおかげと書く。
-
-# 出力
-{"template": "本文"} という JSON を返す。本文は3〜6文の日本語。`;
-
-function buildUserContent(c: Case): string {
-  const pending = c.diagnosis.self.gap.kind === "pending";
-  const placeholderNote = pending
-    ? "この世帯は今の保険が分かっていないため過不足を出していません。{{gapAmount}} は使わないでください。過不足を断定せず、証券が見つかれば比べられることを伝えてください。"
-    : "この世帯は過不足が出ています。{{gapAmount}} を使えます。";
-
-  // 氏名等の識別情報は渡さない（AR-09）。算定結果の構造化JSONだけを渡す。
-  return `${placeholderNote}
-
-算定結果（この中の値だけが事実です。ここに無いことを書かないでください）:
-${JSON.stringify(c.diagnosis, null, 2)}`;
-}
-
 /** Gemini API のレスポンスのうち、ここで使う部分だけ（`any` を持ち込まないため） */
 interface GeminiResponse {
   candidates?: { content?: { parts?: { text?: string }[] } }[];
@@ -165,7 +128,7 @@ async function callGemini(model: string, apiKey: string, user: string): Promise<
         // 鍵はヘッダで渡す。クエリ文字列に載せるとアクセスログやプロキシに残る。
         headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          systemInstruction: { parts: [{ text: systemPrompt("json") }] },
           contents: [{ role: "user", parts: [{ text: user }] }],
           generationConfig: {
             responseMimeType: "application/json",
@@ -199,21 +162,6 @@ async function callGemini(model: string, apiKey: string, user: string): Promise<
   } catch (e) {
     return { ...empty, error: e instanceof Error ? e.message : String(e) };
   }
-}
-
-/**
- * 鍵の「形」だけを検査する。**値そのものは決して出さない。**
- *
- * Google は取り違えの理由を返さず `400 API key not valid` としか言わないので、
- * 引用符や空白の混入のような、よくある貼り付け事故を呼び出す前にここで潰す。
- * 10回分の課金を無駄にしてから気づく形にしないため。
- */
-function apiKeyProblem(key: string): string | null {
-  if (/^["']|["']$/.test(key)) return "引用符が含まれている（.env.local に引用符は不要）";
-  if (/\s/.test(key)) return "空白または改行が混ざっている";
-  if (!key.startsWith("AIza")) return "AIza で始まっていない（AI Studio のキーではない可能性）";
-  if (key.length < 30) return `短すぎる（${key.length}文字）。貼り付けが途中で切れている可能性`;
-  return null;
 }
 
 /** テンプレに、こちらが差し込めないプレースホルダが混ざっていないか。 */
@@ -307,7 +255,7 @@ describe("レポート品質ベイクオフ（T-07 モデル選定）", () => {
 
     for (const m of MODELS) {
       for (const c of cases) {
-        const r = await callGemini(m.id, apiKey, buildUserContent(c));
+        const r = await callGemini(m.id, apiKey, buildUserContent(c.diagnosis));
         const base = {
           model: m.id,
           caseId: c.id,
