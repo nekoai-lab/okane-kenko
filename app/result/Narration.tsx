@@ -1,0 +1,113 @@
+"use client";
+
+/**
+ * やさしい説明（T-07）─ AI が書いたテンプレを受け取り、**数値はこちらで差し込む**。
+ *
+ * 受け取るのは `{{selfRange}}` のようなプレースホルダだけのテンプレで、金額は
+ * サーバが算定した値マップ（`values`）からしか入らない。だからストリーミング中でも
+ * 数値が間違いようがない。数値検査（G-1）と禁止語・結論の検査はサーバ側で走り、
+ * 落ちたら退避文が1回だけ届く（`fallback` イベント）。
+ *
+ * AI が使えないとき（鍵が無い・落ちた・遅い）は `initialText`（テンプレの退避文）のまま。
+ * **AI を止めても結果画面が成立する**という T-07 の完了条件は、ここでも守られている。
+ */
+import { useEffect, useState } from "react";
+import type { PlaceholderValues } from "../../src/narrate/stream.js";
+import { renderStreamed } from "../../src/narrate/stream.js";
+import s from "./page.module.css";
+
+type Mode = "waiting" | "streaming" | "done" | "fallback";
+
+interface Event {
+  type: "chunk" | "done" | "fallback";
+  text?: string;
+  reason?: string;
+}
+
+export function Narration({
+  query,
+  values,
+  initialText,
+  aiEnabled,
+}: {
+  query: string;
+  values: PlaceholderValues;
+  initialText: string;
+  aiEnabled: boolean;
+}) {
+  const [template, setTemplate] = useState("");
+  const [text, setText] = useState(initialText);
+  const [mode, setMode] = useState<Mode>(aiEnabled ? "waiting" : "done");
+
+  useEffect(() => {
+    if (!aiEnabled) return;
+    const abort = new AbortController();
+
+    (async () => {
+      const res = await fetch(`/api/narrate?${query}`, { signal: abort.signal });
+      if (!res.ok || !res.body) throw new Error(`narrate ${res.status}`);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let acc = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const l of lines) {
+          if (!l.trim()) continue;
+          const e = JSON.parse(l) as Event;
+          if (e.type === "chunk" && e.text) {
+            acc += e.text;
+            setTemplate(acc);
+            setMode("streaming");
+          } else if (e.type === "fallback" && e.text) {
+            // 検査に落ちた／AIが使えない。退避文に置き換えて終わる（破棄するだけで済む）
+            setText(e.text);
+            setMode("fallback");
+          } else if (e.type === "done") {
+            setMode("done");
+          }
+        }
+      }
+    })().catch((e: unknown) => {
+      if (abort.signal.aborted) return; // 画面遷移での中断は失敗ではない
+      console.warn("[narrate] 受信に失敗したため退避文を表示します", e);
+      setMode("fallback");
+    });
+
+    return () => abort.abort();
+  }, [aiEnabled, query]);
+
+  const streamed = mode === "streaming" || mode === "done";
+  const body = streamed && template ? renderStreamed(template, values) : text;
+
+  return (
+    <div className={s.section}>
+      <div
+        aria-busy={mode === "streaming" || mode === "waiting"}
+        className={s.narration}
+        data-testid="narration"
+      >
+        {body}
+      </div>
+      <p className={s.basis}>
+        {aiEnabled && mode !== "fallback" ? (
+          <>
+            ※ この「やさしい説明」は AI が書いています。金額は AI
+            に作らせず、算定結果（このページの内訳と同じ値）を差し込んでいます。
+          </>
+        ) : aiEnabled ? (
+          <>※ この「やさしい説明」は、AI の文章が検査を通らなかったため定型文に切り替えました。</>
+        ) : (
+          <>
+            ※ この「やさしい説明」はサンプルです（本番は AI が個別に言い換えます。数値は AI
+            に作らせず、算定結果を差し込みます）。
+          </>
+        )}
+      </p>
+    </div>
+  );
+}

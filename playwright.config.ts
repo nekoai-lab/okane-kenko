@@ -15,7 +15,10 @@ export default defineConfig({
   // Pixel 5＝chromium ベースのモバイル幅（393px）。LINE 内ブラウザ相当の狭さ。
   projects: [{ name: "mobile", use: { ...devices["Pixel 5"] } }],
   webServer: {
-    command: "PORT=3300 npm run dev",
+    // 鍵は**わざと形の違うダミー**を渡す。E2E で実LLMを呼ぶと課金が発生し、生成文が
+    // 毎回変わって落ち方も読めなくなるため。形の検査で弾かれるので外部通信は起きず、
+    // それでも「AIを呼ぶ画面」の経路（ストリーミング受信・退避）は通る。
+    command: "GEMINI_API_KEY=e2e-dummy-not-a-real-key PORT=3300 npm run dev",
     url: "http://localhost:3300/wizard",
     reuseExistingServer: true,
     timeout: 120_000,
