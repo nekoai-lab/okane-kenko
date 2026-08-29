@@ -63,10 +63,11 @@ AI言語化は**実LLM（Gemini API）＋ストリーミングまで実装済み
 - 用語集：[`docs/CONTEXT.md`](./CONTEXT.md)
 - 仕様：[`docs/SPEC.md`](./SPEC.md)／[`docs/機能仕様書_MVP.md`](./機能仕様書_MVP.md)
 - レポート品質の物差し：[`docs/レポート品質_評価基準.md`](./レポート品質_評価基準.md)（T-07 のモデル選定・プロンプト改訂の判定に使う）
-- 直近の申し送り：[`docs/handoff/2026-08-27_llm-provider-and-bakeoff.md`](./handoff/2026-08-27_llm-provider-and-bakeoff.md)（言語化LLMの選定・ベイクオフ準備。**ADR-017 の文案あり・未記入**）
+- 直近の申し送り：[`docs/handoff/2026-08-29_t07-real-llm.md`](./handoff/2026-08-29_t07-real-llm.md)（T-07 を実LLM＋ストリーミングに差し替え。**残りは鍵と盲検採点だけ**）
+- その前：[`docs/handoff/2026-08-27_llm-provider-and-bakeoff.md`](./handoff/2026-08-27_llm-provider-and-bakeoff.md)（言語化LLMの選定・ベイクオフ準備。**ADR-017 の文案あり・未記入**）
 
 ## ⚠️ 触るときの鉄則（詳細は [`CLAUDE.md`](../CLAUDE.md)）
 金額は `src/calc` でしか作らない／AIに金額を書かせない／商品名・送客・煽りは入れない／ゴールデン期待値の正本は `docs/算定テスト_10世帯.xlsx` の検算（red→green のために書き換えない）。
 
 ## GitHub 状態
-`main` 最新・未pushなし。オープンPRは **#18（Draft・マージ不可）** のみ。
+`main` = `17912f8`（PR #34 マージ済み・CI green）・未pushなし。オープンPRは **#18（Draft・マージ不可）** のみ。
