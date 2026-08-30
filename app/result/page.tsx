@@ -9,7 +9,7 @@ import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
-import { CompareBars } from "./CompareBars.js";
+import { GapWaterfall } from "./GapWaterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
 import { loadParams, v } from "../../src/params/index.js";
@@ -142,14 +142,14 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
         </div>
       )}
 
-      {/* 主グラフ：支出と収入を同じ縮尺で対比する（デザイン方針「グラフの設計」1）。
-          差引きの結果はグラフから引き算させない ─ 上のヒーロー数字が担う */}
-      <CompareBars
-        caption={`出ていくお金と入ってくるお金の対比（${title}・万円）`}
-        expense={expenseItems}
+      {/* 主グラフ：支出の合計から受け取れるものを順に引き、残りを見せる。
+          「なぜこの金額か」を文章ではなく手続きで答える（2026-08-30 の方針変更）。
+          引く項目は下の内訳表と1対1で、色の印も対応させている */}
+      <GapWaterfall
+        caption={`支出から、受け取れるものを引く（${title}・万円）`}
         expenseTotal={r.expense.total}
         income={incomeItems}
-        incomeTotal={r.income.total}
+        verdict={r.verdict}
       />
 
       {/* 因数分解：支出 */}
