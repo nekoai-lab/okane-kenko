@@ -289,3 +289,42 @@
   border-radius: var(--radius-control);
   font-size: var(--font-size-std-s);
 }
+
+/* 支出と収入の対比（主グラフ・デザイン方針「グラフの設計」1）
+   色相＝支出/収入の意味、内訳は明度差。棒は装飾で、数字は下の内訳表が正。 */
+.compare {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.barBlock {
+  display: grid;
+  gap: var(--space-1);
+}
+.barHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--font-size-std-s);
+}
+.bar {
+  display: flex;
+  gap: 2px; /* 隣接した塗りが混ざって見えるのを防ぐ（背景色の隙間） */
+  height: 16px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--chart-grid);
+}
+.barSeg {
+  min-width: 2px;
+}
+/* 内訳表の行に置く色の印（色だけで意味を伝えないための「印＋ラベル＋数値」） */
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: var(--space-2);
+  vertical-align: baseline;
+}

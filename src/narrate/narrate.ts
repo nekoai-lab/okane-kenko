@@ -29,6 +29,9 @@ export function placeholderValues(d: HouseholdDiagnosis): PlaceholderValues {
     conclusion: CONCLUSION[d.householdHeadline.kind] ?? "",
     selfRange: formatRange(d.self.range.low, d.self.range.high),
     gapAmount: formatMan(d.self.gap.amount),
+    // 年数も「数値」なので AI には書かせない。いつまで必要かが抜けると金額だけが独り歩きする
+    yearsDependent: `約${d.self.years.dependent}年`,
+    yearsAlone: `約${d.self.years.alone}年`,
   };
 }
 

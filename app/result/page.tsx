@@ -9,6 +9,7 @@ import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
+import { CompareBars } from "./CompareBars.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
 import { loadParams, v } from "../../src/params/index.js";
@@ -113,13 +114,30 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
         </div>
       )}
 
+      {/* 主グラフ：支出と収入を同じ縮尺で対比する（デザイン方針「グラフの設計」1）。
+          差引きの結果はグラフから引き算させない ─ 上のヒーロー数字が担う */}
+      <CompareBars
+        caption={`出ていくお金と入ってくるお金の対比（${title}・万円）`}
+        expense={expenseItems}
+        expenseTotal={r.expense.total}
+        income={incomeItems}
+        incomeTotal={r.income.total}
+      />
+
       {/* 因数分解：支出 */}
       <div className={s.subhead}>どうしてこの金額？ ─ 見込みの支出</div>
       <div className={s.rows}>
-        {expenseItems.map((x) => (
+        {expenseItems.map((x, i) => (
           <div className={s.row} key={x.label}>
             <span className={s.rowLabel}>
-              {x.label}
+              <span>
+                <span
+                  aria-hidden="true"
+                  className={s.swatch}
+                  style={{ background: `var(--chart-expense-${Math.min(i + 1, 5)})` }}
+                />
+                {x.label}
+              </span>
               {x.basis ? <span className={s.basis}>根拠：{x.basis}</span> : null}
             </span>
             <span className={s.rowAmount}>{money(x.amount)}</span>
@@ -134,10 +152,17 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
       {/* 因数分解：収入 */}
       <div className={s.subhead}>受け取れる見込みの収入・資産</div>
       <div className={s.rows}>
-        {incomeItems.map((x) => (
+        {incomeItems.map((x, i) => (
           <div className={s.row} key={x.label}>
             <span className={s.rowLabel}>
-              {x.label}
+              <span>
+                <span
+                  aria-hidden="true"
+                  className={s.swatch}
+                  style={{ background: `var(--chart-income-${Math.min(i + 1, 5)})` }}
+                />
+                {x.label}
+              </span>
               {x.basis ? <span className={s.basis}>根拠：{x.basis}</span> : null}
             </span>
             <span className={s.rowAmount}>{money(x.amount)}</span>

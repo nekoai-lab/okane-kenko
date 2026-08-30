@@ -169,7 +169,7 @@ async function callGemini(model: string, apiKey: string, user: string): Promise<
 }
 
 /** テンプレに、こちらが差し込めないプレースホルダが混ざっていないか。 */
-const KNOWN_PLACEHOLDERS = ["conclusion", "selfRange", "gapAmount"];
+const KNOWN_PLACEHOLDERS = ["conclusion", "selfRange", "gapAmount", "yearsDependent", "yearsAlone"];
 function unknownPlaceholders(template: string): string[] {
   const found = [...template.matchAll(/\{\{([a-zA-Z]+)\}\}/g)].map((m) => m[1]);
   return [...new Set(found.filter((k) => !KNOWN_PLACEHOLDERS.includes(k)))];
