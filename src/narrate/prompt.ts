@@ -23,13 +23,18 @@ const CORE = `あなたは公的保障と家計の「翻訳者」です。判断
 2. 保険商品の名称・保険会社名を出さない。加入や申し込みを勧める表現を使わない。
 3. 不安を煽らない。「大変なことになる」「今すぐ」「絶対」のような圧をかける言い方をしない。
 4. 断定的な将来予測をしない。「概算」「目安」であることを保つ。
-5. 家計全体の最適化や投資の助言はしない。
+5. 家計全体の最適化や投資の助言はしない。**支出・住まい・暮らしの見直しを勧めない**（この診断の範囲外）。「減らせる」と書いてよいのは**保険の保障額**の話だけ。
 6. 算定結果に「減らせる余地」があるときは必ず触れる。無いのに「ある」と書かない。
+7. **結論を言い直さない。** 金額がその額になった理由を書く ── 下に示す「金額を押し上げている上位2項目」に必ず触れ、なぜそれが大きいのかを1文で言う。
+8. 期間のプレースホルダが渡されているときは必ず使う。「いつまで必要なのか」が分からないと、金額だけが独り歩きする。
+9. **{{selfRange}} は必ず使う。** 差額だけを書くと、何に対する差なのかが読み手に分からない。
 
 # 使えるプレースホルダ（これ以外は使用禁止）
-{{conclusion}} … 結論のことば
-{{selfRange}}  … 遺されたご家族に必要な保障の目安（レンジ）
-{{gapAmount}}  … いまの保険との差額
+{{conclusion}}      … 結論のことば
+{{selfRange}}       … 遺されたご家族に必要な保障の目安（レンジ）
+{{gapAmount}}       … いまの保険との差額
+{{yearsDependent}}  … お子さんが独立するまでの年数（子がいる世帯のみ）
+{{yearsAlone}}      … その後、配偶者が65歳になるまでの年数（配偶者がいる世帯のみ）
 
 # 文体
 中学生が読める語彙で書く。専門用語（団信・遺族厚生年金・高額療養費）は初出で1行の注釈を添える。
@@ -49,6 +54,30 @@ export function systemPrompt(mode: OutputMode): string {
   return `${CORE}\n\n${OUTPUT[mode]}`;
 }
 
+/** 支出の内訳ラベル（結果画面と同じ言い方にそろえる。画面と文で呼び名が違うと迷子になる） */
+const EXPENSE_LABEL: Record<string, string> = {
+  livingChild: "ご家族の生活費（子育て期）",
+  livingAlone: "ご家族の生活費（末子独立後）",
+  education: "教育費",
+  housing: "住居費（団信なしのローン残高）",
+  funeral: "葬儀・予備費",
+};
+
+/**
+ * 金額を押し上げている上位2項目を、**こちらで決めて渡す**。
+ *
+ * 算定結果の JSON を丸ごと渡して「大事なところに触れて」と言うだけでは、AI は結論を
+ * 言い直すだけになった（2026-08-30 の盲検採点で両モデルとも同じ欠点が出た）。
+ * 何が大きいかは計算すれば分かることなので、AI に探させない。
+ */
+function topDrivers(d: HouseholdDiagnosis): string[] {
+  return Object.entries(d.self.expense)
+    .filter(([k, v]) => k in EXPENSE_LABEL && typeof v === "number" && v > 0)
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, 2)
+    .map(([k]) => EXPENSE_LABEL[k]);
+}
+
 /**
  * 動的部分。**氏名等の識別情報は渡さない（AR-09）** ─ 算定結果の構造化JSONだけを渡す。
  */
@@ -58,7 +87,30 @@ export function buildUserContent(d: HouseholdDiagnosis): string {
     ? "この世帯は今の保険が分かっていないため過不足を出していません。{{gapAmount}} は使わないでください。過不足を断定せず、証券が見つかれば比べられることを伝えてください。"
     : "この世帯は過不足が出ています。{{gapAmount}} を使えます。";
 
+  const period: string[] = [];
+  if (d.self.years.dependent > 0) period.push("{{yearsDependent}} が使えます");
+  if (d.self.years.alone > 0) period.push("{{yearsAlone}} が使えます");
+  const periodNote =
+    period.length > 0
+      ? `期間のプレースホルダ：${period.join("／")}。必ず使ってください。`
+      : "この世帯に期間のプレースホルダはありません。年数に触れないでください。";
+
+  // {{selfRange}} の意味は verdict で入れ替わる。「足りない額」と「当座資金」を
+  // 同じ言い方で書かせると、収入が支出を上回る世帯で読者が混乱する。
+  const rangeMeaning: Record<string, string> = {
+    shortage: "{{selfRange}} は「いまの備えに対して足りない額」です。",
+    sufficient:
+      "{{selfRange}} は不足額ではありません。収入・資産で支出はまかなえる見込みで、これは「万一の直後に手元に置いておく当座資金（葬儀・予備費と生活費1〜2年分）」の目安です。そう分かるように書いてください。",
+    ample:
+      "{{selfRange}} は「葬儀・予備費」の目安です。収入・資産が支出を大きく上回るため、上乗せの保障は要りません。そう言い切ってください。",
+    not_needed:
+      "{{selfRange}} は「葬儀・予備費」の目安です。扶養するご家族がいないため、大きな死亡保障は要りません。",
+  };
+
   return `${placeholderNote}
+${rangeMeaning[d.self.verdict] ?? rangeMeaning.sufficient}
+${periodNote}
+金額を押し上げている上位2項目：${topDrivers(d).join(" / ")}。この2つに必ず触れてください。
 
 算定結果（この中の値だけが事実です。ここに無いことを書かないでください）:
 ${JSON.stringify(d, null, 2)}`;

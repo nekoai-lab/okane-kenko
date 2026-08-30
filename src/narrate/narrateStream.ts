@@ -15,7 +15,7 @@ import { checkGuardrails } from "./guard.js";
 import { fallbackNarration, fillPlaceholders, hasNoRawNumbers } from "./narrate.js";
 
 /** こちらが差し込めるプレースホルダ。これ以外を書かれても差し込めない */
-const KNOWN_PLACEHOLDERS = ["conclusion", "selfRange", "gapAmount"];
+const KNOWN_PLACEHOLDERS = ["conclusion", "selfRange", "gapAmount", "yearsDependent", "yearsAlone"];
 
 export type FallbackReason =
   | "g1_raw_number"
