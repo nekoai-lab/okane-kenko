@@ -53,19 +53,43 @@ export function chukoreiKafuTotal(
   children: number[],
   yearsTotal: number,
 ): number {
-  const minAge = v(p, "chukoreiKafuMinAge");
-  const add = v(p, "chukoreiKafuAdd");
-  const hasChild = children.length > 0;
-
-  if (!hasChild) {
-    return survivor.age >= minAge ? add * yearsTotal : 0;
-  }
-  const kisoEnd = Math.max(0, 18 - Math.min(...children));
   let total = 0;
-  for (let t = kisoEnd; t < yearsTotal; t++) {
-    if (survivor.age + t >= minAge) total += add;
+  for (let t = 0; t < yearsTotal; t++) {
+    total += chukoreiKafuAnnual(p, {
+      survivorAgeAtDeath: survivor.age,
+      survivorAgeNow: survivor.age + t,
+      childrenAgesNow: children.map((a) => a + t),
+      hasChildAtDeath: children.length > 0,
+    });
   }
   return total;
+}
+
+/**
+ * その年に受け取れる中高齢寡婦加算。
+ *
+ * 累計（`chukoreiKafuTotal`）はこれを年ごとに足したもの。**年次表と総額で式を分けない**ため、
+ * 判定はここ1か所に置く（分けると、片方だけ直して静かにズレる）。
+ */
+export function chukoreiKafuAnnual(
+  p: ParamSet,
+  ctx: {
+    /** 死亡時点の遺族の年齢（子なし世帯の受給資格はここで決まる） */
+    survivorAgeAtDeath: number;
+    survivorAgeNow: number;
+    childrenAgesNow: number[];
+    hasChildAtDeath: boolean;
+  },
+): number {
+  const minAge = v(p, "chukoreiKafuMinAge");
+  const add = v(p, "chukoreiKafuAdd");
+
+  // 子なし：死亡時に年齢要件を満たすかどうかで、算定期間を通じて決まる
+  if (!ctx.hasChildAtDeath) return ctx.survivorAgeAtDeath >= minAge ? add : 0;
+
+  // 子あり：遺族基礎年金が出ている間は対象外。末子が18歳を超えてから、年齢要件を満たす年
+  if (ctx.childrenAgesNow.some((a) => a < 18)) return 0;
+  return ctx.survivorAgeNow >= minAge ? add : 0;
 }
 
 /** 遺族基礎年金の累計（年ごとに子の年齢を進めて積算） */

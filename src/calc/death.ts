@@ -20,7 +20,7 @@ function roundToUnit(x: number, unit: number): number {
  * 学習費総額ベース（塾・部活・行事・制服・寄付を含む）。高校は就学支援金を年ごとに控除する。
  * 大学入学料は年額換算に含めて按分済み（4年総額÷4）。地域係数を最後に掛ける。
  */
-function annualEducation(edu: EducationParams, plan: EducationPlan, age: number): number {
+export function annualEducation(edu: EducationParams, plan: EducationPlan, age: number): number {
   const preset = edu.presets[plan];
   const s = edu.stages;
   if (age >= s.kinder.fromAge && age <= s.kinder.toAge) return s.kinder[preset.kinder];

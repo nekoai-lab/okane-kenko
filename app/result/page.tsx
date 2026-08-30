@@ -8,6 +8,8 @@
 import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
+import type { Projection } from "../../src/calc/projection.js";
+import { projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { GapWaterfall } from "./GapWaterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
@@ -58,7 +60,35 @@ function money(yen: number): string {
   return formatMan(yen);
 }
 
-function CaseCard({ title, r }: { title: string; r: DeathResult }) {
+/**
+ * いちばん細い年（US-04b）。総額の引き算では、この谷が平らに均されて見えなくなる。
+ * 「いくら足りないか」より先に「いつ苦しいか」に答えるための1行。
+ */
+function TightestYear({ pj }: { pj: Projection }) {
+  const t = pj.tightest;
+  if (!t || pj.rows.length < 2) return null;
+  const what = t.events.filter((e) => e !== "診断の起点").join("・");
+  return (
+    <div className={s.timeline}>
+      <strong>いちばん細いのは {t.year}年ごろ</strong>（お子さん
+      {t.ages.children.length > 0 ? `${t.ages.children.join("・")}歳` : "なし"}／その年の収支は
+      {t.net >= 0 ? "約" : "▲約"}
+      {money(Math.abs(t.net))}）。
+      {what ? `${what}時期にあたります。` : ""}
+      {pj.depletedAt ? (
+        <>
+          {" "}
+          この前提のままだと、<strong>{pj.depletedAt.year}年ごろに貯蓄が底をつく</strong>
+          見込みです。
+        </>
+      ) : (
+        <> この前提では、貯蓄が底をつく年はありません。</>
+      )}
+    </div>
+  );
+}
+
+function CaseCard({ title, r, pj }: { title: string; r: DeathResult; pj: Projection }) {
   const verdict = VERDICT[r.verdict] ?? VERDICT.sufficient;
   const expenseItems = [
     { label: "ご家族の生活費（子育て期）", amount: r.expense.livingChild, basis: "当社基準" },
@@ -141,6 +171,8 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
           </div>
         </div>
       )}
+
+      <TightestYear pj={pj} />
 
       {/* 主グラフ：支出の合計から受け取れるものを順に引き、残りを見せる。
           「なぜこの金額か」を文章ではなく手続きで答える（2026-08-30 の方針変更）。
@@ -245,6 +277,34 @@ export default async function ResultPage({
   const { input } = normalize(params, complete, new Date());
   const result = diagnose(params, input);
 
+  // 年次キャッシュフロー（US-04b）。総額と同じ係数・同じ前提で、合計する前の姿を出す。
+  // 変動率は既定の0（実値への切り替えはパラメータ版の更新でやる。SPEC 参照）。
+  const asOfYear = new Date().getFullYear();
+  const base = {
+    children: input.children,
+    housing: input.housing,
+    assets: input.assets,
+    monthlyLiving: input.monthlyLiving,
+    educationPlan: input.educationPlan,
+  };
+  const selfProjection = projectDeath(
+    params,
+    { ...base, deceased: input.self, survivor: input.spouse, currentCoverage: input.coverageSelf },
+    { asOfYear },
+  );
+  const spouseProjection = input.spouse
+    ? projectDeath(
+        params,
+        {
+          ...base,
+          deceased: input.spouse,
+          survivor: input.self,
+          currentCoverage: input.coverageSpouse ?? null,
+        },
+        { asOfYear },
+      )
+    : null;
+
   const anyPending = [result.self.gap, result.spouse?.gap].some((g) => g?.kind === "pending");
   const h = anyPending ? null : (HEADLINE[result.householdHeadline.kind] ?? HEADLINE.shortage);
 
@@ -338,8 +398,10 @@ export default async function ResultPage({
 
       {/* 因数分解（本人・配偶者） */}
       <div className={s.section}>
-        <CaseCard title="あなたが亡くなった場合" r={result.self} />
-        {result.spouse && <CaseCard title="配偶者が亡くなった場合" r={result.spouse} />}
+        <CaseCard pj={selfProjection} r={result.self} title="あなたが亡くなった場合" />
+        {result.spouse && spouseProjection && (
+          <CaseCard pj={spouseProjection} r={result.spouse} title="配偶者が亡くなった場合" />
+        )}
       </div>
 
       {/* 前提を動かす：生活費スライダー（当社基準・ADR-014） */}
