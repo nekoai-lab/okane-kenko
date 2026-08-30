@@ -25,7 +25,7 @@ import { checkGuardrails } from "../src/narrate/guard.js";
 // 採点したプロンプトと本番のプロンプトがズレる。
 import { buildUserContent, systemPrompt } from "../src/narrate/prompt.js";
 // 鍵の形の検査も本番と共通（呼び出す前に貼り付け事故を潰す。10回分の課金を無駄にしないため）
-import { apiKeyProblem } from "../src/narrate/gemini.js";
+import { checkApiKey } from "../src/narrate/gemini.js";
 import { loadParams } from "../src/params/index.js";
 
 const P = loadParams("2026-08");
@@ -35,7 +35,7 @@ const OUT_DIR = "bakeoff-out";
 
 /**
  * 円換算の前提。**概算であり、請求額ではない。**
- * 単価は 2026-08-24 に Gemini API の公式価格ページで確認した paid tier の値。
+ * 単価は 2026-08-30 に Gemini API の公式価格ページで確認した paid tier の値。
  * 単価は変わるので、走らせるときに合っているか確かめること（NFR-12 の実測に使うため）。
  */
 const USD_JPY = 150;
@@ -49,21 +49,25 @@ interface ModelSpec {
   note: string;
 }
 
+/**
+ * 2026-08-30 に組み直した。**`gemini-2.5-pro` は「新規ユーザーには提供終了」で 404**
+ * （API の案内は `gemini-3.1-pro-preview`）。2.5 世代は閉じ始めているので、
+ * 比較は新世代どうしにした（2.5-flash はまだ動くが、候補から外す判断をした）。
+ * 単価は 2026-08-30 に公式価格ページで確認。**単価は変わるので、走らせるときに確かめること。**
+ */
 const MODELS: ModelSpec[] = [
   {
-    id: "gemini-2.5-flash",
-    inUsd: 0.3,
-    outUsd: 2.5,
-    note: "安定版。値上げ予告なし",
+    id: "gemini-3.7-flash",
+    inUsd: 0.75,
+    outUsd: 3.75,
+    note: "2026-12-31まで。2027-01-01 に $1.50/$7.50 へ倍増（採用するなら再試算が要る）",
   },
   {
-    id: "gemini-2.5-pro",
-    inUsd: 1.25,
-    outUsd: 10.0,
-    note: "安定版。200kトークン以下の単価",
+    id: "gemini-3.1-pro-preview",
+    inUsd: 2.0,
+    outUsd: 12.0,
+    note: "preview。200kトークン以下の単価。エイリアス gemini-pro-latest ではなく ID を固定（指す先が動くと記録が再現できない）",
   },
-  // gemini-3.7-flash は 2027-01-01 に単価が倍になる（$0.75/$3.75 → $1.50/$7.50）ので既定では外した。
-  // 比較したくなったらこの配列に足すだけでよい。
 ];
 
 /**
@@ -242,20 +246,22 @@ describe("レポート品質ベイクオフ（T-07 モデル選定）", () => {
     if (!apiKey) return;
 
     // 課金を伴う呼び出しの前に、鍵の形だけ確かめる
-    const problem = apiKeyProblem(apiKey);
-    if (problem) {
+    const checked = checkApiKey(apiKey);
+    if (checked.problem) {
       throw new Error(
-        `.env.local の GEMINI_API_KEY の形がおかしい：${problem}\n` +
+        `.env.local の GEMINI_API_KEY の形がおかしい：${checked.problem}\n` +
+          `実測（値は出していない）：${checked.shape}\n` +
           "正しい形は次の1行のみ（引用符なし・スペースなし）：\n" +
           "GEMINI_API_KEY=AIza...",
       );
     }
+    if (checked.note) console.log(`※ 鍵について：${checked.note}`);
 
     const rows: Row[] = [];
 
     for (const m of MODELS) {
       for (const c of cases) {
-        const r = await callGemini(m.id, apiKey, buildUserContent(c.diagnosis));
+        const r = await callGemini(m.id, checked.key, buildUserContent(c.diagnosis));
         const base = {
           model: m.id,
           caseId: c.id,

@@ -3,7 +3,7 @@
  * ここで確かめるのは「切れ目をまたいでも本文を取りこぼさない」「失敗は例外で返る」こと。
  */
 import { describe, expect, it, vi } from "vitest";
-import { apiKeyProblem, consumeSse, streamGeminiText } from "./gemini.js";
+import { checkApiKey, consumeSse, streamGeminiText } from "./gemini.js";
 
 function sse(text: string): string {
   return `data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] })}\n\n`;
@@ -55,6 +55,21 @@ describe("streamGeminiText", () => {
     expect(await collect(g)).toBe("いまの前提では、{{conclusion}}。");
   });
 
+  it("最後のブロックに終端の空行が無くても取りこぼさない", async () => {
+    // 実際にこれで本文がまるごと消えた（2026-08-30）。読み込み中は「途中かもしれない」
+    // ブロックを保留するので、ストリームの終わりで吐き出さないと最後の1本が落ちる。
+    const noTrailingBlankLine = sse("最後の1文。").trimEnd();
+    const g = streamGeminiText({ ...OPTS, fetchImpl: fakeFetch([noTrailingBlankLine]) });
+    expect(await collect(g)).toBe("最後の1文。");
+  });
+
+  it("本文が1文字も来なければ理由を付けて投げる（黙って空を返さない）", async () => {
+    const onlyFinish = `data: ${JSON.stringify({ candidates: [{ finishReason: "MAX_TOKENS" }] })}\n\n`;
+    await expect(
+      collect(streamGeminiText({ ...OPTS, fetchImpl: fakeFetch([onlyFinish]) })),
+    ).rejects.toThrow("MAX_TOKENS");
+  });
+
   it("HTTP エラーは例外にする（呼び出し側が退避文に切り替えられる）", async () => {
     const fetchImpl = vi.fn(
       async () => new Response("API key not valid", { status: 400 }),
@@ -63,12 +78,30 @@ describe("streamGeminiText", () => {
   });
 });
 
-describe("apiKeyProblem（値そのものは扱わない）", () => {
+describe("checkApiKey（値そのものは扱わない）", () => {
+  const OK = "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
+
   it("よくある貼り付け事故を、呼び出す前に言う", () => {
-    expect(apiKeyProblem('"AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345"')).toContain("引用符");
-    expect(apiKeyProblem("AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012 345")).toContain("空白");
-    expect(apiKeyProblem("sk-ant-0123456789012345678901234567890")).toContain("AIza");
-    expect(apiKeyProblem("AIzaShort")).toContain("短すぎる");
-    expect(apiKeyProblem("AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345")).toBeNull();
+    expect(checkApiKey(`"${OK}"`).problem).toContain("引用符");
+    expect(checkApiKey("sk-ant-0123456789012345678901234567890").problem).toContain("AIza");
+    expect(checkApiKey(`<${OK}>`).problem).toContain("山カッコ");
+    expect(checkApiKey("AIzaShort").problem).toContain("短すぎる");
+    expect(checkApiKey(OK).problem).toBeNull();
+    expect(checkApiKey(OK).note).toBeNull();
+  });
+
+  it("目に見えない文字（ゼロ幅・BOM・改行なし空白）は落として使い、落としたことを伝える", () => {
+    // ブラウザからのコピーで前後に付く。**`\s` に一致しない**ので、以前はこれを
+    // 「AIza で始まっていない」と誤って報告していた（2026-08-30 に実際に踏んだ）
+    for (const invisible of ["​", "﻿", " ", "⁠"]) {
+      const check = checkApiKey(`${invisible}${OK}${invisible}`);
+      expect(check.problem).toBeNull();
+      expect(check.key).toBe(OK);
+      expect(check.note).toContain("目に見えない文字");
+    }
+  });
+
+  it("普通の空白・改行も同じように落とす", () => {
+    expect(checkApiKey(` ${OK}\n`).key).toBe(OK);
   });
 });
