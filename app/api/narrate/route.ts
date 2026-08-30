@@ -12,7 +12,7 @@
  * ここが持つのは HTTP と鍵とタイムアウトだけ。
  */
 import { diagnose } from "../../../src/calc/index.js";
-import { apiKeyProblem, narrationModel, streamGeminiText } from "../../../src/narrate/gemini.js";
+import { checkApiKey, narrationModel, streamGeminiText } from "../../../src/narrate/gemini.js";
 import {
   fallbackEvent,
   type NarrationEvent,
@@ -53,27 +53,27 @@ export async function GET(req: Request): Promise<Response> {
     return Response.json({ error: "diagnosis_unavailable", message }, { status: 503 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  const keyProblem = apiKey ? apiKeyProblem(apiKey) : "未設定";
+  const rawKey = process.env.GEMINI_API_KEY;
+  const checked = rawKey ? checkApiKey(rawKey) : null;
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      if (!apiKey || keyProblem) {
+      if (!checked || checked.problem) {
         // 鍵の値は出さない。形の問題だけをサーバログに残す（黙ると原因が見えないまま
         // 退避文が出続ける＝この製品がいちばん避けたい「静かな壊れ方」になる）
-        console.warn(`[narrate] GEMINI_API_KEY: ${keyProblem}。退避文で返します。`);
-        controller.enqueue(
-          line(fallbackEvent(diagnosis, "ai_unavailable", keyProblem ?? undefined)),
-        );
+        const why = checked?.problem ?? "未設定";
+        console.warn(`[narrate] GEMINI_API_KEY: ${why}。退避文で返します。`);
+        controller.enqueue(line(fallbackEvent(diagnosis, "ai_unavailable", why)));
         controller.close();
         return;
       }
+      if (checked.note) console.warn(`[narrate] GEMINI_API_KEY: ${checked.note}`);
 
       const abort = new AbortController();
       const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
       try {
         const deltas = streamGeminiText({
-          apiKey,
+          apiKey: checked.key,
           model: narrationModel(),
           system: systemPrompt("text"),
           user: buildUserContent(diagnosis),
