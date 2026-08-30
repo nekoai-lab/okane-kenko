@@ -26,6 +26,27 @@ const HEADLINE: Record<string, { icon: string; label: string; tone: "good" | "wa
   shortage: { icon: "⚠", label: "足りない可能性があります", tone: "warn" },
 };
 
+/**
+ * 金額の呼び名は verdict で変える。**同じ数字ではないから。**
+ * shortage＝足りない額／sufficient＝万一直後の当座資金／ample・not_needed＝葬儀・予備費。
+ * ここを「必要な保障額」で統一すると、収入が支出を上回っているのに額が出る理由が
+ * 読者に分からず、グラフと結論が矛盾して見える（2026-08-30 の実物レビューで発覚）。
+ */
+const AMOUNT_LABEL: Record<string, string> = {
+  shortage: "足りない保障額の目安",
+  sufficient: "万一の直後に要る当座資金の目安",
+  ample: "葬儀・予備費の目安",
+  not_needed: "葬儀・予備費の目安",
+};
+
+const AMOUNT_NOTE: Record<string, string> = {
+  shortage: "※ 見込みの支出から、受け取れる収入・資産を差し引いた不足分です。",
+  sufficient:
+    "※ 収入・資産で支出はまかなえる見込みです。これは不足額ではなく、手続きや当面の暮らしのために手元に置いておく目安（葬儀・予備費と生活費1〜2年分）です。",
+  ample: "※ 収入・資産が支出を大きく上回る見込みです。上乗せの保障は要りません。",
+  not_needed: "※ 扶養するご家族がいないため、大きな死亡保障は要りません。",
+};
+
 const VERDICT: Record<string, { label: string; tone: "good" | "warn" | "muted" }> = {
   shortage: { label: "いまの前提では、備えが足りない可能性があります", tone: "warn" },
   sufficient: { label: "いまの前提では、おおむね足りています", tone: "good" },
@@ -71,7 +92,14 @@ function CaseCard({ title, r }: { title: string; r: DeathResult }) {
         {verdict.label}
       </div>
 
-      <div className={s.amount}>必要な保障額の目安：{formatRange(r.range.low, r.range.high)}</div>
+      {/* **数字の意味は verdict で入れ替わる。** 不足のときは「足りない額」だが、
+          収入が支出を上回るときは「万一直後の当座資金（葬儀費＋生活費1〜2年分）」を出している
+          （death.ts の sufficient 分岐）。同じ名前で呼ぶと、グラフと結論が矛盾して見える。 */}
+      <div className={s.amount}>
+        {AMOUNT_LABEL[r.verdict] ?? AMOUNT_LABEL.sufficient}：
+        {formatRange(r.range.low, r.range.high)}
+      </div>
+      <p className={s.basis}>{AMOUNT_NOTE[r.verdict] ?? AMOUNT_NOTE.sufficient}</p>
 
       {/* 現在の保障との比較 */}
       {r.gap.kind === "pending" && (

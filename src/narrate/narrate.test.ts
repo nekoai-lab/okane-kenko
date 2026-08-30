@@ -39,6 +39,19 @@ describe("narrate（T-07 スタブ）", () => {
     expect(n.text).not.toMatch(/\{\{/);
   });
 
+  it("結論と差額の粒度がそろっている（『0万円ほど減らせる』を出さない）", () => {
+    // 世帯としては減らせる／整えられるのに、差額を本人だけから取っていたため
+    // 「0万円ほど減らせる」という壊れた文が出ていた（2026-08-30 実物レビュー）
+    for (const c of GOLDEN) {
+      const d = diagnose(P, c.input, AS_OF);
+      const kind = d.householdHeadline.kind;
+      if (kind === "all_covered" || d.self.gap.kind === "pending") continue;
+      const n = narrate(d);
+      if (n.text.includes("{{")) continue;
+      expect(n.text, `${c.id}（${kind}）の文に 0万円 が出ている`).not.toMatch(/(^|[^\d])0万円/);
+    }
+  });
+
   it("保険が分からない世帯は pending の文面になる（過不足を断定しない）", () => {
     const d = diagnose(P, { ...GOLDEN[1].input, coverageSelf: null }, AS_OF);
     const n = narrate(d);

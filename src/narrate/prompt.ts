@@ -95,7 +95,20 @@ export function buildUserContent(d: HouseholdDiagnosis): string {
       ? `期間のプレースホルダ：${period.join("／")}。必ず使ってください。`
       : "この世帯に期間のプレースホルダはありません。年数に触れないでください。";
 
+  // {{selfRange}} の意味は verdict で入れ替わる。「足りない額」と「当座資金」を
+  // 同じ言い方で書かせると、収入が支出を上回る世帯で読者が混乱する。
+  const rangeMeaning: Record<string, string> = {
+    shortage: "{{selfRange}} は「いまの備えに対して足りない額」です。",
+    sufficient:
+      "{{selfRange}} は不足額ではありません。収入・資産で支出はまかなえる見込みで、これは「万一の直後に手元に置いておく当座資金（葬儀・予備費と生活費1〜2年分）」の目安です。そう分かるように書いてください。",
+    ample:
+      "{{selfRange}} は「葬儀・予備費」の目安です。収入・資産が支出を大きく上回るため、上乗せの保障は要りません。そう言い切ってください。",
+    not_needed:
+      "{{selfRange}} は「葬儀・予備費」の目安です。扶養するご家族がいないため、大きな死亡保障は要りません。",
+  };
+
   return `${placeholderNote}
+${rangeMeaning[d.self.verdict] ?? rangeMeaning.sufficient}
 ${periodNote}
 金額を押し上げている上位2項目：${topDrivers(d).join(" / ")}。この2つに必ず触れてください。
 
