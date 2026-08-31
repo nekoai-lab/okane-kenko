@@ -720,3 +720,50 @@
   border: none;
   padding-top: 0;
 }
+
+/* ------------------------------------------------------------
+ * 注目する年（FPの表には無い部分）
+ * 全年を等しく並べても、どこを見ればよいかは分からない。先に抜き出す。
+ * ------------------------------------------------------------ */
+.keyYears {
+  margin: var(--space-5) 0;
+}
+
+/* 「なぜ見ておくか」「できごと」は文章なので、数字の右寄せから外す */
+.cfWhy {
+  text-align: left !important;
+  white-space: normal !important;
+  min-width: 12em;
+}
+
+/* ------------------------------------------------------------
+ * ことばの意味（用語の1行注釈）
+ * CLAUDE.md の「専門用語は初出で1行注釈」が結果画面で守られていなかった。
+ * 対面のFPなら口頭で補える部分を、紙が自分で説明しきる必要がある。
+ * ------------------------------------------------------------ */
+.terms {
+  margin: var(--space-2) 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-subtle);
+  font-size: var(--font-size-dense);
+}
+
+.termRow {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.termRow:last-child {
+  margin-bottom: 0;
+}
+
+.termName {
+  font-weight: var(--font-weight-bold);
+}
+
+.termNote {
+  margin: 0;
+  color: var(--color-text-secondary);
+}

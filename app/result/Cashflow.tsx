@@ -21,6 +21,7 @@ import type { Projection, ProjectionRow } from "../../src/calc/projection.js";
 import { formatMan } from "../../src/design/tokens.js";
 import { bandWidth, ChartFrame, plotBottom, plotTop, xAt, yAt } from "./ChartFrame.js";
 import { linearScale } from "./chartScale.js";
+import { KeyYears, YearTables } from "./YearTables.js";
 import s from "./page.module.css";
 
 /** 目盛りラベルを間引く間隔。30年で全部出すと潰れる */
@@ -216,45 +217,11 @@ export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
         </p>
       )}
 
-      {/* 全年の数字。グラフを読まなくても、ここに同じ内容がある */}
-      <details className={s.criteria}>
-        <summary>年ごとの表を見る（{n}年分）</summary>
-        <div className={s.cfTableWrap}>
-          <table className={s.cfTable}>
-            <caption className={s.basis}>
-              単位は万円。金額は概算で、四捨五入のため内訳の合計と一致しないことがあります。
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">西暦</th>
-                <th scope="col">お子さん</th>
-                <th scope="col">収入</th>
-                <th scope="col">支出</th>
-                <th scope="col">年間収支</th>
-                <th scope="col">年末の貯蓄</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr className={r.balance < 0 ? s.cfRowNeg : undefined} key={r.year}>
-                  <th scope="row">{r.year}</th>
-                  <td>{childAges(r)}</td>
-                  <td>{formatMan(r.income.total)}</td>
-                  <td>{formatMan(r.expense.total)}</td>
-                  <td>
-                    {r.net < 0 ? "▲" : ""}
-                    {formatMan(Math.abs(r.net))}
-                  </td>
-                  <td>
-                    {r.balance < 0 ? "▲" : ""}
-                    {formatMan(Math.abs(r.balance))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
+      {/* 全年の数字。グラフを読まなくても、ここに同じ内容がある。
+          注目する年は畳まずに出す ── **どの年が効くかを先に言うのが、FPの表に対する差**。
+          全年の表は畳む（開けば収入・支出の内訳まである） */}
+      <KeyYears pj={pj} />
+      <YearTables pj={pj} />
     </div>
   );
 }

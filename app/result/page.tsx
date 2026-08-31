@@ -357,7 +357,8 @@ export default async function ResultPage({
             : "持ち家（ローンなし）",
       note:
         input.housing.type === "own" && (input.housing.loan ?? 0) > 0
-          ? `残り約${money(input.housing.loan ?? 0)}／団信${input.housing.danshin === false ? "なし" : "あり"}`
+          ? // 団信は初出で1行注釈を付ける（CLAUDE.md）。ここが結果画面での初出になる
+            `残り約${money(input.housing.loan ?? 0)}／団信（亡くなるとローンが消える保険）${input.housing.danshin === false ? "なし" : "あり"}`
           : "住居費は生活費に含めています",
     },
   ];
