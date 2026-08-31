@@ -6,20 +6,24 @@
  * 例外なく40年分の表とグラフを主役に置いているのは、顧客が見たいのが総額ではなく
  * **自分の人生の並び**だからで、そこに合わせる（2026-08-31 の指摘）。
  *
+ * 図は2枚に分ける：
+ *   1. 収入・支出・年間収支（**すべて万円なので1軸で足りる**。FPキャプテンの年間収支グラフと同じ）
+ *   2. 年末の貯蓄残高（尽きる年に印を付ける）
+ *
  * 設計上の決めごと：
- * - **2軸グラフにしない**（`docs/デザイン方針.md` の禁止事項）。残高と年間収支は縦に並べる
- * - 棒は装飾（`aria-hidden`）。**読み取れる値はすべて文字で併記**し、
- *   全年の数字は下の表（`<details>`）に置く。色だけ・形だけで意味を伝えない
- * - 残高がマイナスの年は Warning（オレンジ）。**赤は使わない** ── 赤字はシステムエラーではないし、
+ * - **2軸グラフにしない**（`docs/デザイン方針.md` の禁止事項）。単位が同じものだけ重ねる
+ * - 図には要約の `aria-label` を付け、**読み取れる値は本文と表にも必ず書く**
+ * - 貯蓄残高の図でマイナスの年は Warning（オレンジ）。**赤は使わない** ── 赤字はシステムエラーではないし、
  *   煽らないための規定（不足は Warning）
- * - 描画ライブラリは足さない。主戦場が LINE 内ブラウザ（幅393px）で、
- *   このためだけに入れると初回読み込みが重くなる
+ * - 描画ライブラリは足さない。主戦場が LINE 内ブラウザ（幅393px）
  */
 import type { Projection, ProjectionRow } from "../../src/calc/projection.js";
 import { formatMan } from "../../src/design/tokens.js";
+import { bandWidth, ChartFrame, plotBottom, plotTop, xAt, yAt } from "./ChartFrame.js";
+import { linearScale } from "./chartScale.js";
 import s from "./page.module.css";
 
-/** 目盛りラベルを間引く間隔。30年で全部出すと幅393pxでは潰れる */
+/** 目盛りラベルを間引く間隔。30年で全部出すと潰れる */
 function labelEvery(count: number): number {
   if (count <= 12) return 2;
   if (count <= 25) return 5;
@@ -30,21 +34,40 @@ function childAges(row: ProjectionRow): string {
   return row.ages.children.length > 0 ? `${row.ages.children.join("・")}歳` : "—";
 }
 
+/** 折れ線の d 属性 */
+function linePath(values: number[], scale: ReturnType<typeof linearScale>): string {
+  const n = values.length;
+  return values
+    .map((v, i) => `${i === 0 ? "M" : "L"}${xAt(i, n).toFixed(1)},${yAt(scale, v).toFixed(1)}`)
+    .join(" ");
+}
+
 export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
   const rows = pj.rows;
   if (rows.length < 2) return null;
 
-  // 縮尺は「残高の絶対値の最大」。プラス側とマイナス側で高さを分け合い、0の線を揃える。
-  const maxPos = Math.max(0, ...rows.map((r) => r.balance));
-  const maxNeg = Math.max(0, ...rows.map((r) => -r.balance));
-  const span = maxPos + maxNeg;
-  if (span <= 0) return null;
-  const posShare = (maxPos / span) * 100;
-
-  const every = labelEvery(rows.length);
+  const n = rows.length;
+  const years = rows.map((r) => r.year);
+  const every = labelEvery(n);
   const first = rows[0];
-  const last = rows[rows.length - 1];
+  const last = rows[n - 1];
   const tightest = pj.tightest;
+
+  // 図1：収入・支出・年間収支。すべて万円なので1軸に載る
+  const flowScale = linearScale(
+    Math.min(0, ...rows.map((r) => r.net)),
+    Math.max(...rows.map((r) => Math.max(r.income.total, r.expense.total))),
+  );
+  const flowZero = yAt(flowScale, 0);
+  const bw = bandWidth(n);
+
+  // 図2：年末の貯蓄残高
+  const balScale = linearScale(
+    Math.min(0, ...rows.map((r) => r.balance)),
+    Math.max(0, ...rows.map((r) => r.balance)),
+  );
+  const balZero = yAt(balScale, 0);
+  const depletedIndex = pj.depletedAt ? rows.findIndex((r) => r.year === pj.depletedAt?.year) : -1;
 
   // ライフイベントのある年だけ拾う（起点は除く。全年に出すと読めない）
   const events = rows
@@ -54,53 +77,114 @@ export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
   return (
     <div className={s.cashflow}>
       <div className={s.subhead}>
-        これから{rows.length}年間のお金の流れ（{caption}）
+        これから{n}年間のお金の流れ（{caption}）
       </div>
 
-      {/* 貯蓄残高の推移。棒は装飾で、値は下の文と表が正 */}
-      <div aria-hidden="true" className={s.cfChart}>
-        <div className={s.cfPos} style={{ height: `${posShare}%` }}>
-          {rows.map((r) => (
-            <div className={s.cfCol} key={`p-${r.year}`}>
-              <div
-                className={s.cfBarPos}
-                style={{
-                  height: r.balance > 0 ? `${(r.balance / span / (posShare / 100)) * 100}%` : "0%",
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        <div className={s.cfZero} />
-        <div className={s.cfNeg} style={{ height: `${100 - posShare}%` }}>
-          {rows.map((r) => (
-            <div className={s.cfCol} key={`n-${r.year}`}>
-              <div
-                className={s.cfBarNeg}
-                style={{
-                  height:
-                    r.balance < 0 && posShare < 100
-                      ? `${(-r.balance / span / (1 - posShare / 100)) * 100}%`
-                      : "0%",
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div aria-hidden="true" className={s.cfAxis}>
-        {rows.map((r, i) => (
-          <div className={s.cfTick} key={`t-${r.year}`}>
-            {i % every === 0 ? r.year - 2000 : ""}
-          </div>
-        ))}
-      </div>
-      <p className={s.cfCaption}>
-        縦棒は<strong>その年の年末に残っている貯蓄</strong>（横軸は西暦の下2桁）。
-        {maxNeg > 0 ? "オレンジは、貯蓄が尽きてマイナスになる年です。" : ""}
-      </p>
+      <ChartFrame
+        labelEvery={every}
+        legend={[
+          { label: "収入", color: "var(--chart-income-2)", line: true },
+          { label: "支出", color: "var(--chart-expense-2)", line: true },
+          { label: "年間収支", color: "var(--chart-income-4)" },
+        ]}
+        scale={flowScale}
+        summary={`${first.year}年から${last.year}年までの、1年ごとの収入・支出・その差額。単位は万円。`}
+        title="1年ごとの収入と支出（万円）"
+        years={years}
+      >
+        {/* 年間収支の棒。0 の線から上下に伸ばす。
+            **マイナスの年を別の色にしない** ── この図には支出の折れ線（オレンジ）が
+            同居しているので、棒までオレンジにすると系列が混ざって読めなくなる。
+            プラスかマイナスかは 0 の線に対する向きで伝わる。 */}
+        {rows.map((r, i) => {
+          const y = yAt(flowScale, r.net);
+          return (
+            <rect
+              fill="var(--chart-income-4)"
+              height={Math.max(1, Math.abs(y - flowZero))}
+              key={r.year}
+              width={bw}
+              x={xAt(i, n) - bw / 2}
+              y={Math.min(y, flowZero)}
+            />
+          );
+        })}
+        <path
+          d={linePath(
+            rows.map((r) => r.expense.total),
+            flowScale,
+          )}
+          fill="none"
+          stroke="var(--chart-expense-2)"
+          strokeWidth="2"
+        />
+        <path
+          d={linePath(
+            rows.map((r) => r.income.total),
+            flowScale,
+          )}
+          fill="none"
+          stroke="var(--chart-income-2)"
+          strokeWidth="2"
+        />
+      </ChartFrame>
 
-      {/* 棒を読めなくても伝わるように、要点は文で書く */}
+      <ChartFrame
+        labelEvery={every}
+        legend={[
+          { label: "年末に残っている貯蓄", color: "var(--chart-income-3)" },
+          ...(depletedIndex >= 0
+            ? [{ label: "貯蓄が尽きた年", color: "var(--color-warning)" }]
+            : []),
+        ]}
+        scale={balScale}
+        summary={
+          pj.depletedAt
+            ? `貯蓄の残高は${pj.depletedAt.year}年ごろに尽きる見込み。単位は万円。`
+            : `貯蓄の残高は${last.year}年まで残る見込み。単位は万円。`
+        }
+        title="年末に残っている貯蓄（万円）"
+        years={years}
+      >
+        {rows.map((r, i) => {
+          const y = yAt(balScale, r.balance);
+          return (
+            <rect
+              fill={r.balance < 0 ? "var(--color-warning)" : "var(--chart-income-3)"}
+              height={Math.max(1, Math.abs(y - balZero))}
+              key={r.year}
+              width={bw}
+              x={xAt(i, n) - bw / 2}
+              y={Math.min(y, balZero)}
+            />
+          );
+        })}
+        {/* 尽きる年に印。FPの資料が吹き出しで指しているのと同じ役割 */}
+        {depletedIndex >= 0 && (
+          <g>
+            <line
+              stroke="var(--color-warning)"
+              strokeDasharray="3 3"
+              strokeWidth="1.5"
+              x1={xAt(depletedIndex, n)}
+              x2={xAt(depletedIndex, n)}
+              y1={plotTop}
+              y2={plotBottom}
+            />
+            <text
+              fill="var(--color-warning-text)"
+              fontSize="11"
+              textAnchor={depletedIndex > n * 0.7 ? "end" : "start"}
+              x={xAt(depletedIndex, n) + (depletedIndex > n * 0.7 ? -4 : 4)}
+              y={plotTop + 11}
+            >
+              ここで尽きます
+            </text>
+          </g>
+        )}
+      </ChartFrame>
+
+      {/* 図を読めなくても伝わるように、要点は文で書く */}
       <ul className={s.cfPoints}>
         <li>
           はじめ（{first.year}年）の貯蓄は <strong>約{formatMan(first.balance)}</strong>
@@ -134,7 +218,7 @@ export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
 
       {/* 全年の数字。グラフを読まなくても、ここに同じ内容がある */}
       <details className={s.criteria}>
-        <summary>年ごとの表を見る（{rows.length}年分）</summary>
+        <summary>年ごとの表を見る（{n}年分）</summary>
         <div className={s.cfTableWrap}>
           <table className={s.cfTable}>
             <caption className={s.basis}>

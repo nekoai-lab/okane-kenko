@@ -9,9 +9,10 @@ import Link from "next/link";
 import { diagnose } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import type { Projection } from "../../src/calc/projection.js";
-import { projectDeath } from "../../src/calc/projection.js";
+import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { Cashflow } from "./Cashflow.js";
+import { CoverageCurve } from "./CoverageCurve.js";
 import { GapWaterfall } from "./GapWaterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
@@ -64,7 +65,18 @@ function money(yen: number): string {
 /* いちばん細い年の1行表示（TightestYear）は Cashflow に統合した（2026-08-31）。
    同じことを2か所に書くと、片方だけ直したときに食い違う。 */
 
-function CaseCard({ title, r, pj }: { title: string; r: DeathResult; pj: Projection }) {
+function CaseCard({
+  title,
+  r,
+  pj,
+  coverage,
+}: {
+  title: string;
+  r: DeathResult;
+  pj: Projection;
+  /** いまの死亡保障額。分からない（未入力）なら null */
+  coverage: number | null;
+}) {
   const verdict = VERDICT[r.verdict] ?? VERDICT.sufficient;
   const expenseItems = [
     { label: "ご家族の生活費（子育て期）", amount: r.expense.livingChild, basis: "当社基準" },
@@ -151,6 +163,9 @@ function CaseCard({ title, r, pj }: { title: string; r: DeathResult; pj: Project
       {/* 年次キャッシュフロー。**総額の引き算より先に「いつ苦しいか」に答える。**
           projectDeath() は全年分を返しているのに、以前はここで1文しか出していなかった */}
       <Cashflow caption={title} pj={pj} />
+
+      {/* 必要保障額の推移。点（今日いくら）ではなく線（いつまでいくら）で見せる */}
+      <CoverageCurve coverage={coverage} points={coverageCurve(pj, r.income.assets)} />
 
       {/* 主グラフ：支出の合計から受け取れるものを順に引き、残りを見せる。
           「なぜこの金額か」を文章ではなく手続きで答える（2026-08-30 の方針変更）。
@@ -376,9 +391,19 @@ export default async function ResultPage({
 
       {/* 因数分解（本人・配偶者） */}
       <div className={s.section}>
-        <CaseCard pj={selfProjection} r={result.self} title="あなたが亡くなった場合" />
+        <CaseCard
+          coverage={input.coverageSelf}
+          pj={selfProjection}
+          r={result.self}
+          title="あなたが亡くなった場合"
+        />
         {result.spouse && spouseProjection && (
-          <CaseCard pj={spouseProjection} r={result.spouse} title="配偶者が亡くなった場合" />
+          <CaseCard
+            coverage={input.coverageSpouse ?? null}
+            pj={spouseProjection}
+            r={result.spouse}
+            title="配偶者が亡くなった場合"
+          />
         )}
       </div>
 

@@ -389,73 +389,18 @@
   margin: var(--space-5) 0;
 }
 
-.cfChart {
-  display: flex;
-  flex-direction: column;
-  height: 140px;
-  margin-top: var(--space-2);
-}
 
-.cfPos,
-.cfNeg {
-  display: flex;
-  gap: 1px;
-  align-items: flex-end;
-}
 
 /* マイナス側は 0 の線から下に伸びる */
-.cfNeg {
-  align-items: flex-start;
-}
 
-.cfZero {
-  height: 1px;
-  background: var(--color-border);
-}
 
-.cfCol {
-  flex: 1;
-  height: 100%;
-  display: flex;
-  align-items: flex-end;
-}
 
-.cfNeg .cfCol {
-  align-items: flex-start;
-}
 
-.cfBarPos {
-  width: 100%;
-  background: var(--chart-income-3);
-  border-radius: 2px 2px 0 0;
-}
 
 /* 貯蓄が尽きた年は Warning（オレンジ）。赤はシステムエラー専用 */
-.cfBarNeg {
-  width: 100%;
-  background: var(--color-warning);
-  border-radius: 0 0 2px 2px;
-}
 
-.cfAxis {
-  display: flex;
-  gap: 1px;
-  margin-top: var(--space-1);
-}
 
-.cfTick {
-  flex: 1;
-  text-align: center;
-  font-size: 10px;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
 
-.cfCaption {
-  font-size: var(--font-size-dense);
-  color: var(--color-text-secondary);
-  margin: var(--space-2) 0;
-}
 
 .cfPoints {
   margin: var(--space-3) 0;
@@ -514,4 +459,58 @@
 .cfRowNeg td,
 .cfRowNeg th {
   color: var(--color-warning-text);
+}
+
+/* 必要保障額の推移（US-04d）。棒＝必要額、横線＝いまの保障。同じ縦軸で2軸にしない */
+
+
+
+/* いまの保障。位置が意味を持つので、破線ではなく実線＋高コントラストにする */
+
+/* SVGグラフの枠。図・凡例・見出しをひとまとまりにする */
+.chartFigure {
+  margin: var(--space-4) 0;
+}
+
+.chartTitle {
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.chartSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  list-style: none;
+  padding: 0;
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+}
+
+.chartLegendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chartLegendChip {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.chartLegendLine {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  flex: none;
 }
