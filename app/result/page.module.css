@@ -682,3 +682,41 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ------------------------------------------------------------
+ * 配偶者のケース（要約＋開閉）
+ *
+ * 同じ長さのカードが2つ続くと体感の長さが倍になる。ただしタブにはしない ──
+ * 世帯の結論（rebalanceable）は両方を見ないと意味が伝わらず、タブだと片方が
+ * 最後まで見られない可能性がある。**閉じていても判定と金額は要約に出す。**
+ * ------------------------------------------------------------ */
+.spouseCase {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-5);
+}
+
+.spouseSummary {
+  cursor: pointer;
+  padding: var(--space-5);
+  min-height: var(--target-min);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.spouseSummaryTitle {
+  font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-bold);
+}
+
+.spouseSummaryVerdict {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+}
+
+/* 開いたときは、中のカードの枠が二重にならないようにする */
+.spouseCase .caseCard {
+  border: none;
+  padding-top: 0;
+}

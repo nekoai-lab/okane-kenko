@@ -27,10 +27,17 @@ export interface Vital {
   tone?: "good" | "warn";
 }
 
-export function Vitals({ items }: { items: Vital[] }) {
+export function Vitals({
+  items,
+  twoColumns = false,
+}: {
+  items: Vital[];
+  /** 文章の列（720px）に置くときは2列にする。4列だとラベルが潰れる */
+  twoColumns?: boolean;
+}) {
   if (items.length === 0) return null;
   return (
-    <dl className={s.vitals}>
+    <dl className={`${s.vitals} ${twoColumns ? s.vitalsTwo : ""}`}>
       {items.map((it) => (
         <div className={s.vitalTile} key={it.label}>
           <dt className={s.vitalLabel}>{it.label}</dt>
