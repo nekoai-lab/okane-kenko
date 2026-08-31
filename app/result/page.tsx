@@ -16,6 +16,8 @@ import { CoverageCurve } from "./CoverageCurve.js";
 import { GapWaterfall } from "./GapWaterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
+import type { Vital } from "./Vitals.js";
+import { Vitals } from "./Vitals.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
@@ -23,11 +25,34 @@ import { normalize } from "../../src/wizard/normalize.js";
 import { decodeSelections } from "../../src/wizard/url.js";
 import s from "./page.module.css";
 
-const HEADLINE: Record<string, { icon: string; label: string; tone: "good" | "warn" }> = {
-  all_covered: { icon: "✓", label: "いまの前提では、足りています", tone: "good" },
-  reducible: { icon: "💡", label: "減らせる余地がありそうです", tone: "good" },
-  rebalanceable: { icon: "🔁", label: "世帯全体で見直せそうです", tone: "good" },
-  shortage: { icon: "⚠", label: "足りない可能性があります", tone: "warn" },
+const HEADLINE: Record<
+  string,
+  { icon: string; label: string; short: string; tone: "good" | "warn" }
+> = {
+  all_covered: {
+    icon: "✓",
+    label: "いまの前提では、足りています",
+    short: "足りています",
+    tone: "good",
+  },
+  reducible: {
+    icon: "💡",
+    label: "減らせる余地がありそうです",
+    short: "減らせそう",
+    tone: "good",
+  },
+  rebalanceable: {
+    icon: "🔁",
+    label: "世帯全体で見直せそうです",
+    short: "見直せそう",
+    tone: "good",
+  },
+  shortage: {
+    icon: "⚠",
+    label: "足りない可能性があります",
+    short: "足りないかも",
+    tone: "warn",
+  },
 };
 
 /**
@@ -103,7 +128,7 @@ function CaseCard({
 
   return (
     <div className={s.caseCard}>
-      <h2 className={s.caseTitle}>{title}</h2>
+      <h2 className={s.h2}>{title}</h2>
       <div
         className={`${s.verdictLine} ${verdict.tone === "good" ? s.good : verdict.tone === "warn" ? s.warn : ""}`}
       >
@@ -177,8 +202,12 @@ function CaseCard({
         verdict={r.verdict}
       />
 
-      {/* 因数分解：支出 */}
-      <div className={s.subhead}>どうしてこの金額？ ─ 見込みの支出</div>
+      {/* 因数分解の2表は**畳む**（第3層）。結論と根拠の図までで足りる人が大半で、
+          常時展開しておくと画面が「縦の羅列」に戻る。開けば同じ情報がすべてある */}
+      <details className={s.criteria}>
+        <summary>金額の内訳を見る（支出・収入）</summary>
+
+      <h3 className={s.h3}>どうしてこの金額？ ─ 見込みの支出</h3>
       <div className={s.rows}>
         {expenseItems.map((x, i) => (
           <div className={s.row} key={x.label}>
@@ -202,8 +231,7 @@ function CaseCard({
         </div>
       </div>
 
-      {/* 因数分解：収入 */}
-      <div className={s.subhead}>受け取れる見込みの収入・資産</div>
+      <h3 className={s.h3}>受け取れる見込みの収入・資産</h3>
       <div className={s.rows}>
         {incomeItems.map((x, i) => (
           <div className={s.row} key={x.label}>
@@ -230,7 +258,7 @@ function CaseCard({
       {/* 推定で補った前提 */}
       {r.assumptions.length > 0 && (
         <>
-          <div className={s.subhead}>推定で補った前提</div>
+          <h3 className={s.h3}>推定で補った前提</h3>
           <ul className={s.assumptions}>
             {r.assumptions.map((a) => (
               <li key={a.field}>{a.note}</li>
@@ -238,6 +266,7 @@ function CaseCard({
           </ul>
         </>
       )}
+      </details>
     </div>
   );
 }
@@ -303,6 +332,56 @@ export default async function ResultPage({
 
   // 減らせる箇所（無ければ「見つかりませんでした」と明示する＝沈黙で誤解させない）
   const totalExcess = result.householdHeadline.totalExcess;
+  const totalShortage = result.householdHeadline.totalShortage;
+
+  /**
+   * 検査値パネル（拾い読みの入口）。
+   * **同じ内容はすべて下の本文と図が根拠つきで持っている。** ここだけで判断させない。
+   */
+  const selfCurve = coverageCurve(selfProjection, result.self.income.assets);
+  const cov = input.coverageSelf;
+  const coveredFrom = cov === null ? null : (selfCurve.find((pt) => pt.need <= cov) ?? null);
+  const tightest = selfProjection.tightest;
+  const vitals: Vital[] = [
+    {
+      label: "世帯の判定",
+      value: h ? h.short : "保留",
+      note: h ? "内訳は下に出しています" : "いまの保険が分からないため",
+      tone: h ? h.tone : "muted",
+      icon: h ? h.icon : "ℹ",
+    },
+    {
+      label: totalShortage > 0 ? "足りない額（世帯）" : "減らせる額（世帯）",
+      value: totalShortage > 0 ? `約${money(totalShortage)}` : totalExcess > 0 ? `約${money(totalExcess)}` : "0円",
+      note: totalShortage > 0 ? "いまの保障との差" : "保険料が浮きます",
+      tone: totalShortage > 0 ? "warn" : "good",
+    },
+    {
+      label: "いちばん細い年",
+      value: tightest ? `${tightest.year}年ごろ` : "—",
+      note: tightest ? "その年の収支がいちばん小さい" : "算定期間が短いため出せません",
+    },
+    selfProjection.depletedAt
+      ? {
+          label: "貯蓄が尽きる年",
+          value: `${selfProjection.depletedAt.year}年ごろ`,
+          note: "この前提のままだと",
+          tone: "warn" as const,
+        }
+      : coveredFrom
+        ? {
+            label: "いまの保障で足りる年",
+            value: `${coveredFrom.year}年ごろ`,
+            note: "これ以降は上乗せ不要の見込み",
+            tone: "good" as const,
+          }
+        : {
+            label: "貯蓄が尽きる年",
+            value: "ありません",
+            note: "この前提では最後まで残る見込み",
+            tone: "good" as const,
+          },
+  ];
 
   // 進路 what-if（子がいる世帯だけ）：公立/私立で必要額（あなた）がどう変わるか
   const eduWhatIf =
@@ -329,18 +408,24 @@ export default async function ResultPage({
           <span className={s.icon} aria-hidden="true">
             {h.icon}
           </span>
-          <span>{h.label}</span>
+          {/* 結論をそのまま h1 にする。読み上げでも最初に結論が来る */}
+          <h1 className={s.h1}>{h.label}</h1>
         </div>
       ) : (
         <div className={`${s.headline} ${s.pending}`}>
           <span className={s.icon} aria-hidden="true">
             ℹ
           </span>
-          <span>
+          <h1 className={s.h1}>
             いまの保険内容が分からないので、過不足はまだ出していません。必要な保障額の目安だけお見せします。証券が見つかったら再診断できます。
-          </span>
+          </h1>
         </div>
       )}
+
+      {/* 検査値パネル。健康診断書がまず数値の表を出すのと同じ順序にする */}
+      <div className={s.wide}>
+        <Vitals items={vitals} />
+      </div>
 
       <p className={s.meta}>
         これは<strong>概算・要精査</strong>です／算定基準日：{new Date().toISOString().slice(0, 10)}
@@ -389,8 +474,11 @@ export default async function ResultPage({
         </div>
       </div>
 
-      {/* 因数分解（本人・配偶者） */}
-      <div className={s.section}>
+      {/* 因数分解（本人・配偶者）
+          **全幅にはしない。** 一度広げてみたが、SVG は viewBox で伸縮するので
+          図を広げると軸の文字まで拡大されて崩れる。30本の棒も6列の表も720pxで足りており、
+          実際に幅を必要としていたのは検査値パネル（4列）だけだった。 */}
+      <div className={`${s.section} ${s.sectionMajor}`}>
         <CaseCard
           coverage={input.coverageSelf}
           pj={selfProjection}
@@ -419,7 +507,7 @@ export default async function ResultPage({
       {/* 進路 what-if（子がいる世帯だけ） */}
       {eduWhatIf.length > 0 && (
         <div className={s.section}>
-          <div className={s.subhead}>進路で教育費はこう変わる（お子さん合計）</div>
+          <h2 className={s.h2}>進路で教育費はこう変わる（お子さん合計）</h2>
           <div className={s.rows}>
             {eduWhatIf.map((w) => (
               <div className={s.row} key={w.label}>
@@ -449,7 +537,7 @@ export default async function ResultPage({
 
       {/* 次の一歩（T-06）。文面は保険業法の自己診断サンプル（正式レビュー前） */}
       <div className={s.section}>
-        <div className={s.subhead}>次の一歩</div>
+        <h2 className={s.h2}>次の一歩</h2>
         {(result.householdHeadline.kind === "reducible" ||
           result.householdHeadline.kind === "rebalanceable") && (
           <p className={s.meta}>
@@ -492,7 +580,7 @@ export default async function ResultPage({
 
       {/* 参考リンク（公的機関のみ・商品導線は置かない＝受入基準A-4） */}
       <div className={s.section}>
-        <div className={s.subhead}>参考（公的機関）</div>
+        <h2 className={s.h2}>参考（公的機関）</h2>
         <ul className={s.list}>
           <li>
             <a

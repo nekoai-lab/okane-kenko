@@ -64,7 +64,7 @@ export function CoverageCurve({
 
   return (
     <div className={s.cashflow}>
-      <div className={s.subhead}>必要な保障は、これから減っていきます</div>
+      <h3 className={s.h3}>必要な保障は、これから減っていきます</h3>
 
       <ChartFrame
         labelEvery={every}
