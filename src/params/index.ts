@@ -150,14 +150,27 @@ export function assertUsable(
     throw new ParamsExpiredError(p.version, coreKeys);
   }
   if (opts.strictVerified) {
-    const unverified = [...Object.entries(p.public), ...Object.entries(p.toBeSourced)]
-      .filter(([, e]) => e.verified === false)
-      .map(([k]) => k);
-    // 教育費セクションの未確認値も本番に漏らさない（大学・就学支援金は二次情報のため）。
-    if (p.education.university.verified === false) unverified.push("education.university");
-    if (p.education.shien.verified === false) unverified.push("education.shien");
+    const unverified = unverifiedKeys(p);
     if (unverified.length > 0) throw new ParamsUnverifiedError(unverified);
   }
+}
+
+/**
+ * 一次情報で未確認（`verified: false`）のパラメータのキー一覧。
+ *
+ * **本番ゲート（assertUsable）と画面の「検証版」表示が、同じ判定を使うために切り出した。**
+ * 別々に書くと必ずずれる ── 全部 verified になったのにバナーが残る（嘘の注意書き）か、
+ * 未確認が残っているのにバナーが消える（黙って誤った金額を出す）。後者はこの製品が
+ * いちばん避けたい壊れ方なので、判定はここ1か所に置く。
+ */
+export function unverifiedKeys(p: ParamSet): string[] {
+  const keys = [...Object.entries(p.public), ...Object.entries(p.toBeSourced)]
+    .filter(([, e]) => e.verified === false)
+    .map(([k]) => k);
+  // 教育費セクションの未確認値も本番に漏らさない（大学・就学支援金は二次情報のため）。
+  if (p.education.university.verified === false) keys.push("education.university");
+  if (p.education.shien.verified === false) keys.push("education.shien");
+  return keys;
 }
 
 /** 結果画面で「当社基準」として明示し、本人が動かせる値の一覧（ADR-014） */

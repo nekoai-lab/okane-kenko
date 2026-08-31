@@ -1,0 +1,74 @@
+.page {
+  max-width: var(--layout-content-max);
+  margin: 0 auto;
+  padding: var(--space-7) var(--layout-margin-mobile) var(--space-9);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.title {
+  font-size: var(--font-size-std-l);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-4);
+}
+
+.lead {
+  font-size: var(--font-size-std-xs);
+  line-height: var(--line-height-body);
+  margin: 0 0 var(--space-7);
+}
+
+.points {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-7);
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* 「保険を売らない」は、この診断を信じてよい理由そのものなので最初に置く。
+   ただし色で強調はしない（良い知らせは結果画面で出す。入口で煽らない）。 */
+.point {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-card);
+  border-left: 6px solid var(--color-border);
+  background: var(--color-surface-subtle);
+}
+
+.pointTitle {
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-1);
+}
+
+.pointBody {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target-min);
+  padding: var(--space-3) var(--space-6);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: var(--color-text-on-inverse);
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+}
+
+.notes {
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-divider);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-dense);
+}
+
+.notes li {
+  margin-bottom: var(--space-2);
+}

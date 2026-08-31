@@ -1,0 +1,18 @@
+/* 検証版の告知。**煽らないこと**が要件なので、赤（Error）も警告色も使わない。
+   これは利用者の家計についての警告ではなく、このビルドの状態の説明だから。
+   地は中立トーンにとどめ、左ボーダーと文字色でだけ存在を示す。 */
+.draftBanner {
+  padding: var(--space-3) var(--layout-margin-mobile);
+  border-bottom: 1px solid var(--color-divider);
+  border-left: 6px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-dense);
+  line-height: var(--line-height-body);
+}
+
+.draftBannerInner {
+  max-width: var(--layout-content-max);
+  margin: 0 auto;
+}
