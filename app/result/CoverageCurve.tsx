@@ -8,15 +8,16 @@
  * 顧客の関心が金額そのものではなく「いつまで続く話なのか」にあるため（2026-08-31）。
  *
  * 設計上の決めごと：
- * - 棒（必要額）と横線（いまの保障）は**同じ縦軸**。2軸にはしない（デザイン方針の禁止事項）
- * - 棒は装飾（`aria-hidden`）。**交差する年や金額はすべて文字で書く**
- * - 「いまの保障で足りるようになる年」を言い切らず「見込み」と書く。
- *   前提が変われば動く数字なので、断定は信用を落とす
+ * - 面（必要額）と横線（いまの保障）は**同じ縦軸**。2軸にはしない（デザイン方針の禁止事項）
+ * - **交差する年（いまの保障で足りるようになる年）に印を付ける。** ここがこの図の要点
+ * - 「足りるようになる年」を言い切らず「見込み」と書く。前提が変われば動く数字なので
  * - 保険がいつまで続くか（定期／終身）は**まだ聞いていない**ので、いまの保障は
  *   水平線で描く。実際には定期が切れると階段状に下がる。ここは入力を増やす判断が要る
  */
 import type { CoveragePoint } from "../../src/calc/projection.js";
 import { formatMan } from "../../src/design/tokens.js";
+import { ChartFrame, plotBottom, plotTop, xAt, yAt } from "./ChartFrame.js";
+import { linearScale } from "./chartScale.js";
 import s from "./page.module.css";
 
 export function CoverageCurve({
@@ -33,7 +34,7 @@ export function CoverageCurve({
 
   // **必要額がずっと0の世帯にグラフを出さない。**
   // 棒が1本も立たない絵は、情報がないどころか「壊れている」と読まれる。
-  // ここは良い知らせなので、絵ではなく言葉で言い切る（デザイン方針「良い知らせは良い知らせとして届ける」）。
+  // ここは良い知らせなので、絵ではなく言葉で言い切る（「良い知らせは良い知らせとして届ける」）。
   if (maxNeed <= 0) {
     return (
       <div className={s.reduce}>
@@ -47,50 +48,84 @@ export function CoverageCurve({
     );
   }
 
-  // 縦軸は「必要額の最大」と「いまの保障」の大きいほう。どちらも切れないようにする
-  const scale = Math.max(maxNeed, coverage ?? 0);
-  if (scale <= 0) return null;
+  const n = points.length;
+  const years = points.map((p) => p.year);
+  const every = n > 25 ? 10 : 5;
+  const scale = linearScale(0, Math.max(maxNeed, coverage ?? 0));
 
   // いまの保障が必要額に追いつく最初の年（＝それ以降は上乗せが要らなくなる見込み）
-  const crossing = coverage === null ? null : (points.find((p) => p.need <= coverage) ?? null);
-  const coverageTop = coverage === null ? 0 : (coverage / scale) * 100;
+  const crossingIndex = coverage === null ? -1 : points.findIndex((p) => p.need <= coverage);
+  const crossing = crossingIndex >= 0 ? points[crossingIndex] : null;
 
-  const every = points.length > 25 ? 10 : 5;
+  // 必要額の面。下端（0の線）で閉じる
+  const area = `M${xAt(0, n).toFixed(1)},${yAt(scale, 0).toFixed(1)} ${points
+    .map((p, i) => `L${xAt(i, n).toFixed(1)},${yAt(scale, p.need).toFixed(1)}`)
+    .join(" ")} L${xAt(n - 1, n).toFixed(1)},${yAt(scale, 0).toFixed(1)} Z`;
 
   return (
     <div className={s.cashflow}>
       <div className={s.subhead}>必要な保障は、これから減っていきます</div>
 
-      <div aria-hidden="true" className={s.ccChart}>
-        {coverage !== null && (
-          <div className={s.ccCoverage} style={{ bottom: `${coverageTop}%` }} />
-        )}
-        <div className={s.ccBars}>
-          {points.map((p) => (
-            <div className={s.cfCol} key={p.year}>
-              <div className={s.ccBar} style={{ height: `${(p.need / scale) * 100}%` }} />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div aria-hidden="true" className={s.cfAxis}>
-        {points.map((p, i) => (
-          <div className={s.cfTick} key={`t-${p.year}`}>
-            {i % every === 0 ? p.year - 2000 : ""}
-          </div>
-        ))}
-      </div>
+      <ChartFrame
+        labelEvery={every}
+        legend={[
+          { label: "そこから先に必要な保障", color: "var(--chart-expense-3)" },
+          ...(coverage !== null
+            ? [
+                {
+                  label: `いまの保障 約${formatMan(coverage)}`,
+                  color: "var(--color-accent)",
+                  line: true,
+                },
+              ]
+            : []),
+        ]}
+        scale={scale}
+        summary={
+          crossing
+            ? `必要な保障は年々下がり、${crossing.year}年ごろにいまの保障で足りるようになる見込み。単位は万円。`
+            : `必要な保障は年々下がる見込み。単位は万円。`
+        }
+        title="その年に万一があったとき、そこから先に必要な保障（万円）"
+        years={years}
+      >
+        <path d={area} fill="var(--chart-expense-3)" fillOpacity="0.85" />
 
-      <p className={s.cfCaption}>
-        縦棒は<strong>その年に万一があったとき、そこから先に必要な保障</strong>
-        （横軸は西暦の下2桁）。
-        {coverage !== null ? (
-          <>
-            {" "}
-            横の線が<strong>いまの保障 約{formatMan(coverage)}</strong>です。
-          </>
-        ) : null}
-      </p>
+        {coverage !== null && (
+          <line
+            stroke="var(--color-accent)"
+            strokeWidth="2"
+            x1={xAt(0, n)}
+            x2={xAt(n - 1, n)}
+            y1={yAt(scale, coverage)}
+            y2={yAt(scale, coverage)}
+          />
+        )}
+
+        {/* 交差する年に印。この図でいちばん言いたいことなので、図の中でも指す */}
+        {crossing && crossingIndex > 0 && (
+          <g>
+            <line
+              stroke="var(--color-success)"
+              strokeDasharray="3 3"
+              strokeWidth="1.5"
+              x1={xAt(crossingIndex, n)}
+              x2={xAt(crossingIndex, n)}
+              y1={plotTop}
+              y2={plotBottom}
+            />
+            <text
+              fill="var(--color-success-text)"
+              fontSize="11"
+              textAnchor={crossingIndex > n * 0.7 ? "end" : "start"}
+              x={xAt(crossingIndex, n) + (crossingIndex > n * 0.7 ? -4 : 4)}
+              y={plotTop + 11}
+            >
+              ここで足りるようになります
+            </text>
+          </g>
+        )}
+      </ChartFrame>
 
       <ul className={s.cfPoints}>
         <li>
@@ -101,7 +136,7 @@ export function CoverageCurve({
             実際の値を比べてから書く（事実と違う言い方をしない） */}
         <li>
           {(() => {
-            const i = points.length > 10 ? 10 : points.length - 1;
+            const i = n > 10 ? 10 : n - 1;
             const label = i === 10 ? "10年後" : `最後（${points[i].year}年）`;
             const dir =
               points[i].need < points[0].need
@@ -117,7 +152,7 @@ export function CoverageCurve({
           })()}
         </li>
         {coverage !== null && crossing ? (
-          crossing.year === points[0].year ? (
+          crossingIndex === 0 ? (
             <li>
               <strong>いまの保障は、すでに必要額を上回っています</strong>
               （いまの前提では、上乗せは要りません）
