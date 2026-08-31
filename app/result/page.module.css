@@ -671,3 +671,14 @@
 .compare .basis {
   max-width: var(--layout-reading-max);
 }
+
+/* 前提の before/after は2列固定（デスクトップでも4列にしない） */
+.vitalsTwo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .vitalsTwo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

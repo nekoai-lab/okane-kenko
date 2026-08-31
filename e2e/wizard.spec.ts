@@ -114,15 +114,15 @@ test("重い経路：配偶者あり・持ち家ローンあり・保障額あ�
   await expectNoHorizontalOverflow(page, "result(結論)");
   await page.screenshot({ path: "test-results/result-verdict.png", fullPage: true });
 
-  // 当社基準スライダー：生活費を上げると必要額（あなた）がライブ再計算される
+  // 当社基準スライダー：生活費を上げると「変更後」がライブ再計算され、現状と並んで出る
   const slider = page.getByRole("slider");
   await expect(slider).toBeVisible();
-  const resultText = page.getByText("必要な保障額（あなた）：");
-  const before = await resultText.textContent();
+  // 動かす前は「変更後」に値が無い（動かしてはじめて出る）
+  await expect(page.getByText("スライダーを動かすとここに出ます")).toBeVisible();
   await slider.fill("45"); // 生活費を上限(45万)へ
-  await expect(async () => {
-    expect(await resultText.textContent()).not.toBe(before);
-  }).toPass({ timeout: 5000 });
+  // 現状は残り、変更後に差分が出る（before/after で並ぶことがこの機能の要点）
+  await expect(page.getByText("ご入力どおりの前提")).toBeVisible();
+  await expect(page.getByText(/現状より .*(増えます|減ります)/)).toBeVisible({ timeout: 5000 });
   await expectNoHorizontalOverflow(page, "result(slider)");
 });
 
