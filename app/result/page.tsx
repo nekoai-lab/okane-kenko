@@ -328,6 +328,41 @@ export default async function ResultPage({
   const cov = input.coverageSelf;
   const coveredFrom = cov === null ? null : (selfCurve.find((pt) => pt.need <= cov) ?? null);
   const tightest = selfProjection.tightest;
+  /**
+   * この診断が前提にした「いまの家計」。
+   *
+   * **新しい算定はしていない。入力を読み返しているだけ。**
+   * FPの実務資料が例外なく「まずは現状把握が大切です」から始めるのは、
+   * 前提が違えば結論も違うから。ここに出しておけば、入力の取り違えに本人が気づける。
+   */
+  const household: Vital[] = [
+    {
+      label: "世帯の年収（額面）",
+      value: `約${money(input.self.income + (input.spouse?.income ?? 0))}`,
+      note: input.spouse ? "ご本人＋配偶者" : "ご本人のみ",
+    },
+    {
+      label: "毎月の生活費",
+      value: `約${Math.round(input.monthlyLiving / 10000)}万円`,
+      note: "ご申告または年収からの推定",
+    },
+    { label: "金融資産", value: `約${money(input.assets)}`, note: "貯蓄・運用の合計" },
+    {
+      label: "住まい",
+      value:
+        input.housing.type === "rent"
+          ? "賃貸"
+          : (input.housing.loan ?? 0) > 0
+            ? "持ち家（ローンあり）"
+            : "持ち家（ローンなし）",
+      note:
+        input.housing.type === "own" && (input.housing.loan ?? 0) > 0
+          ? // 団信は初出で1行注釈を付ける（CLAUDE.md）。ここが結果画面での初出になる
+            `残り約${money(input.housing.loan ?? 0)}／団信（亡くなるとローンが消える保険）${input.housing.danshin === false ? "なし" : "あり"}`
+          : "住居費は生活費に含めています",
+    },
+  ];
+
   const vitals: Vital[] = [
     {
       // 金額の呼び名は verdict で変える（同じ名前で別の数を出さない・2026-08-30 の修正と同じ理由）
@@ -430,6 +465,22 @@ export default async function ResultPage({
         values={placeholderValues(result)}
       />
 
+      {/* この診断が前提にした「いまの家計」。前提が違えば結論も違うので、
+          本人が取り違えに気づけるようにしておく（FPの「まず現状把握」にあたる） */}
+      <div className={`${s.section} ${s.sectionMajor}`}>
+        <h2 className={s.h2}>この診断が前提にした、いまの家計</h2>
+        {/* こちらは文章の列に収まる位置なので2×2にする。720px幅で4列にすると
+            「世帯の年収（額面）」のようなラベルが潰れる */}
+        <Vitals items={household} twoColumns />
+        <p className={s.basis}>
+          違っていたら{" "}
+          <Link className={s.link} href={`/wizard?${q.toString()}`}>
+            入力をやり直せます
+          </Link>
+          。前提が変われば結論も変わります。
+        </p>
+      </div>
+
       {/* この診断で分かること／分からないこと（先に線を引く・T-06） */}
       <div className={s.section}>
         <div className={s.scope}>
@@ -474,13 +525,34 @@ export default async function ResultPage({
           r={result.self}
           title="あなたが亡くなった場合"
         />
+        {/* 配偶者側は**要約1行＋開閉**にする。
+            同じ長さのカードが2つ続くと、体感の長さが倍になって読まれなくなる。
+            ただしタブにはしない ── 世帯の結論（rebalanceable）は両方を見ないと意味が伝わらず、
+            タブだと片方が最後まで見られない可能性がある。
+            **閉じていても判定と金額は要約に出す**ので、結論そのものは必ず届く。 */}
         {result.spouse && spouseProjection && (
-          <CaseCard
-            coverage={input.coverageSpouse ?? null}
-            pj={spouseProjection}
-            r={result.spouse}
-            title="配偶者が亡くなった場合"
-          />
+          <details className={s.spouseCase}>
+            <summary className={s.spouseSummary}>
+              <span className={s.spouseSummaryTitle}>配偶者が亡くなった場合</span>
+              {/* **判定と過不足を並べない。** verdict（必要額の大きさ）と gap（いまの保障との差）は
+                  別の話なので、つなげると「十分に足りています／約200万円 足りていません」のような
+                  矛盾した1行になる（実際になった）。要約では行動につながる過不足を優先し、
+                  過不足が出ていないときだけ判定を出す。両方の意味は開けば書いてある。 */}
+              <span className={s.spouseSummaryVerdict}>
+                {result.spouse.gap.kind === "shortage"
+                  ? `いまの保障より 約${money(result.spouse.gap.amount)} 足りていません`
+                  : result.spouse.gap.kind === "excess"
+                    ? `いまの保障は 約${money(result.spouse.gap.amount)} 減らせそうです`
+                    : (VERDICT[result.spouse.verdict]?.label ?? VERDICT.sufficient.label)}
+              </span>
+            </summary>
+            <CaseCard
+              coverage={input.coverageSpouse ?? null}
+              pj={spouseProjection}
+              r={result.spouse}
+              title="配偶者が亡くなった場合"
+            />
+          </details>
         )}
       </div>
 

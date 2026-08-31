@@ -682,3 +682,88 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ------------------------------------------------------------
+ * 配偶者のケース（要約＋開閉）
+ *
+ * 同じ長さのカードが2つ続くと体感の長さが倍になる。ただしタブにはしない ──
+ * 世帯の結論（rebalanceable）は両方を見ないと意味が伝わらず、タブだと片方が
+ * 最後まで見られない可能性がある。**閉じていても判定と金額は要約に出す。**
+ * ------------------------------------------------------------ */
+.spouseCase {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-5);
+}
+
+.spouseSummary {
+  cursor: pointer;
+  padding: var(--space-5);
+  min-height: var(--target-min);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.spouseSummaryTitle {
+  font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-bold);
+}
+
+.spouseSummaryVerdict {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+}
+
+/* 開いたときは、中のカードの枠が二重にならないようにする */
+.spouseCase .caseCard {
+  border: none;
+  padding-top: 0;
+}
+
+/* ------------------------------------------------------------
+ * 注目する年（FPの表には無い部分）
+ * 全年を等しく並べても、どこを見ればよいかは分からない。先に抜き出す。
+ * ------------------------------------------------------------ */
+.keyYears {
+  margin: var(--space-5) 0;
+}
+
+/* 「なぜ見ておくか」「できごと」は文章なので、数字の右寄せから外す */
+.cfWhy {
+  text-align: left !important;
+  white-space: normal !important;
+  min-width: 12em;
+}
+
+/* ------------------------------------------------------------
+ * ことばの意味（用語の1行注釈）
+ * CLAUDE.md の「専門用語は初出で1行注釈」が結果画面で守られていなかった。
+ * 対面のFPなら口頭で補える部分を、紙が自分で説明しきる必要がある。
+ * ------------------------------------------------------------ */
+.terms {
+  margin: var(--space-2) 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-subtle);
+  font-size: var(--font-size-dense);
+}
+
+.termRow {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.termRow:last-child {
+  margin-bottom: 0;
+}
+
+.termName {
+  font-weight: var(--font-weight-bold);
+}
+
+.termNote {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
