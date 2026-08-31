@@ -1,0 +1,61 @@
+# GitHub の main に push されたら、ビルドして Cloud Run に出す。
+#
+# gemini-case-navi と同じ形（Cloud Build トリガー）。手元に Docker は要らない ─
+# ビルドはここで走る。トリガーの作成は README ではなく docs/本番前チェックリスト.md「G」に書く。
+#
+# 注意：**検証ビルドの間は verified:false のパラメータが残っている。**
+# 本番として開ける（strictVerified を有効にする）のは、A〜C を潰してから。
+
+substitutions:
+  _SERVICE: okane-kenko
+  _REGION: asia-northeast1
+  _REPO: okane-kenko
+
+steps:
+  # 1. イメージを作る。$SHORT_SHA で「どのコミットが動いているか」を後から追えるようにする
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    id: push
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}
+
+  # 2. Cloud Run に出す。
+  #    GEMINI_API_KEY は Secret Manager から渡す（値をこのファイルにも環境変数にも書かない）。
+  #    鍵が未設定でも診断は成立する（AI言語化が定型文に退避するだけ）ので、
+  #    秘密が用意できていない段階でもデプロイできる。
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --cpu=1
+      - --memory=512Mi
+      - --min-instances=0
+      - --max-instances=3
+      - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8

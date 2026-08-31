@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Cloud Run に載せるため、依存ごと1つに畳んだ出力を作る（Dockerfile がこれを使う）。
+  // Vercel に出す場合も無害（Vercel は独自にビルドする）。
+  output: "standalone",
   // 算定は params/*.yaml を実行時に readFileSync で読む（src/params/index.ts）。
   // Vercel のサーバーレス関数トレースは実行時パスを追えないので、明示的に同梱する。
   // これを忘れると本番だけ「パラメータが見つかりません」で静かに壊れる。

@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.githooks
+.claude
+.cursor
+e2e
+bakeoff-out
+docs
+*.md
+.env*
+playwright-report
+test-results
