@@ -13,6 +13,6 @@
 }
 
 .draftBannerInner {
-  max-width: var(--layout-content-max);
+  max-width: var(--layout-reading-max);
   margin: 0 auto;
 }

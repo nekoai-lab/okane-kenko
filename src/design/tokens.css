@@ -87,49 +87,91 @@
   --dg-black: #000000;
 
   /* ============================================================
+   * プリミティブカラー（Airbnb・getdesign.md の DESIGN.md より）
+   *
+   * 2026-08-31 の判断で、面と文字とブランド色をこちらに寄せた。
+   * 「洗練された明るさ」＝白キャンバス＋広い余白＋大きめ角丸、という骨格が要るため。
+   * 使うのはトークン定義の中だけ。UIコードから直接参照しない。
+   * ============================================================ */
+  --ab-rausch: #ff385c; /* 唯一のブランド色。CTA とアクセント */
+  --ab-rausch-active: #e00b41;
+  --ab-rausch-disabled: #ffd1da;
+  --ab-error-text: #c13515; /* ブランドの赤と**明度で分ける**ためのエラー色 */
+  --ab-error-text-hover: #b32505;
+  --ab-ink: #222222;
+  --ab-body: #3f3f3f;
+  --ab-muted: #6a6a6a;
+  --ab-hairline: #dddddd;
+  --ab-hairline-soft: #ebebeb;
+  --ab-canvas: #ffffff;
+  --ab-surface-soft: #f7f7f7;
+  --ab-surface-strong: #f2f2f2;
+
+  /* ============================================================
    * セマンティックカラー（このプロダクトの意味）
    * UIコードはここだけを参照する。
    * ============================================================ */
 
   /* 面 */
-  --color-surface: var(--dg-white);
-  --color-surface-subtle: var(--dg-gray-50);
-  --color-surface-inverse: var(--dg-blue-1000);
+  --color-surface: var(--ab-canvas);
+  --color-surface-subtle: var(--ab-surface-soft);
+  --color-surface-strong: var(--ab-surface-strong);
+  --color-surface-inverse: var(--ab-ink);
 
   /* 文字 */
-  --color-text: var(--dg-gray-900);
-  --color-text-secondary: var(--dg-gray-700);
-  --color-text-muted: var(--dg-gray-536);
+  --color-text: var(--ab-ink);
+  --color-text-secondary: var(--ab-body);
+  --color-text-muted: var(--ab-muted); /* #6a6a6a は白地で 5.7:1 */
   --color-text-on-inverse: var(--dg-white);
 
   /* 罫線 */
-  --color-border: var(--dg-gray-300);
-  --color-divider: var(--dg-gray-100);
+  --color-border: var(--ab-hairline);
+  --color-divider: var(--ab-hairline-soft);
 
-  /* 主要 */
-  --color-primary: var(--dg-blue-1000);
-  --color-link: var(--dg-blue-1000);
-  --color-link-visited: var(--dg-magenta-900);
+  /* 主要
+   *
+   * **ブランドの赤は CTA と、利用者が自分で動かすコントロールだけに使う。**
+   * Airbnb も Rausch を載せるのは主要CTA・検索・お気に入りに限っていて、
+   * 情報の線や進捗には使わない。ここを守らないと画面が赤だらけになり、
+   * 「押してほしい場所」と「ただの区切り」が区別できなくなる。
+   * 線・進捗・選択枠のような情報アクセントは ink（--color-accent）を使う。 */
+  --color-primary: var(--ab-rausch);
+  --color-primary-active: var(--ab-rausch-active);
+  --color-primary-disabled: var(--ab-rausch-disabled);
+  --color-accent: var(--ab-ink);
+
+  /* リンクは Airbnb の編集面と同じく「濃い文字＋下線」。
+     白地の青リンク（#428bff）はコントラストが 3.1:1 しかなく本文に使えない。
+     下線があれば色に頼らずリンクだと分かる。 */
+  --color-link: var(--ab-ink);
+  --color-link-visited: var(--ab-muted);
 
   /* フォーカス（デジタル庁DSの規定。いかなる場合も変更しない） */
   --color-focus-inner: var(--dg-yellow-300);
   --color-focus-outer: var(--dg-black);
 
-  /* 状態 */
+  /* 状態
+   *
+   * **ブランド色が赤（Rausch）になったので、「赤＝システムエラー」では区別できない。**
+   * 代わりに Airbnb 自身の解き方に倣い、**明度で分ける**：
+   *   ブランド #ff385c（明るい）／エラー #c13515（暗く、茶寄り）。
+   * 不足の橙（#c74700）はさらに茶寄りで、3色は隣り合っても混ざらない。
+   * それでも色だけには頼らない ── 判定は「アイコン＋ラベル＋色」の3点で出す。 */
   --color-success: var(--dg-green-600);
   --color-success-text: var(--dg-green-800);
-  --color-warning: var(--dg-orange-600);
+  --color-warning: var(--dg-orange-700);
   --color-warning-text: var(--dg-orange-800);
-  --color-error: var(--dg-red-800);
-  --color-error-text: var(--dg-red-900);
+  --color-error: var(--ab-error-text);
+  --color-error-text: var(--ab-error-text-hover);
   --color-error-bg: var(--dg-red-50);
 
   /* ------------------------------------------------------------
    * 診断結果の判定色 ─ このプロダクト固有の割り当て
    *
-   * 「煽らない」という芯があるので、赤はシステムエラーだけに使う。
    * 保障の不足はエラーではないので warning（橙）にする。
    * 減らせる＝保険料が浮く＝良い知らせなので success（緑）にする。
+   * **ブランドの赤を判定に使わない。** CTA と同じ色で「不足」を塗ると、
+   * 押させたい場所と不安を示す場所が同じ色になり、煽りになる。
    * 色だけで意味を伝えないため、必ずラベルとアイコンを併記すること。
    * ------------------------------------------------------------ */
   --color-verdict-shortage: var(--color-warning); /* 不足している */
@@ -205,8 +247,14 @@
   --line-height-dense: 1.3;
   --line-height-oneline: 1;
 
+  /* Airbnb は見出しを 500/600 で組む。**700 以上の太字は使わない** ──
+     写真と余白で語る設計なので、文字を太らせて主張させない。
+     このプロダクトも主役は数字と根拠なので、その考え方が合う。
+     `--font-weight-bold` の値を 600 に下げることで、各画面の CSS を
+     1行も触らずに「軽い見出し」へ寄せている。 */
   --font-weight-normal: 400;
-  --font-weight-bold: 700;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
 
   /* ------------------------------------------------------------
    * レイアウト（デジタル庁DSの規定）
@@ -218,6 +266,10 @@
   --layout-gutter-tablet: 24px;
   --layout-gutter-desktop: 32px;
   --layout-content-max: 1120px;
+
+  /* **読み物の幅**。1120px いっぱいに和文を流すと1行が長すぎて目が戻れない
+     （2026-08-31 の指摘「読みづらい」の主因）。本文は必ずこの幅に収める。 */
+  --layout-reading-max: 720px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -246,19 +298,21 @@
    * ------------------------------------------------------------ */
 
   /* 8px を基準にした余白。セクション間は大きく取り、画面を詰めない */
-  --space-section: 80px; /* セクションの上下 */
+  --space-section: 64px; /* セクションの上下（Airbnb の spacing.section） */
   --space-section-sm: 48px; /* モバイル */
   --space-card: 24px; /* カード内側 */
 
-  /* 形 */
+  /* 形（Airbnb の rounded スケール。**どこにも硬い角を作らない**） */
   --radius-pill: 9999px; /* CTA・チップは必ずピル型 */
-  --radius-card: 18px;
-  --radius-control: 8px;
+  --radius-card: 14px; /* rounded.md。カード */
+  --radius-panel: 20px; /* rounded.lg。大きな面 */
+  --radius-control: 8px; /* rounded.sm。ボタン・入力欄 */
   --radius-tile: 0; /* 全幅タイルは角を丸めない */
 
-  /* 奥行きは1つだけ。主役（結果カード）にしか使わない。
-     ボタン・入力欄・通常のカードには影を付けない */
-  --shadow-hero: 0 5px 30px rgba(0, 0, 0, 0.08);
+  /* 奥行きは**1段だけ**（Airbnb はシステム全体でこの1定義しか持たない）。
+     95%の面は影なし。深さは面の色と角丸で出す。 */
+  --shadow-hero: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0,
+    rgba(0, 0, 0, 0.1) 0 4px 8px 0;
   --backdrop-sticky: saturate(180%) blur(20px);
 
   /* 字送り。大きな数字だけ少し詰めると、締まって見える。
@@ -268,70 +322,32 @@
   --tracking-body: 0;
 
   /* 面の切り替え。罫線ではなく面の色でセクションを分ける */
-  --color-tile-plain: var(--dg-white);
-  --color-tile-tinted: var(--dg-gray-50);
-  --color-tile-inverse: var(--dg-blue-1000);
+  --color-tile-plain: var(--ab-canvas);
+  --color-tile-tinted: var(--ab-surface-soft);
+  --color-tile-inverse: var(--ab-ink);
 }
 
 /* ============================================================
- * ダークモード
- * 自動反転ではなく、同じ ramp から選び直して検証したもの。
- * カテゴリカルは dataviz validator の全6項目 PASS（dark, surface #1a1a19）
+ * 地色と文字色 ─ ライト固定
+ *
+ * **ダークモードは持たない**（2026-08-31 の判断）。Airbnb のシステムが
+ * 白キャンバス前提のライト専用で、求めているのが「洗練された明るさ」だから。
+ * OS がダークでも画面はライトのままにする（`color-scheme: light`）。
+ * これでフォームコントロール（ウィザードの生年 select）も白地のまま揃う。
+ *
+ * body に地色と文字色を当てているのは、当てていなかったせいで
+ * 「文字だけが反転して地は白のまま＝本文が読めない」事故が起きたため
+ * （2026-08-31 に本番で発見）。ライト固定にした今も、地の指定は明示しておく。
  * ============================================================ */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-surface: var(--dg-gray-900);
-    --color-surface-subtle: var(--dg-gray-800);
-    --color-text: var(--dg-gray-50);
-    --color-text-secondary: var(--dg-gray-200);
-    --color-text-muted: var(--dg-gray-300);
-    --color-border: var(--dg-gray-700);
-    --color-divider: var(--dg-gray-800);
-
-    --color-primary: var(--dg-blue-300);
-    --color-link: var(--dg-blue-300);
-    --color-link-visited: #ff8eff;
-
-    --color-success: var(--dg-green-500);
-    --color-success-text: #71c598;
-    --color-warning: var(--dg-orange-500);
-    --color-warning-text: #ffa66d;
-    --color-error: #ff7171;
-    --color-error-text: #ff9696;
-    --color-error-bg: #3b0000;
-
-    --chart-surface: var(--dg-gray-900);
-    --chart-grid: var(--dg-gray-800);
-    --chart-axis-text: var(--dg-gray-200);
-
-    --chart-cat-1: var(--dg-blue-500); /* #4979F5 */
-    --chart-cat-2: var(--dg-orange-700); /* #E25100 */
-    --chart-cat-3: var(--dg-green-500); /* #2CAC6E */
-    --chart-cat-4: var(--dg-magenta-600); /* #DB00DB */
-    --chart-cat-5: var(--dg-lime-700); /* #6FA104 */
-    --chart-cat-6: var(--dg-cyan-700); /* #008DA6 */
-  }
+:root {
+  color-scheme: light;
 }
 
-/* ============================================================
- * 地色と文字色 ─ ダークモードの土台
- *
- * トークンは反転させていたのに、**それを body に当てていなかった**。
- * そのためダークモードでは文字だけが明るくなり、地はブラウザ既定の白のまま＝
- * カードの外に置いた見出しやヒーロー数字が白飛びして読めなくなっていた
- * （2026-08-31 に本番で発見）。ライトモードでは既定色とほぼ同じ値なので、
- * この2行はライトの見た目を変えない。
- *
- * color-scheme はフォームコントロール（ウィザードの生年 select）を
- * OS の設定に追随させるために要る。指定しないと地だけ暗くて中身が明るいままになる。
- * ============================================================ */
 body {
   background: var(--color-surface);
   color: var(--color-text);
-}
-
-:root {
-  color-scheme: light dark;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ============================================================

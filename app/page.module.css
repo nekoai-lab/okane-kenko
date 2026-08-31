@@ -1,5 +1,5 @@
 .page {
-  max-width: var(--layout-content-max);
+  max-width: var(--layout-reading-max);
   margin: 0 auto;
   padding: var(--space-7) var(--layout-margin-mobile) var(--space-9);
   color: var(--color-text);
@@ -47,18 +47,25 @@
   color: var(--color-text-secondary);
 }
 
+/* Airbnb の button-primary：48px 高・8px 角丸・14×24px パディング・ウェイト500。
+   枠線は持たせない（塗りだけで立たせる）。 */
 .cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--target-min);
-  padding: var(--space-3) var(--space-6);
-  border: 2px solid var(--color-primary);
+  min-height: 48px;
+  padding: 14px var(--space-5);
+  border: 0;
   border-radius: var(--radius-control);
   background: var(--color-primary);
   color: var(--color-text-on-inverse);
-  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
   text-decoration: none;
+}
+
+.cta:hover {
+  background: var(--color-primary-active);
 }
 
 .notes {
