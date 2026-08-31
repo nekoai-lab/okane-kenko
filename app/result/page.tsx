@@ -11,6 +11,7 @@ import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import type { Projection } from "../../src/calc/projection.js";
 import { projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
+import { Cashflow } from "./Cashflow.js";
 import { GapWaterfall } from "./GapWaterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
@@ -60,33 +61,8 @@ function money(yen: number): string {
   return formatMan(yen);
 }
 
-/**
- * いちばん細い年（US-04b）。総額の引き算では、この谷が平らに均されて見えなくなる。
- * 「いくら足りないか」より先に「いつ苦しいか」に答えるための1行。
- */
-function TightestYear({ pj }: { pj: Projection }) {
-  const t = pj.tightest;
-  if (!t || pj.rows.length < 2) return null;
-  const what = t.events.filter((e) => e !== "診断の起点").join("・");
-  return (
-    <div className={s.timeline}>
-      <strong>いちばん細いのは {t.year}年ごろ</strong>（お子さん
-      {t.ages.children.length > 0 ? `${t.ages.children.join("・")}歳` : "なし"}／その年の収支は
-      {t.net >= 0 ? "約" : "▲約"}
-      {money(Math.abs(t.net))}）。
-      {what ? `${what}時期にあたります。` : ""}
-      {pj.depletedAt ? (
-        <>
-          {" "}
-          この前提のままだと、<strong>{pj.depletedAt.year}年ごろに貯蓄が底をつく</strong>
-          見込みです。
-        </>
-      ) : (
-        <> この前提では、貯蓄が底をつく年はありません。</>
-      )}
-    </div>
-  );
-}
+/* いちばん細い年の1行表示（TightestYear）は Cashflow に統合した（2026-08-31）。
+   同じことを2か所に書くと、片方だけ直したときに食い違う。 */
 
 function CaseCard({ title, r, pj }: { title: string; r: DeathResult; pj: Projection }) {
   const verdict = VERDICT[r.verdict] ?? VERDICT.sufficient;
@@ -172,7 +148,9 @@ function CaseCard({ title, r, pj }: { title: string; r: DeathResult; pj: Project
         </div>
       )}
 
-      <TightestYear pj={pj} />
+      {/* 年次キャッシュフロー。**総額の引き算より先に「いつ苦しいか」に答える。**
+          projectDeath() は全年分を返しているのに、以前はここで1文しか出していなかった */}
+      <Cashflow caption={title} pj={pj} />
 
       {/* 主グラフ：支出の合計から受け取れるものを順に引き、残りを見せる。
           「なぜこの金額か」を文章ではなく手続きで答える（2026-08-30 の方針変更）。

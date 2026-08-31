@@ -378,3 +378,140 @@
   color: var(--color-warning-text);
   font-weight: var(--font-weight-bold);
 }
+
+/* ------------------------------------------------------------
+ * 年次キャッシュフロー（US-04b）
+ *
+ * **2軸にしない**（デザイン方針の禁止事項）。残高の棒と、年ごとの表を縦に並べる。
+ * 棒は装飾で、値は文と表が正。色だけで意味を伝えない。
+ * ------------------------------------------------------------ */
+.cashflow {
+  margin: var(--space-5) 0;
+}
+
+.cfChart {
+  display: flex;
+  flex-direction: column;
+  height: 140px;
+  margin-top: var(--space-2);
+}
+
+.cfPos,
+.cfNeg {
+  display: flex;
+  gap: 1px;
+  align-items: flex-end;
+}
+
+/* マイナス側は 0 の線から下に伸びる */
+.cfNeg {
+  align-items: flex-start;
+}
+
+.cfZero {
+  height: 1px;
+  background: var(--color-border);
+}
+
+.cfCol {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.cfNeg .cfCol {
+  align-items: flex-start;
+}
+
+.cfBarPos {
+  width: 100%;
+  background: var(--chart-income-3);
+  border-radius: 2px 2px 0 0;
+}
+
+/* 貯蓄が尽きた年は Warning（オレンジ）。赤はシステムエラー専用 */
+.cfBarNeg {
+  width: 100%;
+  background: var(--color-warning);
+  border-radius: 0 0 2px 2px;
+}
+
+.cfAxis {
+  display: flex;
+  gap: 1px;
+  margin-top: var(--space-1);
+}
+
+.cfTick {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.cfCaption {
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+  margin: var(--space-2) 0;
+}
+
+.cfPoints {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-5);
+  font-size: var(--font-size-std-s);
+}
+
+.cfPoints li {
+  margin-bottom: var(--space-1);
+}
+
+.cfEvents {
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+/* 幅393pxに6列は入らないので、表だけ横スクロールさせる（ページ自体は横に流さない） */
+.cfTableWrap {
+  overflow-x: auto;
+  margin-top: var(--space-3);
+}
+
+.cfTable {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 460px;
+  font-size: var(--font-size-dense);
+  font-variant-numeric: tabular-nums;
+}
+
+.cfTable th,
+.cfTable td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-divider);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cfTable thead th {
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.cfTable tbody th {
+  text-align: left;
+  font-weight: var(--font-weight-normal);
+}
+
+.cfRowNeg {
+  background: var(--color-surface-subtle);
+}
+
+.cfRowNeg td,
+.cfRowNeg th {
+  color: var(--color-warning-text);
+}
