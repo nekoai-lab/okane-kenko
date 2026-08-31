@@ -568,12 +568,22 @@
 
 /* ------------------------------------------------------------
  * 検査値パネル
- * モバイルで2列、デスクトップで4列。1列に潰れると縦の羅列に戻るので2列を下限にする
+ *
+ * **1枚の表として組む。** 独立したカードを4つ浮かべるのではなく、1px の罫線で仕切る。
+ * 検査値表は罫線で区切られた1つの表であって、チップの集まりではない。
+ * 罫線は grid の gap に背景色を透かせて作る（セルごとに border を付けると
+ * 端の1本が二重になり、角丸と噛み合わない）。
+ *
+ * モバイルで2列、デスクトップで4列。1列に潰れると縦の羅列に戻るので2列を下限にする。
  * ------------------------------------------------------------ */
 .vitals {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
   margin: var(--space-5) 0;
 }
 
@@ -583,47 +593,51 @@
   }
 }
 
+/* セルの地をページと同じ色にすることで、gap だけが罫線として見える */
 .vitalTile {
+  background: var(--color-surface);
   padding: var(--space-4);
-  border-radius: var(--radius-card);
-  background: var(--color-surface-subtle);
-  border-left: 4px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
 }
 
-.vitalGood {
-  border-left-color: var(--color-success);
-}
-
-.vitalWarn {
-  border-left-color: var(--color-warning);
-}
-
+/* ラベルは2行ぶんの高さを確保する。
+   モバイル2列では「足りない保障額の目安（あなた）」のような長いラベルが折り返し、
+   確保していないとセルごとに数字の高さがずれて、表に見えなくなる。 */
 .vitalLabel {
   font-size: var(--font-size-dense);
+  line-height: 1.4;
+  min-height: 2.8em;
   color: var(--color-text-secondary);
   margin: 0;
 }
 
+/* 値の行は高さを固定して、4つのセルの数字が同じ高さにそろうようにする
+   （補足の行数が違っても数字の位置がずれない） */
 .vitalValue {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
   font-size: var(--font-size-std-s);
   font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
   line-height: var(--line-height-heading);
-  margin: var(--space-1) 0 0;
+  color: var(--color-text);
+  margin: var(--space-2) 0 0;
   overflow-wrap: anywhere;
 }
 
-.vitalIcon {
-  font-size: 1em;
-  line-height: 1;
+/* 色を使うのは過不足のセルだけ。4つとも色を付けると要点が消える */
+.vitalGood {
+  color: var(--color-success-text);
+}
+
+.vitalWarn {
+  color: var(--color-warning-text);
 }
 
 .vitalNote {
   font-size: var(--font-size-dense);
-  color: var(--color-text-secondary);
-  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  margin: auto 0 0;
+  padding-top: var(--space-2);
 }
 
 /* ------------------------------------------------------------
