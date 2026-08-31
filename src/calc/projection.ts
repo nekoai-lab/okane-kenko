@@ -213,3 +213,52 @@ export function projectDeath(
 
   return { rows, tightest, depletedAt };
 }
+
+/** 必要保障額の推移の1点 */
+export interface CoveragePoint {
+  year: number;
+  /** 生存者の年齢（配偶者がいなければ null） */
+  survivorAge: number | null;
+  /** その年に亡くなった場合、そこから先に必要な保障額（円・0未満は0） */
+  need: number;
+}
+
+/**
+ * 必要保障額の推移（US-04d）
+ *
+ * **必要保障額は「今日の1点」ではなく、時間とともに減っていく線である。**
+ * 子が育ち、教育費が終わり、残りの期間が短くなるほど、必要な額は下がる。
+ * 点で出すと「いま多すぎる」までしか言えないが、線で出すと
+ * 「いつまで、いくら必要か」が同時に伝わる（FPの実務資料はここを主役にしている）。
+ *
+ * 定義：**その年以降に必要な額 ＝ 残りの支出 − 残りの収入 − 金融資産**
+ *
+ * この定義を選んだのは、**新しい財務的な仮定を1つも足さずに済む**から。
+ * projectDeath の行をうしろから足すだけで、住宅ローンの年割りなどの扱いも
+ * 既存の算定とそろう。初年度の値は定義上 `DeathResult.rawNeed` と一致する
+ * （年次の合計＝既存の総額、が projection のテストで保証されているため）。
+ * これを不変条件テストにしてある。
+ *
+ * **見ていないもの（利用者に明示すること）**：ご存命のあいだの貯蓄の増減。
+ * 金融資産は今の額のまま置いている。実際には貯蓄が増えれば必要額はさらに下がるので、
+ * この線は**必要額を多めに見せる側**に倒れている（保険が要る方向に誤らせない）。
+ */
+export function coverageCurve(pj: Projection, assets: number): CoveragePoint[] {
+  const rows = pj.rows;
+  const points: CoveragePoint[] = new Array(rows.length);
+  let remainingExpense = 0;
+  let remainingIncome = 0;
+
+  // うしろから足す（接尾和）。前から引くと丸め誤差が端に寄る
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    remainingExpense += r.expense.total;
+    remainingIncome += r.income.total;
+    points[i] = {
+      year: r.year,
+      survivorAge: r.ages.survivor,
+      need: Math.max(0, remainingExpense - remainingIncome - assets),
+    };
+  }
+  return points;
+}

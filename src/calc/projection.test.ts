@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { diagnose } from "./index.js";
-import { projectDeath } from "./projection.js";
+import { coverageCurve, projectDeath } from "./projection.js";
 import { loadParams } from "../params/index.js";
 import { GOLDEN } from "../__tests__/households.js";
 import { normalize } from "../wizard/normalize.js";
@@ -115,5 +115,50 @@ describe("projectDeath（年次キャッシュフロー）", () => {
     expect(pj.rows.length).toBeGreaterThan(0);
     expect(pj.rows[0].year).toBe(AS_OF_YEAR);
     void normalize; // 経路の存在確認（normalize は結果画面側で使う）
+  });
+});
+
+describe("coverageCurve（必要保障額の推移）", () => {
+  it("初年度の必要額が、既存の rawNeed と1円まで一致する（10世帯すべて）", () => {
+    for (const c of GOLDEN) {
+      const d = diagnose(P, c.input, AS_OF);
+      const pj = projectDeath(P, selfHousehold(c.input), { asOfYear: AS_OF_YEAR });
+      const curve = coverageCurve(pj, d.self.income.assets);
+      if (curve.length === 0) continue;
+      expect(Math.round(curve[0].need), `${c.id} の初年度必要額`).toBe(
+        Math.round(d.self.rawNeed),
+      );
+    }
+  });
+
+  it("点の数が年次表の行数と一致し、年も同じ並びになる", () => {
+    for (const c of GOLDEN) {
+      const d = diagnose(P, c.input, AS_OF);
+      const pj = projectDeath(P, selfHousehold(c.input), { asOfYear: AS_OF_YEAR });
+      const curve = coverageCurve(pj, d.self.income.assets);
+      expect(curve.length).toBe(pj.rows.length);
+      expect(curve.map((x) => x.year)).toEqual(pj.rows.map((r) => r.year));
+    }
+  });
+
+  it("必要額は負にならない（足りている世帯は0で止まる）", () => {
+    for (const c of GOLDEN) {
+      const d = diagnose(P, c.input, AS_OF);
+      const pj = projectDeath(P, selfHousehold(c.input), { asOfYear: AS_OF_YEAR });
+      for (const pt of coverageCurve(pj, d.self.income.assets)) {
+        expect(pt.need, `${c.id} の ${pt.year}年`).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it("金融資産が増えれば、必要額は増えない（保険が要る方向に誤らせない）", () => {
+    const c = GOLDEN[1]; // GT-02（不足が出る世帯）
+    const d = diagnose(P, c.input, AS_OF);
+    const pj = projectDeath(P, selfHousehold(c.input), { asOfYear: AS_OF_YEAR });
+    const base = coverageCurve(pj, d.self.income.assets);
+    const richer = coverageCurve(pj, d.self.income.assets + 10_000_000);
+    for (let i = 0; i < base.length; i++) {
+      expect(richer[i].need).toBeLessThanOrEqual(base[i].need);
+    }
   });
 });
