@@ -25,34 +25,11 @@ import { normalize } from "../../src/wizard/normalize.js";
 import { decodeSelections } from "../../src/wizard/url.js";
 import s from "./page.module.css";
 
-const HEADLINE: Record<
-  string,
-  { icon: string; label: string; short: string; tone: "good" | "warn" }
-> = {
-  all_covered: {
-    icon: "✓",
-    label: "いまの前提では、足りています",
-    short: "足りています",
-    tone: "good",
-  },
-  reducible: {
-    icon: "💡",
-    label: "減らせる余地がありそうです",
-    short: "減らせそう",
-    tone: "good",
-  },
-  rebalanceable: {
-    icon: "🔁",
-    label: "世帯全体で見直せそうです",
-    short: "見直せそう",
-    tone: "good",
-  },
-  shortage: {
-    icon: "⚠",
-    label: "足りない可能性があります",
-    short: "足りないかも",
-    tone: "warn",
-  },
+const HEADLINE: Record<string, { icon: string; label: string; tone: "good" | "warn" }> = {
+  all_covered: { icon: "✓", label: "いまの前提では、足りています", tone: "good" },
+  reducible: { icon: "💡", label: "減らせる余地がありそうです", tone: "good" },
+  rebalanceable: { icon: "🔁", label: "世帯全体で見直せそうです", tone: "good" },
+  shortage: { icon: "⚠", label: "足りない可能性があります", tone: "warn" },
 };
 
 /**
@@ -336,7 +313,16 @@ export default async function ResultPage({
 
   /**
    * 検査値パネル（拾い読みの入口）。
-   * **同じ内容はすべて下の本文と図が根拠つきで持っている。** ここだけで判断させない。
+   *
+   * **判定はここに置かない。** すぐ上の h1 が結論そのもので、繰り返しになる。
+   * ここは測定値だけにして4つの性格をそろえ、「目安の額 → いまの保障 → 過不足 → 時期」
+   * の順に並べる。**同じ内容はすべて下の本文と図が根拠つきで持っている。**
+   *
+   * ラベルには必ず「あなた」「世帯」のどちらかを書く。範囲が混ざったまま数字を並べると、
+   * どこの話をしているのか読み手に分からない。
+   *
+   * **色を付けるのは過不足のセルだけ。** 年のセルにも色を付けてみたが、4つのうち2つが
+   * 色付きになると、どれが要点か分からなくなった。年が重い事実であることは言葉が伝える。
    */
   const selfCurve = coverageCurve(selfProjection, result.self.income.assets);
   const cov = input.coverageSelf;
@@ -344,42 +330,45 @@ export default async function ResultPage({
   const tightest = selfProjection.tightest;
   const vitals: Vital[] = [
     {
-      label: "世帯の判定",
-      value: h ? h.short : "保留",
-      note: h ? "内訳は下に出しています" : "いまの保険が分からないため",
-      tone: h ? h.tone : "muted",
-      icon: h ? h.icon : "ℹ",
+      // 金額の呼び名は verdict で変える（同じ名前で別の数を出さない・2026-08-30 の修正と同じ理由）
+      label: `${AMOUNT_LABEL[result.self.verdict] ?? AMOUNT_LABEL.sufficient}（あなた）`,
+      value: formatRange(result.self.range.low, result.self.range.high),
+      note: "下の内訳が根拠です",
+    },
+    {
+      label: "いまの保障（あなた）",
+      value: cov === null ? "未入力" : `約${money(cov)}`,
+      note: cov === null ? "証券が見つかったら再診断できます" : "ご申告の死亡保障額",
     },
     {
       label: totalShortage > 0 ? "足りない額（世帯）" : "減らせる額（世帯）",
-      value: totalShortage > 0 ? `約${money(totalShortage)}` : totalExcess > 0 ? `約${money(totalExcess)}` : "0円",
+      value:
+        cov === null && result.spouse === null
+          ? "—"
+          : totalShortage > 0
+            ? `約${money(totalShortage)}`
+            : totalExcess > 0
+              ? `約${money(totalExcess)}`
+              : "0円",
       note: totalShortage > 0 ? "いまの保障との差" : "保険料が浮きます",
       tone: totalShortage > 0 ? "warn" : "good",
-    },
-    {
-      label: "いちばん細い年",
-      value: tightest ? `${tightest.year}年ごろ` : "—",
-      note: tightest ? "その年の収支がいちばん小さい" : "算定期間が短いため出せません",
     },
     selfProjection.depletedAt
       ? {
           label: "貯蓄が尽きる年",
           value: `${selfProjection.depletedAt.year}年ごろ`,
           note: "この前提のままだと",
-          tone: "warn" as const,
         }
       : coveredFrom
         ? {
             label: "いまの保障で足りる年",
             value: `${coveredFrom.year}年ごろ`,
             note: "これ以降は上乗せ不要の見込み",
-            tone: "good" as const,
           }
         : {
-            label: "貯蓄が尽きる年",
-            value: "ありません",
-            note: "この前提では最後まで残る見込み",
-            tone: "good" as const,
+            label: "いちばん細い年",
+            value: tightest ? `${tightest.year}年ごろ` : "—",
+            note: tightest ? "その年の収支がいちばん小さい" : "算定期間が短いため出せません",
           },
   ];
 
