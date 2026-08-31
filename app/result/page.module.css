@@ -1,5 +1,8 @@
+/* **幅を2種類に分ける。**
+   散文は 720px（1行が長すぎると目が戻れない）、図と表は 1,120px（デジタル庁DSの
+   コンテンツ最大幅）。モバイルではどちらも画面幅いっぱいなので影響しない。 */
 .page {
-  max-width: var(--layout-reading-max);
+  max-width: var(--layout-content-max);
   margin: 0 auto;
   padding: var(--space-5) var(--layout-margin-mobile) var(--space-9);
   color: var(--color-text);
@@ -513,4 +516,144 @@
   height: 3px;
   border-radius: 2px;
   flex: none;
+}
+
+/* ------------------------------------------------------------
+ * 文章の幅
+ *
+ * 図と表はページ幅（1,120px）いっぱいを使ってよいが、**散文は 720px に絞る**。
+ * 1行が長すぎると目が行を戻せない（2026-08-31 の「読みづらい」の主因）。
+ * ------------------------------------------------------------ */
+.prose {
+  max-width: var(--layout-reading-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ------------------------------------------------------------
+ * 見出しの階層（docs/デザイン仕様.html のタイポスケール）
+ *
+ * 結果画面には h1 が無く、節見出しがすべて div だった。仕様書は
+ * Dsp-48B-140 / Std-24B-150 / Std-18B-160 / Std-16N-170 の4段階を
+ * 定義しているのに、実装は「大きい数字」と「本文」の2段階しか使っておらず、
+ * 全部が同じ平面に並んで見えていた（2026-08-31 の「縦に羅列」の原因）。
+ * ------------------------------------------------------------ */
+.h1 {
+  font-size: var(--font-size-std-l); /* Std-28 */
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  letter-spacing: var(--tracking-heading);
+  margin: 0;
+}
+
+.h2 {
+  font-size: var(--font-size-std-m); /* Std-24B-150 */
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  margin: 0 0 var(--space-4);
+}
+
+.h3 {
+  font-size: var(--font-size-std-xs); /* Std-18B-160 */
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  color: var(--color-text);
+  margin: var(--space-5) 0 var(--space-2);
+}
+
+/* セクションの余白は階層をつける。すべて同じ間隔だと区切りが見えない */
+.sectionMajor {
+  margin-top: var(--space-8);
+}
+
+/* ------------------------------------------------------------
+ * 検査値パネル
+ * モバイルで2列、デスクトップで4列。1列に潰れると縦の羅列に戻るので2列を下限にする
+ * ------------------------------------------------------------ */
+.vitals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+}
+
+@media (min-width: 768px) {
+  .vitals {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.vitalTile {
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-subtle);
+  border-left: 4px solid var(--color-border);
+}
+
+.vitalGood {
+  border-left-color: var(--color-success);
+}
+
+.vitalWarn {
+  border-left-color: var(--color-warning);
+}
+
+.vitalLabel {
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.vitalValue {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--font-size-std-s);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.vitalIcon {
+  font-size: 1em;
+  line-height: 1;
+}
+
+.vitalNote {
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+  margin: var(--space-1) 0 0;
+}
+
+/* ------------------------------------------------------------
+ * 全幅ブロックの抜き出し（full-bleed グリッド）
+ *
+ * 中央の列を「読み物の幅」に固定し、`.wide` を付けた要素だけが左右に張り出す。
+ * 負のマージンのような小細工を使わずに、**散文は720px・図と表は1,120px**を
+ * 1つのレイアウトで両立させる。モバイルでは min() が効いて両方とも画面幅になる。
+ * ------------------------------------------------------------ */
+.page {
+  display: grid;
+  grid-template-columns:
+    1fr
+    min(var(--layout-reading-max), 100%)
+    1fr;
+}
+
+.page > * {
+  grid-column: 2;
+}
+
+.page > .wide {
+  grid-column: 1 / -1;
+}
+
+/* 全幅ブロックの中にある文章までは広げない（図と表だけ広くしたい） */
+.cashflow .cfPoints,
+.cashflow .cfEvents,
+.cashflow .cfCaption,
+.cashflow .basis,
+.compare .basis {
+  max-width: var(--layout-reading-max);
 }

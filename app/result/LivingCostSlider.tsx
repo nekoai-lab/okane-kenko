@@ -54,7 +54,7 @@ export function LivingCostSlider({
 
   return (
     <div className={s.sliderBox}>
-      <div className={s.subhead}>前提を動かしてみる（当社基準）</div>
+      <h2 className={s.h2}>前提を動かしてみる（当社基準）</h2>
       <label className={s.sliderLabel}>
         毎月の生活費：<strong>{man}万円</strong>
         <input

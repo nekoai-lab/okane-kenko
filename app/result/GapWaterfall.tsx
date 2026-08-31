@@ -59,7 +59,7 @@ export function GapWaterfall({
 
   return (
     <div className={s.compare}>
-      <div className={s.subhead}>{caption}</div>
+      <h3 className={s.h3}>{caption}</h3>
 
       <div className={s.wfRow}>
         <span className={s.wfLabel}>見込みの支出の合計</span>

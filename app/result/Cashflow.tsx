@@ -76,9 +76,9 @@ export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
 
   return (
     <div className={s.cashflow}>
-      <div className={s.subhead}>
+      <h3 className={s.h3}>
         これから{n}年間のお金の流れ（{caption}）
-      </div>
+      </h3>
 
       <ChartFrame
         labelEvery={every}
