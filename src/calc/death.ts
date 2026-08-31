@@ -81,7 +81,22 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
   }
 
   const funeral = v(p, "funeralReserve");
-  const expenseTotal = livingChild + livingAlone + education + housingCost + funeral;
+
+  // 老後（配偶者65歳→平均寿命）の基本生活の不足（ADR-008 見直し）。
+  // 年金が単身分に減った後の、基本生活費に対する構造的な不足を連続的に積む（崖を作らない）。
+  // 介護・老人ホームは分散が大きいのでここに含めず、別レイヤー（elderlyCareEstimate）で提示する。
+  const elderlyYears = survivor ? Math.max(0, p.elderly.lifeExpectancy - v(p, "pensionAge")) : 0;
+  const elderly = elderlyYears * p.elderly.annualDeficit;
+  if (survivor && elderly > 0) {
+    assumptions.push({
+      field: "elderly",
+      value: Math.round(elderly / 10000),
+      reason: "estimated",
+      note: `65歳以降の老後は、年金が単身分に減ったあとの基本生活の不足を平均寿命（${p.elderly.lifeExpectancy}歳）まで見込んでいます（家計調査ベース・当社基準）。介護・老人ホームは含めていません。`,
+    });
+  }
+
+  const expenseTotal = livingChild + livingAlone + education + housingCost + funeral + elderly;
 
   // ---------- 収入・資産 I ----------
   let pensionBasic = 0;
@@ -166,6 +181,7 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
       education,
       housing: housingCost,
       funeral,
+      elderly,
       total: expenseTotal,
     },
     income: {

@@ -62,7 +62,7 @@ export const GOLDEN: GoldenCase[] = [
       coverageSpouse: 0,
     },
     expect: {
-      self: { verdict: "shortage", low: 2000, high: 3000, gap: "shortage", gapAmount: 1000 },
+      self: { verdict: "shortage", low: 2500, high: 3800, gap: "shortage", gapAmount: 1500 }, // 老後込み(暫定)
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "self_insurable",
       reform2028: false,
@@ -152,7 +152,7 @@ export const GOLDEN: GoldenCase[] = [
       coverageSpouse: 0,
     },
     expect: {
-      self: { verdict: "shortage", low: 1600, high: 2500, gap: "shortage", gapAmount: 600 },
+      self: { verdict: "shortage", low: 2200, high: 3300, gap: "shortage", gapAmount: 1200 }, // 老後込み(暫定)
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "self_insurable",
       reform2028: false,
@@ -198,7 +198,7 @@ export const GOLDEN: GoldenCase[] = [
       coverageSpouse: 0,
     },
     expect: {
-      self: { verdict: "sufficient", low: 400, high: 600, gap: "adequate", gapAmount: 0 },
+      self: { verdict: "shortage", low: 300, high: 500, gap: "adequate", gapAmount: 0 }, // 老後込み(暫定・sufficient→shortage反転)
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "partial",
       reform2028: false,
