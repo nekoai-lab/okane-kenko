@@ -2,7 +2,7 @@
    フォーカスリングは tokens.css のグローバル :focus-visible に任せ、ここでは上書きしない。 */
 
 .page {
-  max-width: var(--layout-content-max);
+  max-width: var(--layout-reading-max);
   margin: 0 auto;
   padding: var(--space-5) var(--layout-margin-mobile) var(--space-9);
   color: var(--color-text);
@@ -30,7 +30,7 @@
 
 .barFill {
   height: 100%;
-  background: var(--color-primary);
+  background: var(--color-accent);
   border-radius: var(--radius-pill);
   transition: width 0.2s ease;
 }
@@ -82,7 +82,7 @@
 
 /* 選択は色だけに頼らない：ネイティブのラジオのドットでも伝わる */
 .choice:has(input:checked) {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   background: var(--color-surface-subtle);
   font-weight: var(--font-weight-bold);
 }
@@ -110,29 +110,40 @@
   margin-top: var(--space-7);
 }
 
+/* Airbnb の button-primary / button-secondary に合わせる。
+   48px 高・8px 角丸・ウェイト500。二次ボタンは白地に細い枠。 */
 .primary,
 .secondary {
-  min-height: var(--target-min);
-  padding: var(--space-3) var(--space-6);
+  min-height: 48px;
+  padding: 14px var(--space-5);
   border-radius: var(--radius-control);
   font: inherit;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
 }
 
 .primary {
-  border: 2px solid var(--color-primary);
+  border: 0;
   background: var(--color-primary);
   color: var(--color-text-on-inverse);
 }
 
+.primary:hover:not(:disabled) {
+  background: var(--color-primary-active);
+}
+
+/* Airbnb の button-primary-disabled は「淡い Rausch 地に白文字」だが、
+   それだとコントラストが 1.3:1 しかなく**ラベルが読めない**。
+   地はそのままに、文字を濃い Rausch にして 4.7:1 を確保する。
+   まだ押せないことは、色の淡さとカーソルで十分に伝わる。 */
 .primary:disabled {
-  opacity: 0.5;
+  background: var(--color-primary-disabled);
+  color: var(--color-primary-active);
   cursor: not-allowed;
 }
 
 .secondary {
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-text);
   background: var(--color-surface);
   color: var(--color-text);
 }

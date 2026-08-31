@@ -1,5 +1,5 @@
 .page {
-  max-width: var(--layout-content-max);
+  max-width: var(--layout-reading-max);
   margin: 0 auto;
   padding: var(--space-5) var(--layout-margin-mobile) var(--space-9);
   color: var(--color-text);
@@ -76,8 +76,12 @@
   color: var(--color-text-secondary);
 }
 
+/* Airbnb の編集面と同じ「濃い文字＋下線」。色ではなく下線でリンクだと分からせる
+   （白地の青は 3.1:1 しか出ず、本文のリンク色には使えない）。 */
 .link {
   color: var(--color-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .section {
@@ -134,7 +138,7 @@
   margin-top: var(--space-2);
 }
 .segDep {
-  background: var(--color-primary);
+  background: var(--color-accent);
 }
 .segAlone {
   background: var(--color-border);
@@ -195,7 +199,7 @@
 
 /* この診断で分かること/分からないこと（先に線を引く） */
 .scope {
-  border-left: 6px solid var(--color-primary);
+  border-left: 6px solid var(--color-accent);
   background: var(--color-surface-subtle);
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-control);
