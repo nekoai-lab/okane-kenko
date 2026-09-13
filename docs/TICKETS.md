@@ -220,6 +220,24 @@ T-01 算定エンジン ✅完了
 
 法人管理コンソール／効果ダッシュボード／再診断の自動トリガー／法人データ連携／就業不能・介護・学資／ネイティブアプリ。
 
+## T-13 ─ 気づき通知(継続的な見直し)フェーズ2a
+
+**価値**：一回で終わる健康診断から、たまに見直したくなる主治医へ。範囲は保険のまま、継続性で価値を出す。
+設計 → [`docs/hackathon/2026-09-14_watch-notify-design.md`](hackathon/2026-09-14_watch-notify-design.md)
+
+- [x] 子の学齢の節目到達を判定する純粋関数(`src/watch/milestones.ts`)
+- [x] Watchストア(Firestore：`households` / `notice_log`)
+- [x] Slack Incoming Webhookへの通知投稿
+- [x] 観察→判断→行動→記録のウォッチャー本体(`src/watch/run.ts`)
+- [x] Cloud Scheduler用API `POST /api/watch/run`(共有シークレットで保護)
+- [x] 同意API `POST /api/watch/consent`
+- [x] 初回保存の同意画面(独立した確認画面)
+- [x] 通知着地画面(`/notice/{token}`)・削除API(SPEC.md US-10)
+
+**完了条件**：Slack通知→着地画面→「詳しく見直す」→`/result`という一連の流れが、実際のFirestore・Slackで動作確認できる(Task 11)。
+
+**明示的にスコープ外**：制度側の監視(フェーズ2b・別途設計)、住宅ローン・教育費などを独立機能として追加すること(既存のOut of Scope判断を維持)。
+
 ## 着手前に必ず終わらせること
 
 - [ ] **保険業法の線引きの弁護士レビュー（OI-01）** ─ T-06 の「団体保険の確認を促す」表現と、T-10 の「合計保険料を増やさずに解決できる」表現を含めて確認する
