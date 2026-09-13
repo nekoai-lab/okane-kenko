@@ -184,65 +184,65 @@ function CaseCard({
       <details className={s.criteria}>
         <summary>金額の内訳を見る（支出・収入）</summary>
 
-      <h3 className={s.h3}>どうしてこの金額？ ─ 見込みの支出</h3>
-      <div className={s.rows}>
-        {expenseItems.map((x, i) => (
-          <div className={s.row} key={x.label}>
-            <span className={s.rowLabel}>
-              <span>
-                <span
-                  aria-hidden="true"
-                  className={s.swatch}
-                  style={{ background: `var(--chart-expense-${Math.min(i + 1, 5)})` }}
-                />
-                {x.label}
+        <h3 className={s.h3}>どうしてこの金額？ ─ 見込みの支出</h3>
+        <div className={s.rows}>
+          {expenseItems.map((x, i) => (
+            <div className={s.row} key={x.label}>
+              <span className={s.rowLabel}>
+                <span>
+                  <span
+                    aria-hidden="true"
+                    className={s.swatch}
+                    style={{ background: `var(--chart-expense-${Math.min(i + 1, 5)})` }}
+                  />
+                  {x.label}
+                </span>
+                {x.basis ? <span className={s.basis}>根拠：{x.basis}</span> : null}
               </span>
-              {x.basis ? <span className={s.basis}>根拠：{x.basis}</span> : null}
-            </span>
-            <span className={s.rowAmount}>{money(x.amount)}</span>
+              <span className={s.rowAmount}>{money(x.amount)}</span>
+            </div>
+          ))}
+          <div className={`${s.row} ${s.total}`}>
+            <span>支出の合計</span>
+            <span className={s.rowAmount}>{money(r.expense.total)}</span>
           </div>
-        ))}
-        <div className={`${s.row} ${s.total}`}>
-          <span>支出の合計</span>
-          <span className={s.rowAmount}>{money(r.expense.total)}</span>
         </div>
-      </div>
 
-      <h3 className={s.h3}>受け取れる見込みの収入・資産</h3>
-      <div className={s.rows}>
-        {incomeItems.map((x, i) => (
-          <div className={s.row} key={x.label}>
-            <span className={s.rowLabel}>
-              <span>
-                <span
-                  aria-hidden="true"
-                  className={s.swatch}
-                  style={{ background: `var(--chart-income-${Math.min(i + 1, 5)})` }}
-                />
-                {x.label}
+        <h3 className={s.h3}>受け取れる見込みの収入・資産</h3>
+        <div className={s.rows}>
+          {incomeItems.map((x, i) => (
+            <div className={s.row} key={x.label}>
+              <span className={s.rowLabel}>
+                <span>
+                  <span
+                    aria-hidden="true"
+                    className={s.swatch}
+                    style={{ background: `var(--chart-income-${Math.min(i + 1, 5)})` }}
+                  />
+                  {x.label}
+                </span>
+                {x.basis ? <span className={s.basis}>根拠：{x.basis}</span> : null}
               </span>
-              {x.basis ? <span className={s.basis}>根拠：{x.basis}</span> : null}
-            </span>
-            <span className={s.rowAmount}>{money(x.amount)}</span>
+              <span className={s.rowAmount}>{money(x.amount)}</span>
+            </div>
+          ))}
+          <div className={`${s.row} ${s.total}`}>
+            <span>収入・資産の合計</span>
+            <span className={s.rowAmount}>{money(r.income.total)}</span>
           </div>
-        ))}
-        <div className={`${s.row} ${s.total}`}>
-          <span>収入・資産の合計</span>
-          <span className={s.rowAmount}>{money(r.income.total)}</span>
         </div>
-      </div>
 
-      {/* 推定で補った前提 */}
-      {r.assumptions.length > 0 && (
-        <>
-          <h3 className={s.h3}>推定で補った前提</h3>
-          <ul className={s.assumptions}>
-            {r.assumptions.map((a) => (
-              <li key={a.field}>{a.note}</li>
-            ))}
-          </ul>
-        </>
-      )}
+        {/* 推定で補った前提 */}
+        {r.assumptions.length > 0 && (
+          <>
+            <h3 className={s.h3}>推定で補った前提</h3>
+            <ul className={s.assumptions}>
+              {r.assumptions.map((a) => (
+                <li key={a.field}>{a.note}</li>
+              ))}
+            </ul>
+          </>
+        )}
       </details>
     </div>
   );
@@ -680,6 +680,12 @@ export default async function ResultPage({
         出典：遺族年金は日本年金機構・厚生年金保険法（令和8年度の年金額は報道値ベースで確定前）、教育費は文部科学省
         子供の学習費調査。生活費率・就労推定などの「当社基準」は公的出典のない当社の見立てです。
       </p>
+
+      <div className={s.section}>
+        <Link className={s.link} href={`/save?${q.toString()}`}>
+          この結果を保存して、変化があったときにお知らせを受け取る →
+        </Link>
+      </div>
 
       <div className={s.draftNote}>
         次の一歩・選ぶ基準の文面は、保険業法の正式な弁護士レビュー（OI-01）後に確定します（現在はサンプル）。
