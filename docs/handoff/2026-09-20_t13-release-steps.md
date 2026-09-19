@@ -66,6 +66,10 @@ PROJECT=okane-kenko-507122
 PROJNUM=84783545243
 RUNTIME="${PROJNUM}-compute@developer.gserviceaccount.com"
 
+# Firestore API はこのプロジェクトでまだ有効化されていない（2026-09-20 に確認）。
+# 先に enable しないと、次の list が「有効化しますか？」の対話プロンプトで止まる。
+gcloud services enable firestore.googleapis.com --project=$PROJECT
+
 gcloud firestore databases list --project=$PROJECT
 gcloud firestore databases create --project=$PROJECT \
   --location=asia-northeast1 --type=firestore-native
@@ -93,7 +97,8 @@ curl -X POST http://localhost:3000/api/watch/run \
 
 期待：`{"checked":1,"notified":1,"errors":[]}` が返り、Slack に
 「お子さんが◯歳になりました。前回の診断からの変化を確認できます。」＋ `/notice/{token}` のリンクが届く。
-**数字が1つも含まれていないことを目で確かめる**（設計の芯。通知はきっかけだけにする）。
+**金額が1つも含まれていないことを目で確かめる**（設計の芯。通知はきっかけだけにする）。
+なお**年齢の数字は文面に入る**（`describeCrossing`）。これは設計どおりなので、見えても正しい。
 
 5. リンクを開く → `/notice/{token}` に金額が出ていないこと → 「詳しく見直す」→ `/result` が出ること
 6. もう一度 `/notice/{token}` を開き「この記録を削除する」→ Firestore から消えること（SPEC.md US-10 を即時で満たす）
