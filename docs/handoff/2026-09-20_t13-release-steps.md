@@ -30,22 +30,102 @@ Cloud Build のトリガー `deploy-main` は `^main$` にしか反応しない�
 
 ## S1 Slack Incoming Webhook を発行する（人手・ブラウザ）
 
-Slack ワークスペースで「Incoming Webhooks」アプリを追加し、通知先チャンネルを選んで URL を発行する。
-デモ用は単一 Webhook でよい（法人ごとに配る Slack App 化は設計のスコープ外）。
+> **2026-09-20 に実際にやったときの記録。** ここで30分溶かしたので、順番どおりにやること。
+> 詰まるのは Slack ではなく、**ターミナルへの貼り付け**である。
 
-発行したら `.env.local` に3つ書く。
+### S1-1 通知用のチャンネルを先に作る
+
+Slack サイドバーの「チャンネル」横の ＋ →「チャンネルを作成」。名前は `okane-kenko-notice` など。
+**公開チャンネルにする**（非公開だと、自分が参加していない限り Webhook 発行時のプルダウンに出てこない）。
+専用チャンネルにしておくと、デモ動画を撮るときに他の会話が映り込まない。
+
+**あとからチャンネルを変えると Webhook URL を発行し直すことになる**（`.env.local` と Secret Manager の値も差し替え）。最初に決め切る。
+
+### S1-2 Slack App を作って Webhook を発行する
+
+1. https://api.slack.com/apps →「Create New App」
+2. **「Blank app」を選ぶ**（"Empty app with minimal setup"）。
+   初期選択が「AI agent」になっているので、**クリックして選択を移してから** Continue する
+3. アプリ名（`okane-kenko 気づき通知` など）とワークスペースを選ぶ
+4. 左メニュー「Incoming Webhooks」→ **Activate Incoming Webhooks を On**
+5. 下に現れる「Add New Webhook to Workspace」→ S1-1 のチャンネルを選んで「許可する」
+6. 「Webhook URLs for Your Workspace」に `https://hooks.slack.com/services/T.../B.../xxxx` が出る
+
+会社のワークスペースだと管理者承認が要る設定のことがあり、その場合は承認されるまでこの欄が空のままになる。
+**欄が空なら curl 以前の問題**なので、先にそこを確認する。
+
+### S1-3 `.env.local` に書く ─ ターミナルに貼らない
+
+**Webhook URL をターミナルに直接貼らない。** エディタで `.env.local` に書く。
+
+```bash
+cd ~/Desktop/ai-driven/okane-kenko
+open -e .env.local
+```
+
+Slack の Copy ボタンでコピーし、エディタに貼って保存する。**クォートで囲まない。**
 
 ```
-SLACK_WEBHOOK_URL=<発行したWebhook URL>
-WATCH_CRON_SECRET=<openssl rand -hex 32 で生成した値>
-WATCH_BASE_URL=http://localhost:3000
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../xxxx
 ```
 
-`WATCH_CRON_SECRET` は**あとで Secret Manager と Cloud Scheduler にも同じ値を入れる**ので、ここで作った値を使い回す。
+なぜターミナルに貼らないか:
 
-> `.env.local` は Git に含まれない。AIエージェントは実値を読めない設定になっている（`.env.example` は読める）。
+- **コマンドをコピーした時点で、クリップボードの Webhook URL が消える。**
+  `pbpaste` から読む方法は、手順書のコマンドをコピペして使う流れと両立しない（実際にこれで詰まった）
+- 貼り付けで**不可視文字**（ゼロ幅スペース・BOM）が混ざると `curl: (3) URL rejected: Malformed input to a URL function` になる。
+  2026-08-30 に `GEMINI_API_KEY` で同じ事故を踏み、`sanitizeApiKey` を入れた原因がこれ
+- シングルクォートが閉じずに `quote>` で固まる
 
-**完了の合図**：`.env.example` の3キーが `.env.local` に実値で揃っている。
+残り2つは値に癖がないので、ターミナルから追記してよい。
+
+```bash
+echo "" >> .env.local
+echo "WATCH_CRON_SECRET=$(openssl rand -hex 32)" >> .env.local
+echo "WATCH_BASE_URL=http://localhost:3000" >> .env.local
+```
+
+> **1行目の `echo ""` を省かない。** `.env.local` の末尾に改行が無いと、
+> `WATCH_CRON_SECRET=` が `SLACK_WEBHOOK_URL=` の行末にくっついて1行になる（実際になった）。
+> `WATCH_CRON_SECRET` は S5 と S9 でも同じ値を使うので、ここで作った値を使い回す。
+
+### S1-4 疎通テスト ─ ファイルから読んで送る
+
+```bash
+HOOK=$(grep -m1 '^SLACK_WEBHOOK_URL=' .env.local | cut -d= -f2- | tr -d '[:space:]')
+echo ${#HOOK}
+curl -s -o /dev/null -w 'status=%{http_code}\n' -X POST -H 'Content-type: application/json' -d '{"text":"test"}' "$HOOK"
+```
+
+`80` 前後の文字数と `status=200` が出て、チャンネルにメッセージが届けば成功。
+
+**この読み方（`grep | cut`）は S5 で Secret Manager に入れるときとまったく同じ**なので、
+ここが通れば S5 も通る。逆にここで空になるなら、S5 では空の Secret ができていた。
+
+> Slack の成功レスポンスは `ok` の3文字で、**改行が付かない**。
+> `-w` を付けずに実行すると、プロンプトとくっついて `oktsuki@... %` と表示され、見落とす。
+
+### S1-5 確認
+
+```bash
+grep -c '^SLACK_WEBHOOK_URL=\|^WATCH_CRON_SECRET=\|^WATCH_BASE_URL=' .env.local
+```
+
+**完了の合図**：`3` が返り、S1-4 が `status=200`。
+
+> `2` しか返らないときは、行がくっついている（上記の改行の件）。
+> 値は出さずにキー名だけ確認できる → `grep -o '^[A-Z_]*=' .env.local`
+
+### 無料プランで踏むこと
+
+無料プランでも Incoming Webhook は普通に使える。ただし2つ。
+
+- **アプリ連携は10個まで。** 枠が埋まっていると追加できない。使っていないものを外すか、別ワークスペースを作る
+- **メッセージ履歴は直近90日。** 通知は90日で見えなくなるので、**届いた画面はスクショか録画で残す**。
+  ただし監査の証跡は Firestore の `notice_log` 側に持たせる設計なので、システムとしての記録は消えない
+
+なお今回の通知は**固定文言で数字を含まない**設計なので、履歴が消えて困る情報は Slack 側に乗らない。
+金額は本人が `/notice/{token}` から能動的に開いたときだけ出る。
 
 ## S2 ローカルから Firestore を触れるようにする（人手）
 
@@ -213,4 +293,8 @@ CLAUDE.md の規定により、`docs/ADR.md` と `docs/CONTEXT.md` はAIが勝�
 | `/api/watch/run` が 500 `misconfigured` | `SLACK_WEBHOOK_URL` か `WATCH_BASE_URL` が実行環境に届いていない |
 | ローカルで `notified:0` にしかならない | 仕様どおり。`lastCheckedAt` を戻して節目をまたがせる（§S4補足） |
 | lint が `internalError/io` | コマンドに余計な引数が渡っている（`#` コメントの付け忘れ事故） |
+| `curl: (3) URL rejected: Malformed input to a URL function` | 貼り付けで不可視文字か改行が混入。ターミナルに貼らず `.env.local` に書く（S1-3） |
+| ターミナルが `quote>` で固まる | シングルクォートが閉じていない。`Ctrl+C` で抜ける |
+| curl が何も返さないように見える | Slack の `ok` は改行なし。`-w 'status=%{http_code}\n'` を付ける |
+| `.env.local` のキーが1つ足りない | 末尾に改行が無く、前の行にくっついた（S1-3） |
 | commit が中止される | pre-commit の lint / typecheck / `npm test` のどれかが落ちている。**テストを直すのではなく実装を疑う** |
