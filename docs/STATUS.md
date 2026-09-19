@@ -60,9 +60,13 @@ AI言語化は**実LLM（Gemini API）＋ストリーミングが本番でも稼
 
 ---
 
-## 🔀 次の一手（2026-09-19 時点）
-**T-13 Task 11 ─ 気づき通知を実機で通す。** その手順と、10/15 提出までの着手順は
-→ **[`docs/hackathon/2026-09-19_vol5-handoff.md`](./hackathon/2026-09-19_vol5-handoff.md)（最新の正本）**
+## 🔀 次の一手（2026-09-20 時点）
+**T-13 を公開まで持っていく。** 上から順に実行できる手順書がある
+→ **[`docs/handoff/2026-09-20_t13-release-steps.md`](./handoff/2026-09-20_t13-release-steps.md)**（S1〜S10）
+方針と 10/15 提出までの着手順 → **[`docs/hackathon/2026-09-19_vol5-handoff.md`](./hackathon/2026-09-19_vol5-handoff.md)**
+
+> ⚠️ **すべてローカルで確かめ終わるまで `main` にマージしない。** マージ＝公開URLの差し替え。
+> 逆に、作業ブランチを push しただけでは本番は何も変わらない（トリガーは `^main$` のみ）。
 
 次はフェーズ2b（制度側の自律監視）。**審査軸②がいまほぼ空で、ここが唯一の埋め手。**
 
@@ -106,7 +110,8 @@ FPの実務資料と比べると、**表の質では並んだ／部分的に勝�
 - 用語集：[`docs/CONTEXT.md`](./CONTEXT.md)
 - 仕様：[`docs/SPEC.md`](./SPEC.md)／[`docs/機能仕様書_MVP.md`](./機能仕様書_MVP.md)
 - レポート品質の物差し：[`docs/レポート品質_評価基準.md`](./レポート品質_評価基準.md)（T-07 のモデル選定・プロンプト改訂の判定に使う）
-- **最新の正本：[`docs/hackathon/2026-09-19_vol5-handoff.md`](./hackathon/2026-09-19_vol5-handoff.md)**（9/19 再整理・10/15までの着手順）
+- **残りの作業手順：[`docs/handoff/2026-09-20_t13-release-steps.md`](./handoff/2026-09-20_t13-release-steps.md)**（T-13 を公開まで持っていく S1〜S10）
+- **方針の正本：[`docs/hackathon/2026-09-19_vol5-handoff.md`](./hackathon/2026-09-19_vol5-handoff.md)**（9/19 再整理・10/15までの着手順）
 - T-13 設計：[`docs/hackathon/2026-09-14_watch-notify-design.md`](./hackathon/2026-09-14_watch-notify-design.md)／実装計画：[`同 -plan.md`](./hackathon/2026-09-14_watch-notify-plan.md)（Task 11 の手順）
 - その前の申し送り：[`docs/handoff/2026-08-31pm_output-rework.md`](./handoff/2026-08-31pm_output-rework.md)（**出力の作り直し**。FP資料13点の分析→時間軸・図・表・文書構造）
 - その前：[`docs/handoff/2026-08-31_cloud-run.md`](./handoff/2026-08-31_cloud-run.md)（Cloud Run 公開・T-02 完了）
