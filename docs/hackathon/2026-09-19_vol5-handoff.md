@@ -23,7 +23,7 @@
 
 ### コード
 
-- 作業ブランチ **`feat/t13-watch-notify`**。`origin/main`（`941d892`）に対して **11コミットが未push**
+- 作業ブランチ **`feat/t13-watch-notify`**（2026-09-20 に push 済み・PR未作成）。`origin/main` は `941d892`
 - **T-13 フェーズ2a：Task 1〜10 まで実装・コミット済み**
   - `src/watch/milestones.ts` 子の学齢の節目到達を判定する純粋関数（AIを使わない決定的ロジック）
   - `src/watch/store.ts` / `store.memory.ts` / `store.firestore.ts` Watchストア
@@ -112,8 +112,10 @@ ChatGPT 側の推論で、ざっくりした必要保障額は出せてしまう
 2. Firestore 有効化 → Cloud Run 実行SAに `roles/datastore.user`
 3. Slack Incoming Webhook 発行 → `.env.local` に3変数（`SLACK_WEBHOOK_URL` / `WATCH_CRON_SECRET` / `WATCH_BASE_URL`）
 4. 同意フロー → ウォッチャー実行 → 着地画面 → 削除、の一連をローカルで通す
-5. `feat/t13-watch-notify` を push して PR → `main` マージ（＝自動デプロイ）
-6. 本番に Secret Manager で3変数 → Cloud Scheduler ジョブ作成
+5. **マージ前に** Secret Manager に `slack-webhook-url` と `watch-cron-secret` を作り、実行SAに accessor を付ける（[`docs/本番前チェックリスト.md`](../本番前チェックリスト.md) §G-2）。
+   `cloudbuild.yaml` が参照する Secret が1つでも無いと deploy が落ちるので、**順番を逆にしない**
+6. PR → `main` マージ（＝自動デプロイ）。Cloud Build は `^main$` にしか反応しないので、ブランチを push しただけでは何も起きない
+7. Cloud Scheduler ジョブ `watch-notify-weekly` を作成
 
 **完了の合図**：Slack に通知が届き、リンクから `/notice/{token}` → `/result` まで実機で繋がる。
 

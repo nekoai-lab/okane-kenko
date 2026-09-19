@@ -52,7 +52,7 @@ AI言語化は**実LLM（Gemini API）＋ストリーミングが本番でも稼
 | モデル比較ハーネス `npm run bakeoff`（盲検シート・実測トークン） | ✅ 2026-08-31 に現行プロンプトで実行済み（`gemini-3.7-flash` × `gemini-3.1-pro-preview`）。→ **盲検採点が未着手**（人がやる） |
 | T-08 ガードレール G-1/G-2/G-4/G-6（禁止語・結論一致・投資・数値） | ✅ 核実装（G-3出典/G-5再生成は RAG・実LLM後） |
 | T-09 計測／T-10 配偶者追加／T-11 運営レビュー／T-12 RAG | ⬜ |
-| T-13 気づき通知（継続的な見直し）フェーズ2a | 🔶 Task 1〜10 実装済み（`feat/t13-watch-notify`・**未push**）／**Task 11 インフラ＋実機疎通が残り** |
+| T-13 気づき通知（継続的な見直し）フェーズ2a | 🔶 Task 1〜10 実装済み（`feat/t13-watch-notify`・push済み／167テスト green）／**Task 11 インフラ＋実機疎通が残り** |
 | フェーズ2b 制度側の自律監視（審査軸②の本丸） | ⬜ 設計から |
 
 ## 老後モデル（別トラック・`main`非マージ）
@@ -117,5 +117,5 @@ FPの実務資料と比べると、**表の質では並んだ／部分的に勝�
 金額は `src/calc` でしか作らない／AIに金額を書かせない／商品名・送客・煽りは入れない／ゴールデン期待値の正本は `docs/算定テスト_10世帯.xlsx` の検算（red→green のために書き換えない）。
 
 ## GitHub 状態
-`main` = `941d892`（PR #53 マージ済み）。作業ブランチ **`feat/t13-watch-notify` に11コミット未push**（2026-09-19 時点）。オープンPRは **#18（Draft・マージ不可）** のみ。
+`main` = `941d892`（PR #53 マージ済み）。作業ブランチ **`feat/t13-watch-notify` は push 済み・PR未作成**（2026-09-20 時点）。マージ前に [`docs/本番前チェックリスト.md`](./本番前チェックリスト.md) §G-2（T-13 の Secret と Firestore）を済ませること。オープンPRは **#18（Draft・マージ不可）** のみ。
 `main` に入ると Cloud Build が自動で走る → https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1?project=okane-kenko-507122
