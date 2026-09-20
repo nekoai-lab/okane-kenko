@@ -1,0 +1,39 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--layout-margin-mobile) var(--space-9);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+/* 本物の告示と見間違えないように、いちばん上に置く */
+.banner {
+  border-left: 6px solid var(--color-warning);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-control);
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-size: var(--font-size-std-l);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-4);
+}
+
+/* 罠そのもの。読み手（人間）には罠だと分かる見た目にしておく */
+.trap {
+  border: 2px dashed var(--color-error-text);
+  border-radius: var(--radius-control);
+  padding: var(--space-4);
+  margin: var(--space-5) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-std-s);
+}
+
+.note {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+}

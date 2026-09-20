@@ -1,0 +1,159 @@
+.page {
+  max-width: var(--layout-content-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--layout-margin-mobile) var(--space-9);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.title {
+  font-size: var(--font-size-std-l);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-4);
+}
+
+/* いちばん誤解されやすいことを、いちばん上に置く */
+.notice {
+  border-left: 6px solid var(--color-text-muted);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-control);
+  margin-bottom: var(--space-6);
+}
+
+.empty {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-6);
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.h2 {
+  font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-4);
+}
+
+.h3 {
+  font-size: var(--font-size-std-xs);
+  font-weight: var(--font-weight-bold);
+  margin: var(--space-5) 0 var(--space-2);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-3);
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-divider);
+  font-size: var(--font-size-std-s);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.impact {
+  margin: 0 0 var(--space-2);
+}
+
+.list {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-5);
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+}
+
+.basis {
+  font-size: var(--font-size-std-s);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.quote {
+  font-family: var(--font-family-mono, monospace);
+}
+
+.link {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+/* 指示の検出は「危険」ではなく「起きたことの記録」。警告色で煽らず、事実として出す */
+.injection {
+  border-left: 6px solid var(--color-warning);
+  background: var(--color-surface-subtle);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-std-s);
+  margin: var(--space-4) 0;
+}
+
+.log {
+  margin: var(--space-4) 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: var(--space-3) var(--space-4);
+}
+
+.log > summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-bold);
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.approve,
+.reject {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  min-height: var(--target-min);
+}
+
+/* 承認は「記録する」操作であって、売る導線ではない。ブランドの赤は使わない */
+.approve {
+  border: 1px solid var(--color-text);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.reject {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.blocked {
+  border-left: 6px solid var(--color-error-text);
+  background: var(--color-surface-subtle);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  font-size: var(--font-size-std-s);
+  margin-top: var(--space-5);
+}
