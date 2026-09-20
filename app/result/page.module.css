@@ -767,3 +767,33 @@
   margin: 0;
   color: var(--color-text-secondary);
 }
+
+/* 続きを受け取る導線（T-13）。
+   ブランドの赤（CTA）は使わない。押させたい場所ではなく「選べる場所」として出すため、
+   枠は ink 系の淡い面にする（デザイン方針：赤は CTA と利用者が動かすコントロールだけ）。 */
+.watchCard {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+  background: var(--color-surface-subtle);
+}
+
+.watchLead {
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-body);
+  margin: 0 0 var(--space-4);
+}
+
+.watchButton {
+  display: inline-block;
+  padding: 12px 20px;
+  border: 1px solid var(--color-text);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+}
+
+.watchButton:hover {
+  background: var(--color-surface);
+}
