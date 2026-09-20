@@ -286,13 +286,19 @@ curl -X POST https://okane-kenko-caiwgo7uta-an.a.run.app/api/watch/run \
 
 **完了の合図**：本番URLからウォッチャーが1周まわる。
 
-## S9 Cloud Scheduler ジョブを作る（人手）
+## S9 Cloud Scheduler ジョブを作る（人手）─ **本運用まで保留**
+
+> **2026-09-20 に「いまは作らない」と判断した。** 保存された世帯が0件なので、
+> 定期実行しても毎週 `checked:0` を返すだけで、動いている証拠にならない。
+> **再開条件は「実在の利用者が1件でも保存に同意したとき」**（＝ n1 を実施するとき）。
+> それまでは S8 の手打ちで確認できる。API（`cloudscheduler.googleapis.com`）は有効化済み。
 
 ```bash
 gcloud scheduler jobs create http watch-notify-weekly \
   --project=okane-kenko-507122 \
   --location=asia-northeast1 \
   --schedule="0 9 * * 1" \
+  --time-zone="Asia/Tokyo" \
   --uri="https://okane-kenko-caiwgo7uta-an.a.run.app/api/watch/run" \
   --http-method=POST \
   --headers="X-Watch-Secret=<WATCH_CRON_SECRET の値>"
@@ -300,7 +306,10 @@ gcloud scheduler jobs create http watch-notify-weekly \
 
 毎週月曜9時（JST）。`gcloud scheduler jobs run watch-notify-weekly` で手動実行して確かめられる。
 
-**完了の合図**：手動実行で `notice_log` に1行増える。**ここで T-13 フェーズ2a は完了。**
+> **`--time-zone` を省かない。** 既定は UTC なので、`0 9 * * 1` が月曜18時（JST）になる。
+
+**完了の合図**：手動実行で `notice_log` に1行増える。**ここで T-13 フェーズ2a は完全に完了。**
+（保留中でも S8 まで通っているので、**仕組みとしては動いている**。残るのは定期実行の自動化だけ。）
 
 ## S10 後始末（人間の確認が要る）
 
