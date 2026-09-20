@@ -42,5 +42,6 @@ export async function POST(
   }
 
   await store.decide(id, decision, new Date().toISOString());
-  return NextResponse.redirect(new URL("/admin/proposals", req.url), { status: 303 });
+  // 絶対URLを組み立てない（Cloud Run では内部の 0.0.0.0:8080 になる。login ルート参照）
+  return new NextResponse(null, { status: 303, headers: { Location: "/admin/proposals" } });
 }
