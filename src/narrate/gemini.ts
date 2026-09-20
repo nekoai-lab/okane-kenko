@@ -77,12 +77,21 @@ export function checkApiKey(raw: string): ApiKeyCheck {
     // 手順書の `GEMINI_API_KEY=<実値>` を、山カッコごと貼ってしまう事故。実際に踏んだ（2026-08-30）。
     // 「AIza で始まっていない」とだけ言うと原因にたどり着けないので、名指しする。
     if (/^<.*>$/.test(key)) return "山カッコ <> で囲まれている（手順書の <実値> ごと貼られている）";
-    if (!key.startsWith("AIza")) return "AIza で始まっていない（AI Studio のキーではない可能性）";
+    // **先頭が AIza かどうかで弾かない。** 2026-09-20、AI Studio が発行した有効な鍵
+    // （Google に直接投げて 200 が返る）を、この条件だけで拒否して半日止まった。
+    // 鍵の形式は Google の都合で増える。**こちらの知っている形を正解にしない。**
+    // 妥当性の最終判断は Google に任せ、ここは「明らかな貼り付け事故」だけを見る。
     if (key.length < 30) return `短すぎる（${key.length}文字）。貼り付けが途中で切れている可能性`;
     return null;
   })();
 
-  return { key, note, problem, shape };
+  // 見慣れない形は「止める理由」ではなく「調べる手がかり」として添える。
+  const prefixNote =
+    problem === null && !key.startsWith("AIza")
+      ? "AIza で始まらない形式の鍵（新しい形式の可能性）。呼び出しは試みる"
+      : null;
+
+  return { key, note: note ?? prefixNote, problem, shape };
 }
 
 /** SSE の1ブロックのうち、ここで使う部分だけ（`any` を持ち込まないため） */
