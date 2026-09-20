@@ -42,13 +42,26 @@ export function GapWaterfall({
   let cursor = expenseTotal;
   const steps = income.map((it, i) => {
     const from = Math.max(0, cursor - it.amount);
+    /**
+     * **実際に引かれた分**と、引く先が無くて余った分を分ける。
+     *
+     * ここを分けないと、支出が尽きたあとの行が「金額は −400万円 と書いてあるのに
+     * 棒が1ピクセルも無い」状態になり、**描画の故障に見える**（2026-09-20 の指摘）。
+     * 実際には故障ではなく「もう引く先が無い」だけなので、そう書く。
+     * 良い知らせ（使わずに残る）を、黙って消さない。
+     */
+    const used = Math.min(it.amount, cursor);
     const row = {
       label: it.label,
       amount: it.amount,
       // 引かれる区間を、右端から順に左へ寄せて描く（段が下りていくのが見える）
       left: (from / scale) * 100,
-      width: (Math.min(it.amount, cursor) / scale) * 100,
+      width: (used / scale) * 100,
       color: `var(--chart-income-${Math.min(i + 1, 5)})`,
+      /** 1円も引かれなかった（この行より前で支出が尽きている） */
+      unused: used === 0,
+      /** ここで支出をまかないきった（途中まで引かれた） */
+      crossing: used > 0 && used < it.amount,
     };
     cursor = from;
     return row;
@@ -73,15 +86,26 @@ export function GapWaterfall({
       </div>
 
       {steps.map((r) => (
-        <div className={s.wfRow} key={r.label}>
-          <span className={s.wfLabel}>− {r.label}</span>
-          <span className={s.wfTrack} aria-hidden="true">
-            <span
-              className={s.wfBar}
-              style={{ left: `${r.left}%`, width: `${r.width}%`, background: r.color }}
-            />
+        <div className={`${s.wfRow} ${r.unused ? s.wfUnused : ""}`} key={r.label}>
+          <span className={s.wfLabel}>
+            {r.unused ? r.label : `− ${r.label}`}
+            {r.crossing ? (
+              <span className={s.wfNote}>ここで支出をまかないきります</span>
+            ) : r.unused ? (
+              <span className={s.wfNote}>ここまででまかなえるので、使わずに残ります</span>
+            ) : null}
           </span>
-          <span className={s.wfAmount}>−{formatMan(r.amount)}</span>
+          <span className={s.wfTrack} aria-hidden="true">
+            {r.width > 0 ? (
+              <span
+                className={s.wfBar}
+                style={{ left: `${r.left}%`, width: `${r.width}%`, background: r.color }}
+              />
+            ) : null}
+          </span>
+          <span className={s.wfAmount}>
+            {r.unused ? formatMan(r.amount) : `−${formatMan(r.amount)}`}
+          </span>
         </div>
       ))}
 

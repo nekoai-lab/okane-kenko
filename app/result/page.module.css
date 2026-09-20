@@ -797,3 +797,17 @@
 .watchButton:hover {
   background: var(--color-surface);
 }
+
+/* 支出が尽きたあとの行。**棒が無いのは故障ではなく「引く先が無い」**という事実。
+   数字だけ残して黙らせると描画の失敗に見えるので、行ごと淡くして理由を添える。 */
+.wfUnused .wfLabel,
+.wfUnused .wfAmount {
+  color: var(--color-text-muted);
+}
+
+.wfNote {
+  display: block;
+  font-size: var(--font-size-std-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-normal);
+}
