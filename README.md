@@ -161,7 +161,8 @@ Secret Manager / Firestore / Gemini API / Slack Incoming Webhook。
 | [`docs/機能仕様書_MVP.md`](./docs/機能仕様書_MVP.md) | 画面・算定式・ガードレール・API・テスト |
 | [`docs/デザイン方針.md`](./docs/デザイン方針.md) | 色に持たせた意味・グラフの設計 |
 | [`docs/本番前チェックリスト.md`](./docs/本番前チェックリスト.md) | 本番化までの全宿題（GCP構成・Secret の作り方） |
-| [`docs/hackathon/`](./docs/hackathon/) | 方針・設計・デモの筋書き・アーキテクチャ図 |
+| [`docs/アーキテクチャ図.html`](./docs/アーキテクチャ図.html) | 上の3枚の図を1枚にまとめたもの（注記つき・単体で開ける） |
+| [`docs/hackathon/`](./docs/hackathon/) | 方針・設計・デモの筋書き・図の正本（`*.mmd`） |
 | [`docs/handoff/`](./docs/handoff/) | 申し送り（日付順） |
 
 ## 未確定であることを忘れない
