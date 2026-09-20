@@ -52,6 +52,23 @@ const RULES = [
   ],
 ];
 
+/**
+ * .env 系のファイルに触れようとしているか（.env.example だけは通す）。
+ *
+ * 上の RULES はツール名（cat / grep / sed …）を列挙する形だったため、
+ * `node -e 'readFileSync(".env.local")'` のような言語処理系からの読み取りが素通りしていた
+ * （2026-09-20 に実際に通した）。フックが「読めない」と言っているのに読めてしまうと、
+ * 守られているつもりの穴になるので、ツールを問わずファイル名で塞ぐ。
+ *
+ * 限界：ディスク上のスクリプトが .env を読む場合（`npx tsx foo.mjs` など）、
+ * コマンド文字列に .env が現れないので検知できない。
+ * ここで止められるのは「コマンドに .env と書いてある」ものまで。
+ */
+function touchesEnvFile(command) {
+  const hits = command.match(/\.env(?:\.[\w-]+)*/g) ?? [];
+  return hits.some((hit) => hit !== ".env.example");
+}
+
 /** 引数を持たない `git push`（＝現在のブランチをそのまま押す形）か */
 function isBarePush(command) {
   const m = command.match(/\bgit\s+push\b([^\n;&|]*)/);
@@ -108,6 +125,12 @@ process.stdin.on("end", () => {
     allow(); // 解釈できない入力で作業を止めない
   }
   if (typeof command !== "string" || command === "") allow();
+
+  if (touchesEnvFile(command)) {
+    block(
+      ".env 系のファイルに触れるコマンドは、ツールを問わず実行できません（.env.example は読めます）。値の存在確認が必要なら、未設定時にエラーを投げる形で実装してください",
+    );
+  }
 
   for (const [pattern, reason] of RULES) {
     if (pattern.test(command)) block(reason);
