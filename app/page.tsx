@@ -19,12 +19,23 @@ export default function Home() {
 
       <p className={s.lead}>
         あなたに万一のことがあったとき、ご家族に必要なお金はいくらか。
-        いまの保険で足りているか、多すぎないか。
+        <strong>いまの保険で足りているか、多すぎないか。</strong>
         公的なしくみ（遺族年金や高額療養費など）をふまえて概算します。
       </p>
 
+      {/* **CTA を「読み終わってから」に置かない。** 何のサービスかが分かった直後に
+          押せる場所を作る。理由（売らない・選ぶだけ・再開できる）は下で読めばよい。 */}
+      <div className={s.ctaBlock}>
+        <Link className={s.cta} href="/wizard">
+          診断をはじめる
+        </Link>
+        <p className={s.ctaNote}>
+          10問ほど、選ぶだけ。<strong>登録もメールアドレスも要りません。</strong>
+        </p>
+      </div>
+
       <ul className={s.points}>
-        <li className={s.point}>
+        <li className={`${s.point} ${s.pointLead}`}>
           <p className={s.pointTitle}>保険を売りません</p>
           <p className={s.pointBody}>
             この診断は保険の申込みにつなぎません。商品名も出しません。
@@ -32,9 +43,12 @@ export default function Home() {
           </p>
         </li>
         <li className={s.point}>
-          <p className={s.pointTitle}>質問は10問ほど。選ぶだけです</p>
+          {/* 問数は CTA の下に書いた。ここは「答えられない質問があっても大丈夫」に絞る。
+              正確に答えられないことが、やめる理由のいちばん多い形なので。 */}
+          <p className={s.pointTitle}>「分からない」も答えになります</p>
           <p className={s.pointBody}>
-            金額は範囲から選びます。「分からない」「答えたくない」も、そのまま選べます。
+            金額は範囲から選びます。「分からない」「答えたくない」を選んでも診断は進み、
+            どこを推定で補ったかは結果画面に残します。
           </p>
         </li>
         <li className={s.point}>
@@ -45,13 +59,13 @@ export default function Home() {
         </li>
       </ul>
 
-      <Link className={s.cta} href="/wizard">
-        診断をはじめる
-      </Link>
-
       <ul className={s.notes}>
         <li>
-          結果は<strong>概算・要精査</strong>です。確定した金額ではありません。
+          結果は「<strong>必要な額</strong>」「<strong>いまの保障との差</strong>」「
+          <strong>減らせる箇所</strong>」を、根拠（計算の内訳と出典）つきで出します。
+        </li>
+        <li>
+          ただし<strong>概算・要精査</strong>です。確定した金額ではありません。
         </li>
         {/* 「検証版です」はページ上部のバナーが担う（app/layout.tsx）。
             未確認パラメータの有無から自動で出るので、ここに二重に書かない。 */}

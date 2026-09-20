@@ -153,10 +153,14 @@ function YearSelect(props: {
   for (let y = props.max; y >= props.min; y--) years.push(y);
   return (
     <label className={s.select}>
-      {props.label}：
-      <select value={props.value ?? ""} onChange={(e) => props.onChange(Number(e.target.value))}>
+      <span className={s.selectLabel}>{props.label}</span>
+      <select
+        className={s.selectControl}
+        value={props.value ?? ""}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+      >
         <option value="" disabled>
-          選択
+          選択してください
         </option>
         {years.map((y) => (
           <option key={y} value={y}>
@@ -202,6 +206,49 @@ export default function WizardPage() {
     const next = [...(sel.childrenBirthYears ?? [])];
     next[i] = y;
     set({ childrenBirthYears: next });
+  };
+
+  /**
+   * いま何が足りなくて進めないか。**色だけで「押せません」と伝えない。**
+   * 無効なボタンは、理由が書いていないと「壊れている」と読まれる。
+   */
+  const missingOnStep = (): string[] => {
+    const m: string[] = [];
+    switch (step) {
+      case 0:
+        if (sel.selfBirthYear === undefined) m.push("あなたの生まれた年");
+        if (sel.selfEmployment === undefined) m.push("働き方");
+        break;
+      case 1:
+        if (sel.hasSpouse === undefined) m.push("配偶者の有無");
+        if (sel.hasSpouse && sel.spouseBirthYear === undefined) m.push("配偶者の生まれた年");
+        if (sel.hasSpouse && sel.spouseEmployment === undefined) m.push("配偶者の働き方");
+        if (sel.childrenBirthYears === undefined) m.push("お子さんの人数");
+        if ((sel.childrenBirthYears?.length ?? 0) > 0 && sel.educationPlan === undefined) {
+          m.push("進路の見込み");
+        }
+        break;
+      case 2:
+        if (sel.selfIncome === undefined) m.push("あなたの年収");
+        if (sel.hasSpouse && sel.spouseIncome === undefined) m.push("配偶者の年収");
+        break;
+      case 3:
+        if (sel.assets === undefined) m.push("金融資産");
+        if (sel.livingCost === undefined) m.push("毎月の生活費");
+        break;
+      case 4:
+        if (sel.housing === undefined) m.push("住まい");
+        if (sel.housing === "own_loan" && sel.loan === undefined) m.push("ローン残高");
+        if (sel.housing === "own_loan" && sel.danshin === undefined) m.push("団信の有無");
+        break;
+      case 5:
+        if (sel.coverageSelf === undefined) m.push("あなたの死亡保障額");
+        if (sel.hasSpouse && sel.coverageSpouse === undefined) m.push("配偶者の死亡保障額");
+        break;
+      default:
+        break;
+    }
+    return m;
   };
 
   const stepValid = (): boolean => {
@@ -309,13 +356,14 @@ export default function WizardPage() {
             <legend className={s.legend}>お子さんの人数</legend>
             <div className={s.selectRow}>
               <label className={s.select}>
-                人数：
+                <span className={s.selectLabel}>人数</span>
                 <select
+                  className={s.selectControl}
                   value={childCount ?? ""}
                   onChange={(e) => setChildCount(Number(e.target.value))}
                 >
                   <option value="" disabled>
-                    選択
+                    選択してください
                   </option>
                   {[0, 1, 2, 3, 4, 5].map((n) => (
                     <option key={n} value={n}>
@@ -471,6 +519,13 @@ export default function WizardPage() {
           </button>
         )}
       </div>
+      {missingOnStep().length > 0 ? (
+        <p aria-live="polite" className={s.missing}>
+          {missingOnStep().length === 1
+            ? `あと「${missingOnStep()[0]}」を選ぶと進めます。`
+            : `あと${missingOnStep().length}つ選ぶと進めます：${missingOnStep().join("・")}`}
+        </p>
+      ) : null}
       <p className={s.helper}>
         入力の途中でも、このページのURLをブックマークすれば続きから再開できます。
       </p>
