@@ -1,0 +1,54 @@
+%% お金の健康診断 ─ システム構成（GCP）
+%% 主張：秘密は Secret Manager にしか無く、params はリポジトリにしか無い。
+%% 構成：①利用者 ②GCP（デプロイ経路と実行環境） ③外部サービス ④正本（Git）
+flowchart LR
+  subgraph users["👤 利用者"]
+    direction TB
+    employee["社員<br>登録不要で診断"]:::trigger
+    operator["運営者<br>合言葉つき承認画面"]:::trigger
+  end
+
+  subgraph gcp["☁️ Google Cloud（asia-northeast1）"]
+    direction TB
+    cloudRun["Cloud Run: okane-kenko<br>Next.js 15 / 公開・認証なし"]:::primary
+    firestore["Firestore（native）<br>households / notice_log<br>param_proposals / param_watch_log"]:::success
+    secrets["Secret Manager<br>gemini-api-key / slack-webhook-url<br>watch-cron-secret / admin-password"]:::gate
+    cloudBuild["Cloud Build: deploy-main<br>lint → typecheck → test → deploy"]:::ai
+  end
+
+  subgraph external["🌐 外部サービス"]
+    direction TB
+    gemini["Gemini API<br>言語化のみ・金額は渡さない"]:::ai
+    slack["Slack Incoming Webhook<br>金額を含めない通知"]
+    nenkin["日本年金機構<br>一次情報（許可リスト）"]
+  end
+
+  subgraph repo["📦 正本（GitHub）"]
+    direction TB
+    mainBranch["main ブランチ"]:::success
+    paramsYaml["params/*.yaml<br>制度パラメータ＋出典＋有効期限"]:::primary
+  end
+
+  employee -- "HTTPS" --> cloudRun
+  operator -- "HTTPS＋合言葉クッキー" --> cloudRun
+
+  cloudRun -- "世帯記録・承認キュー（ADCで認証）" --> firestore
+  cloudRun -- "起動時に環境変数へ注入" --> secrets
+  cloudRun -- "プレースホルダだけの文章を生成" --> gemini
+  cloudRun -- "節目の通知（金額なし）" --> slack
+  cloudRun -- "巡回（許可リスト内の1ホップ）" --> nenkin
+
+  mainBranch -- "push で起動" --> cloudBuild
+  cloudBuild -- "検査に通ればデプロイ" --> cloudRun
+  paramsYaml -- "コンテナに同梱される" --> cloudBuild
+
+  classDef trigger fill:#fed7aa,stroke:#c2410c,color:#374151
+  classDef success fill:#a7f3d0,stroke:#047857,color:#374151
+  classDef gate fill:#fef3c7,stroke:#b45309,color:#374151
+  classDef ai fill:#ddd6fe,stroke:#6d28d9,color:#374151
+  classDef primary fill:#3b82f6,stroke:#1e3a5f,color:#ffffff
+
+  style users fill:#f4f6f8,stroke:#5a6472,color:#374151
+  style gcp fill:#f0fdf4,stroke:#047857,color:#374151
+  style external fill:#fff1f2,stroke:#b91c1c,stroke-dasharray:6 4,color:#374151
+  style repo fill:#eff6ff,stroke:#1e3a5f,color:#374151
