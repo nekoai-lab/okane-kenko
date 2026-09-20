@@ -12,7 +12,10 @@ import { loadWatchSources } from "./sources.js";
 import { createMemoryProposalStore } from "./store.memory.js";
 
 const P = loadParams("2026-08");
-const S = loadWatchSources();
+// **本番の YAML 全体を使わない。** 監視対象が増減するたびに件数の期待が崩れるうえ、
+// ここで確かめたいのは「1つの watch をどう回すか」であって、対象の数ではない。
+const ALL = loadWatchSources();
+const S = { version: ALL.version, watches: { izokuKiso: ALL.watches.izokuKiso } };
 const CASES = GOLDEN.map((g) => ({ id: g.id, label: g.label, input: g.input }));
 const NOW = new Date("2026-09-20T09:00:00+09:00");
 

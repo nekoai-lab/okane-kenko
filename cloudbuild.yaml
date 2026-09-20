@@ -55,7 +55,7 @@ steps:
       - --memory=512Mi
       - --min-instances=0
       - --max-instances=3
-      - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,SLACK_WEBHOOK_URL=slack-webhook-url:latest,WATCH_CRON_SECRET=watch-cron-secret:latest
+      - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,SLACK_WEBHOOK_URL=slack-webhook-url:latest,WATCH_CRON_SECRET=watch-cron-secret:latest,ADMIN_PASSWORD=admin-password:latest
       # WATCH_BASE_URL は通知リンク（/notice/{token}）を組み立てる公開URLで、秘密ではない。
       # Secret Manager に入れると権限と版の管理が増えるだけなので、素の環境変数で渡す。
       - --set-env-vars=WATCH_BASE_URL=https://okane-kenko-caiwgo7uta-an.a.run.app
