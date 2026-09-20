@@ -1,6 +1,6 @@
 # 進捗ステータス（共有用スナップショット）
 
-**最終更新：2026-08-31**
+**最終更新：2026-09-20**
 このページは「いまどこまで進んだか」を共有するための**薄い索引**です。詳細は各正本（TICKETS / チェックリスト / ADR）にリンクします（内容の二重管理を避けるため、ここには要約だけ置きます）。
 
 > 🔄 **更新ルール**：ハンドオフ（`docs/handoff/`）を書くとき・進捗を大きく動かしたときは、**このページ（最終更新日・進捗表・「次の分岐」）も必ず一緒に更新する**。薄い索引に保ち、詳細は正本へのリンクで済ませる。
@@ -52,16 +52,30 @@ AI言語化は**実LLM（Gemini API）＋ストリーミングが本番でも稼
 | モデル比較ハーネス `npm run bakeoff`（盲検シート・実測トークン） | ✅ 2026-08-31 に現行プロンプトで実行済み（`gemini-3.7-flash` × `gemini-3.1-pro-preview`）。→ **盲検採点が未着手**（人がやる） |
 | T-08 ガードレール G-1/G-2/G-4/G-6（禁止語・結論一致・投資・数値） | ✅ 核実装（G-3出典/G-5再生成は RAG・実LLM後） |
 | T-09 計測／T-10 配偶者追加／T-11 運営レビュー／T-12 RAG | ⬜ |
+| T-13 気づき通知（継続的な見直し）フェーズ2a | 🔶 実装・インフラ・ローカル疎通まで完了（**[PR #54](https://github.com/nekoai-lab/okane-kenko/pull/54) は Draft・未マージ**）。手順書 S1〜S6 済み／**S7 マージ以降（本番疎通・Cloud Scheduler・文書更新）が残り** |
+| フェーズ2b 制度側の自律監視（審査軸②の本丸） | ⬜ 設計から |
 
 ## 老後モデル（別トラック・`main`非マージ）
 **PR #18（Draft・マージ不可）** … 老後（配偶者65歳→平均寿命の基本生活不足）を結果画面まで配線した検証ビルド。**必要額が上がる**ため専門家レビュー＋検算まで保留。判断材料 → [`docs/老後モデル_専門家レビュー論点.md`](./老後モデル_専門家レビュー論点.md)（ADR-016）。
 
 ---
 
-## 🔀 次の一手（いま止まっている一点／2026-09-01 再開時点）
-**まず PR #52 をマージする**（盲検の修正・採点シートの生成物化）。そのうえで盲検採点へ。
+## 🔀 次の一手（2026-09-20 時点）
+**T-13 を公開まで持っていく。** 上から順に実行できる手順書がある
+→ **[`docs/handoff/2026-09-20_t13-release-steps.md`](./handoff/2026-09-20_t13-release-steps.md)**（S1〜S10）
+方針と 10/15 提出までの着手順 → **[`docs/hackathon/2026-09-19_vol5-handoff.md`](./hackathon/2026-09-19_vol5-handoff.md)**
 
+**S1〜S6 は 2026-09-20 に完了**（Slack Webhook・ADC・Firestore・ローカル一連の疎通・Secret 2件・検査3つ green）。
+残りは **S7 のマージ以降**：PR #54 を Ready にしてマージ → S8 本番で1周 → S9 Cloud Scheduler（**API がまだ未有効化**）→ S10 文書更新。
 
+> ⚠️ **すべてローカルで確かめ終わるまで `main` にマージしない。** マージ＝公開URLの差し替え。
+> 逆に、作業ブランチを push しただけでは本番は何も変わらない（トリガーは `^main$` のみ）。
+
+次はフェーズ2b（制度側の自律監視）。**審査軸②がいまほぼ空で、ここが唯一の埋め手。**
+
+> 9/4 の作戦書（新リポ `okane-doctor` に分割する案）は 9/14 に**撤回済み**。提出物は本体（`main`）である。
+
+### 事業側の持ち越し（10/15 提出の必須要件ではない）
 **`bakeoff-out/blind.md` の10本を6観点で盲検採点する** → モデル確定（`GEMINI_MODEL`）→ `docs/ADR.md` に ADR-017 を記入。
 **ベイクオフは 2026-08-31 に現行プロンプトで回し直し済み**（10生成・133秒）。残っているのは人の採点だけ。
 
@@ -99,7 +113,10 @@ FPの実務資料と比べると、**表の質では並んだ／部分的に勝�
 - 用語集：[`docs/CONTEXT.md`](./CONTEXT.md)
 - 仕様：[`docs/SPEC.md`](./SPEC.md)／[`docs/機能仕様書_MVP.md`](./機能仕様書_MVP.md)
 - レポート品質の物差し：[`docs/レポート品質_評価基準.md`](./レポート品質_評価基準.md)（T-07 のモデル選定・プロンプト改訂の判定に使う）
-- 直近の申し送り：[`docs/handoff/2026-08-31pm_output-rework.md`](./handoff/2026-08-31pm_output-rework.md)（**出力の作り直し**。FP資料13点の分析→時間軸・図・表・文書構造）
+- **残りの作業手順：[`docs/handoff/2026-09-20_t13-release-steps.md`](./handoff/2026-09-20_t13-release-steps.md)**（T-13 を公開まで持っていく S1〜S10）
+- **方針の正本：[`docs/hackathon/2026-09-19_vol5-handoff.md`](./hackathon/2026-09-19_vol5-handoff.md)**（9/19 再整理・10/15までの着手順）
+- T-13 設計：[`docs/hackathon/2026-09-14_watch-notify-design.md`](./hackathon/2026-09-14_watch-notify-design.md)／実装計画：[`同 -plan.md`](./hackathon/2026-09-14_watch-notify-plan.md)（Task 11 の手順）
+- その前の申し送り：[`docs/handoff/2026-08-31pm_output-rework.md`](./handoff/2026-08-31pm_output-rework.md)（**出力の作り直し**。FP資料13点の分析→時間軸・図・表・文書構造）
 - その前：[`docs/handoff/2026-08-31_cloud-run.md`](./handoff/2026-08-31_cloud-run.md)（Cloud Run 公開・T-02 完了）
 - その前：[`docs/handoff/2026-08-29_t07-real-llm.md`](./handoff/2026-08-29_t07-real-llm.md)（T-07 を実LLM＋ストリーミングに差し替え）
 - その前：[`docs/handoff/2026-08-27_llm-provider-and-bakeoff.md`](./handoff/2026-08-27_llm-provider-and-bakeoff.md)（言語化LLMの選定・ベイクオフ準備。**ADR-017 の文案あり・未記入**）
@@ -108,5 +125,5 @@ FPの実務資料と比べると、**表の質では並んだ／部分的に勝�
 金額は `src/calc` でしか作らない／AIに金額を書かせない／商品名・送客・煽りは入れない／ゴールデン期待値の正本は `docs/算定テスト_10世帯.xlsx` の検算（red→green のために書き換えない）。
 
 ## GitHub 状態
-`main` = `ba6b1c5`（PR #41 マージ済み・CI green）・未pushなし。オープンPRは **#18（Draft・マージ不可）** のみ。
+`main` = `941d892`（PR #53 マージ済み）。作業ブランチ `feat/t13-watch-notify` は push 済みで、**[PR #54](https://github.com/nekoai-lab/okane-kenko/pull/54)（Draft・未マージ）**（2026-09-20 時点）。マージ前の [`docs/本番前チェックリスト.md`](./本番前チェックリスト.md) §G-2（T-13 の Secret と Firestore）は**完了済み**（Secret 2件作成・実行SAに accessor 付与・Firestore native 有効化・ローカル一連の疎通）。オープンPRは **#54（Draft）** と **#18（Draft・マージ不可）**。
 `main` に入ると Cloud Build が自動で走る → https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1?project=okane-kenko-507122

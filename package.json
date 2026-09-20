@@ -20,6 +20,7 @@
     "bakeoff": "vitest run --config vitest.bakeoff.config.ts"
   },
   "dependencies": {
+    "firebase-admin": "^14.4.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

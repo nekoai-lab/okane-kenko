@@ -3,6 +3,11 @@
 # gemini-case-navi と同じ形（Cloud Build トリガー）。手元に Docker は要らない ─
 # ビルドはここで走る。トリガーの作成は README ではなく docs/本番前チェックリスト.md「G」に書く。
 #
+# 注意：**参照している Secret が1つでも無いと deploy ステップで落ちる。**
+# T-13（気づき通知）で slack-webhook-url と watch-cron-secret を足したので、
+# main にマージする前に Secret Manager に作り、ビルド用SAに accessor を付けておくこと。
+# 手順は docs/本番前チェックリスト.md「G」。
+#
 # 注意：**検証ビルドの間は verified:false のパラメータが残っている。**
 # 本番として開ける（strictVerified を有効にする）のは、A〜C を潰してから。
 
@@ -50,7 +55,10 @@ steps:
       - --memory=512Mi
       - --min-instances=0
       - --max-instances=3
-      - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest
+      - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,SLACK_WEBHOOK_URL=slack-webhook-url:latest,WATCH_CRON_SECRET=watch-cron-secret:latest
+      # WATCH_BASE_URL は通知リンク（/notice/{token}）を組み立てる公開URLで、秘密ではない。
+      # Secret Manager に入れると権限と版の管理が増えるだけなので、素の環境変数で渡す。
+      - --set-env-vars=WATCH_BASE_URL=https://okane-kenko-caiwgo7uta-an.a.run.app
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
