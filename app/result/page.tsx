@@ -11,6 +11,7 @@ import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import type { Projection } from "../../src/calc/projection.js";
 import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
+import { jstYear } from "../../src/time/jstYear.js";
 import { Cashflow } from "./Cashflow.js";
 import { CoverageCurve } from "./CoverageCurve.js";
 import { GapWaterfall } from "./GapWaterfall.js";
@@ -278,7 +279,7 @@ export default async function ResultPage({
 
   // 年次キャッシュフロー（US-04b）。総額と同じ係数・同じ前提で、合計する前の姿を出す。
   // 変動率は既定の0（実値への切り替えはパラメータ版の更新でやる。SPEC 参照）。
-  const asOfYear = new Date().getFullYear();
+  const asOfYear = jstYear(new Date());
   const base = {
     children: input.children,
     housing: input.housing,

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { decodeSelections, encodeSelections } from "../../src/wizard/url.js";
 import { isComplete } from "../../src/wizard/complete.js";
+import { jstYear } from "../../src/time/jstYear.js";
 import type {
   AssetCode,
   CoverageCode,
@@ -188,7 +189,7 @@ export default function WizardPage() {
 
   if (!mounted) return null;
 
-  const currentYear = new Date().getFullYear();
+  const currentYear = jstYear(new Date());
   const set = (patch: Partial<WizardSelections>) => setSel((prev) => ({ ...prev, ...patch }));
 
   const childCount = sel.childrenBirthYears?.length;
