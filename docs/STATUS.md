@@ -52,7 +52,7 @@ AI言語化は**実LLM（Gemini API）＋ストリーミングが本番でも稼
 | モデル比較ハーネス `npm run bakeoff`（盲検シート・実測トークン） | ✅ 2026-08-31 に現行プロンプトで実行済み（`gemini-3.7-flash` × `gemini-3.1-pro-preview`）。→ **盲検採点が未着手**（人がやる） |
 | T-08 ガードレール G-1/G-2/G-4/G-6（禁止語・結論一致・投資・数値） | ✅ 核実装（G-3出典/G-5再生成は RAG・実LLM後） |
 | T-09 計測／T-10 配偶者追加／T-11 運営レビュー／T-12 RAG | ⬜ |
-| T-13 気づき通知（継続的な見直し）フェーズ2a | 🔶 実装・インフラ・ローカル疎通まで完了（**[PR #54](https://github.com/nekoai-lab/okane-kenko/pull/54) は Draft・未マージ**）。手順書 S1〜S6 済み／**S7 マージ以降（本番疎通・Cloud Scheduler・文書更新）が残り** |
+| T-13 気づき通知（継続的な見直し）フェーズ2a | 🔶 **本番稼働**（PR #54 マージ・rev `00014-fhl`）。手順書 S1〜S8 済み／**残りは S9（Cloud Scheduler の週次ジョブ）と ADR 記入だけ** |
 | フェーズ2b 制度側の自律監視（審査軸②の本丸） | ⬜ 設計から |
 
 ## 老後モデル（別トラック・`main`非マージ）
@@ -65,8 +65,17 @@ AI言語化は**実LLM（Gemini API）＋ストリーミングが本番でも稼
 → **[`docs/handoff/2026-09-20_t13-release-steps.md`](./handoff/2026-09-20_t13-release-steps.md)**（S1〜S10）
 方針と 10/15 提出までの着手順 → **[`docs/hackathon/2026-09-19_vol5-handoff.md`](./hackathon/2026-09-19_vol5-handoff.md)**
 
-**S1〜S6 は 2026-09-20 に完了**（Slack Webhook・ADC・Firestore・ローカル一連の疎通・Secret 2件・検査3つ green）。
-残りは **S7 のマージ以降**：PR #54 を Ready にしてマージ → S8 本番で1周 → S9 Cloud Scheduler（**API がまだ未有効化**）→ S10 文書更新。
+**S1〜S8 は 2026-09-20 に完了。** PR #54 をマージ（`a210260`）→ Cloud Build SUCCESS → 本番 rev `00014-fhl` で
+`POST /api/watch/run` が `200 {"checked":0,"notified":0,"errors":[]}` を返すところまで確認済み
+（`checked:0` は S4 の手順6で試験用の記録を削除したあとなので想定どおり）。
+
+**残りは S9（Cloud Scheduler の週次ジョブ作成）だけ。** API は有効化済み。ジョブ作成コマンドは手順書 S9 にある。
+**このコマンドは人間のターミナルで実行する** — 共有シークレットをジョブ設定に保存する形なので、AIエージェント側では止められる。
+
+> ⚠️ **`ageAsOf` にタイムゾーン依存のバグがあり、PR #54 の中で直した**（`674888d`）。`getFullYear()` が
+> 実行環境の年を返すため、**UTC で動く Cloud Run では JST 1/1 0:00〜9:00 に年齢が1歳若く判定され、
+> 節目の通知を取りこぼす**。開発機（JST）では再現せず、CI（UTC）で初めて落ちた。
+> **同じ形が `src/wizard/normalize.ts:34` に残っている**（算定の入口。未修正・別件）。
 
 > ⚠️ **すべてローカルで確かめ終わるまで `main` にマージしない。** マージ＝公開URLの差し替え。
 > 逆に、作業ブランチを push しただけでは本番は何も変わらない（トリガーは `^main$` のみ）。
@@ -125,5 +134,5 @@ FPの実務資料と比べると、**表の質では並んだ／部分的に勝�
 金額は `src/calc` でしか作らない／AIに金額を書かせない／商品名・送客・煽りは入れない／ゴールデン期待値の正本は `docs/算定テスト_10世帯.xlsx` の検算（red→green のために書き換えない）。
 
 ## GitHub 状態
-`main` = `941d892`（PR #53 マージ済み）。作業ブランチ `feat/t13-watch-notify` は push 済みで、**[PR #54](https://github.com/nekoai-lab/okane-kenko/pull/54)（Draft・未マージ）**（2026-09-20 時点）。マージ前の [`docs/本番前チェックリスト.md`](./本番前チェックリスト.md) §G-2（T-13 の Secret と Firestore）は**完了済み**（Secret 2件作成・実行SAに accessor 付与・Firestore native 有効化・ローカル一連の疎通）。オープンPRは **#54（Draft）** と **#18（Draft・マージ不可）**。
+`main` = `a210260`（**[PR #54](https://github.com/nekoai-lab/okane-kenko/pull/54) マージ済み**・2026-09-20）。[`docs/本番前チェックリスト.md`](./本番前チェックリスト.md) §G-2（T-13 の Secret と Firestore）は完了済み。オープンPRは **#18（Draft・マージ不可）** のみ。
 `main` に入ると Cloud Build が自動で走る → https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1?project=okane-kenko-507122
