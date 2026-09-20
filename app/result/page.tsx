@@ -364,6 +364,47 @@ export default async function ResultPage({
     },
   ];
 
+  /**
+   * 世帯の過不足を1枚で出す。**足りない側と減らせる側が同時にあるなら、両方を名指しする。**
+   *
+   * 以前は `totalShortage > 0` なら不足額だけを出していた。組み替えで済む世帯
+   * （本人が過剰・配偶者が不足）では、見出しが「世帯全体で見直せそうです」なのに
+   * 目が最初に行く場所には不足額だけがオレンジで立っていて、**結論と逆のことを言っていた**。
+   * 大きく出すのは額の大きい側（＝その世帯で効く側）にし、もう一方は必ず注記に残す。
+   */
+  const gapVital: Vital =
+    cov === null && result.spouse === null
+      ? { label: "世帯の過不足", value: "—", note: "いまの保障が分かれば出せます" }
+      : totalShortage > 0 && totalExcess > 0
+        ? totalExcess >= totalShortage
+          ? {
+              label: "減らせる額（世帯）",
+              value: `約${money(totalExcess)}`,
+              note: `一方で約${money(totalShortage)}足りません。組み替えで対応できる見込みです`,
+              tone: "good",
+            }
+          : {
+              label: "足りない額（世帯）",
+              value: `約${money(totalShortage)}`,
+              note: `別のところで約${money(totalExcess)}減らせます`,
+              tone: "warn",
+            }
+        : totalShortage > 0
+          ? {
+              label: "足りない額（世帯）",
+              value: `約${money(totalShortage)}`,
+              note: "いまの保障との差",
+              tone: "warn",
+            }
+          : totalExcess > 0
+            ? {
+                label: "減らせる額（世帯）",
+                value: `約${money(totalExcess)}`,
+                note: "保険料が浮きます",
+                tone: "good",
+              }
+            : { label: "世帯の過不足", value: "0円", note: "過不足なし", tone: "good" };
+
   const vitals: Vital[] = [
     {
       // 金額の呼び名は verdict で変える（同じ名前で別の数を出さない・2026-08-30 の修正と同じ理由）
@@ -376,19 +417,7 @@ export default async function ResultPage({
       value: cov === null ? "未入力" : `約${money(cov)}`,
       note: cov === null ? "証券が見つかったら再診断できます" : "ご申告の死亡保障額",
     },
-    {
-      label: totalShortage > 0 ? "足りない額（世帯）" : "減らせる額（世帯）",
-      value:
-        cov === null && result.spouse === null
-          ? "—"
-          : totalShortage > 0
-            ? `約${money(totalShortage)}`
-            : totalExcess > 0
-              ? `約${money(totalExcess)}`
-              : "0円",
-      note: totalShortage > 0 ? "いまの保障との差" : "保険料が浮きます",
-      tone: totalShortage > 0 ? "warn" : "good",
-    },
+    gapVital,
     selfProjection.depletedAt
       ? {
           label: "貯蓄が尽きる年",
@@ -640,6 +669,22 @@ export default async function ResultPage({
         </p>
       </div>
 
+      {/* 続きを受け取る導線（T-13）。**出典より下に置かない。**
+          唯一「こちらから声をかける」機能が、最下部のテキストリンク1本では見つからない。
+          ただし CTA の赤は使わない。押させたい場所ではなく、選べる場所として出す。 */}
+      <div className={`${s.section} ${s.watchCard}`}>
+        <h2 className={s.h3}>このあと、状況が変わったら</h2>
+        <p className={s.watchLead}>
+          お子さんの進学など、必要な保障が変わる時期にだけ一言お知らせします。
+          保存するのは今日の入力（範囲）と結果の要点だけで、
+          <strong>お知らせに金額は書きません</strong>。いつでも削除できます。
+        </p>
+        <Link className={s.watchButton} href={`/save?${q.toString()}`}>
+          この結果を保存してお知らせを受け取る
+        </Link>
+        <p className={s.basis}>※ 保存しなくても、この結果はURLをブックマークすれば見返せます。</p>
+      </div>
+
       {/* 参考リンク（公的機関のみ・商品導線は置かない＝受入基準A-4） */}
       <div className={s.section}>
         <h2 className={s.h2}>参考（公的機関）</h2>
@@ -681,12 +726,6 @@ export default async function ResultPage({
         出典：遺族年金は日本年金機構・厚生年金保険法（令和8年度の年金額は報道値ベースで確定前）、教育費は文部科学省
         子供の学習費調査。生活費率・就労推定などの「当社基準」は公的出典のない当社の見立てです。
       </p>
-
-      <div className={s.section}>
-        <Link className={s.link} href={`/save?${q.toString()}`}>
-          この結果を保存して、変化があったときにお知らせを受け取る →
-        </Link>
-      </div>
 
       <div className={s.draftNote}>
         次の一歩・選ぶ基準の文面は、保険業法の正式な弁護士レビュー（OI-01）後に確定します（現在はサンプル）。

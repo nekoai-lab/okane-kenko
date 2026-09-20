@@ -56,3 +56,29 @@ test("検査に落ちたら定型文に切り替え、切り替えたことを�
   await expect(page.getByTestId("narration")).toContainText("必要な保障の目安は");
   await expect(page.getByText("定型文に切り替えました")).toBeVisible();
 });
+
+/**
+ * 2026-09-20：本番で Gemini の鍵が無効になっていたとき、画面は
+ * 「AI の文章が検査を通らなかった」と言い続けていた。文は1文字も届いていないのに、
+ * 起きていないことを断定していた。起きたことだけを書く。
+ */
+test("AIを呼べなかったときは「検査に落ちた」と書かない", async ({ page }) => {
+  await page.route("**/api/narrate*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body: ndjson([
+        {
+          type: "fallback",
+          text: "いまの前提では、必要な保障の目安は 約200万円 です。世帯全体で見直せそうです。",
+          reason: "api_error",
+        },
+      ]),
+    });
+  });
+
+  await page.goto(`/result?${QUERY}`);
+  await expect(page.getByTestId("narration")).toContainText("必要な保障の目安は");
+  await expect(page.getByText("AI をいま呼び出せなかったため")).toBeVisible();
+  await expect(page.getByText("検査を通らなかった")).toHaveCount(0);
+});
