@@ -1,0 +1,73 @@
+/**
+ * 制度監視が積む「承認待ち」の型と保存先インターフェース（フェーズ2b）。
+ *
+ * **エージェントは提案を積むだけで、`params/` には触れない。**
+ * 承認は「人間が確認した」という記録であって、YAML の更新は人間が PR で行う。
+ * 取り消せない操作をエージェントに渡さない、という一点のためにこの層がある。
+ *
+ * 実装（Firestore）はテストから切り離すため、ここはインターフェースだけを置く。
+ */
+import type { Impact, ParamChange } from "./judge.js";
+
+/** 1回の巡回で何をしたか。**全ツール呼び出しを時系列で読める形にする**（審査軸②の証跡） */
+export interface ActionLogEntry {
+  at: string;
+  /** 何をしたか（fetch / extract / judge / decide） */
+  step: string;
+  /** 入力の要約。**本文そのものは載せない**（長すぎるうえ、載せる意味がない） */
+  input: string;
+  /** 出力の要約 */
+  output: string;
+  ms: number;
+}
+
+export type ProposalStatus = "pending" | "approved" | "rejected";
+
+export interface ProposalRecord {
+  id: string;
+  watchKey: string;
+  label: string;
+  changes: ParamChange[];
+  sourceUrl: string;
+  fetchedAt: string;
+  /** 根拠として残す本文の一部。**そのまま引用する**（要約すると検証できない） */
+  matchedTexts: string[];
+  /** 本文に指示らしき文字列があったか。**従わなかったことの証跡** */
+  injectionSuspected: string[];
+  impact: Impact;
+  actionLog: ActionLogEntry[];
+  status: ProposalStatus;
+  createdAt: string;
+  decidedAt: string | null;
+}
+
+export type RunDecision = "proposed" | "silent" | "blocked" | "failed";
+
+/** 提案を作らなかった回も残す。**沈黙も設計のうち**（2a の notice_log と同じ思想） */
+export interface WatchRunLogEntry {
+  runAt: string;
+  watchKey: string;
+  decision: RunDecision;
+  detail: string;
+}
+
+export interface CreateProposalInput {
+  watchKey: string;
+  label: string;
+  changes: ParamChange[];
+  sourceUrl: string;
+  fetchedAt: string;
+  matchedTexts: string[];
+  injectionSuspected: string[];
+  impact: Impact;
+  actionLog: ActionLogEntry[];
+  createdAt: string;
+}
+
+export interface ProposalStore {
+  listProposals(): Promise<ProposalRecord[]>;
+  createProposal(input: CreateProposalInput): Promise<string>;
+  decide(id: string, status: Exclude<ProposalStatus, "pending">, at: string): Promise<void>;
+  appendRunLog(entry: WatchRunLogEntry): Promise<void>;
+  listRunLog(limit: number): Promise<WatchRunLogEntry[]>;
+}
