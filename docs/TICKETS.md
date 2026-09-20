@@ -234,7 +234,10 @@ T-01 算定エンジン ✅完了
 - [x] 初回保存の同意画面(独立した確認画面)
 - [x] 通知着地画面(`/notice/{token}`)・削除API(SPEC.md US-10)
 
-**完了条件**：Slack通知→着地画面→「詳しく見直す」→`/result`という一連の流れが、実際のFirestore・Slackで動作確認できる(Task 11)。
+- [x] 実機疎通(Task 11)：保存→`/api/watch/run`→Slack→着地画面→削除→二重通知しない、をローカルから実Firestore・実Slackで確認(2026-09-20)
+- [ ] 本番で1周＋Cloud Schedulerの定期実行(手順書 S8・S9)
+
+**完了条件**：Slack通知→着地画面→「詳しく見直す」→`/result`という一連の流れが、実際のFirestore・Slackで動作確認できる(Task 11)。**ローカルからは 2026-09-20 に確認済み**。本番URLでの1周と週次実行は [`docs/handoff/2026-09-20_t13-release-steps.md`](handoff/2026-09-20_t13-release-steps.md) S8・S9。
 
 **明示的にスコープ外**：制度側の監視(フェーズ2b・別途設計)、住宅ローン・教育費などを独立機能として追加すること(既存のOut of Scope判断を維持)。
 
