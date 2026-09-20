@@ -20,8 +20,15 @@ export function milestoneAges(p: ParamSet): number[] {
   ];
 }
 
+/** JST は年間を通じて UTC+9（夏時間がない）ので、固定のオフセットで足りる */
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
 export function ageAsOf(birthYear: number, asOf: Date): number {
-  return asOf.getFullYear() - birthYear;
+  // getFullYear() は実行環境のタイムゾーンで年を返すため、同じ時刻でも
+  // 開発機(JST)と Cloud Run / CI(UTC)で年が1つずれ、年齢が1歳ずれる。
+  // 日本国内向けのサービスなので、どこで動いても JST の年で数える。
+  const jst = new Date(asOf.getTime() + JST_OFFSET_MS);
+  return jst.getUTCFullYear() - birthYear;
 }
 
 export interface MilestoneCrossing {
