@@ -90,6 +90,16 @@ describe("normalize：レンジ→代表値の写像", () => {
   });
 });
 
+describe("normalize：年齢は実行環境のタイムゾーンに左右されない", () => {
+  it("JST の元日に診断しても、JST の年で年齢を出す（UTC ではまだ前年）", () => {
+    // UTC で動く本番(Cloud Run)と開発機(JST)で年がずれると、年齢が1歳ずれる。
+    const newYear = new Date("2026-01-01T00:00:00+09:00"); // UTC では 2025-12-31
+    const { input } = normalize(P, base, newYear);
+    expect(input.self.age).toBe(37);
+    expect(input.children).toEqual([2]);
+  });
+});
+
 describe("normalize：生活費の年収推定（§4.2.1）", () => {
   it("世帯手取り × 0.75 / 12 で月額を出す", () => {
     const { input, estimations } = normalize(P, { ...base, livingCost: "estimate" }, AS_OF);

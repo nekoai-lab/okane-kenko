@@ -8,6 +8,7 @@
 import type { DiagnoseInput, Employment, Person } from "../calc/index.js";
 import type { ParamSet } from "../params/index.js";
 import { v } from "../params/index.js";
+import { jstYear } from "../time/jstYear.js";
 import type {
   CoverageCode,
   EmploymentChoice,
@@ -31,7 +32,7 @@ function toEmployment(c: EmploymentChoice | SpouseEmploymentChoice): Employment 
 }
 
 export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): NormalizedInput {
-  const asOfYear = asOf.getFullYear();
+  const asOfYear = jstYear(asOf);
   const age = (birthYear: number) => asOfYear - birthYear;
   const estimations: Estimation[] = [];
 
