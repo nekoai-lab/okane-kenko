@@ -153,18 +153,33 @@ gcloud services enable firestore.googleapis.com --project=$PROJECT
 gcloud firestore databases list --project=$PROJECT
 gcloud firestore databases create --project=$PROJECT \
   --location=asia-northeast1 --type=firestore-native
+# 実行SAはプロジェクト全体で roles/editor を持っており、editor に Datastore の
+# 読み書きが含まれる（2026-09-20 に確認）。この行は実質不要で、権限が明示になるだけ。
+# 一方 S5 の secretmanager.secretAccessor は editor に含まれないので、S5 は省略できない。
 gcloud projects add-iam-policy-binding $PROJECT \
   --member="serviceAccount:${RUNTIME}" --role="roles/datastore.user"
 ```
 
-**完了の合図**：`households` と `notice_log` を読み書きできる。
+**完了の合図**：`databases list` に `(default)` / `asia-northeast1` / `FIRESTORE_NATIVE` が並ぶ。
+
+> `households` と `notice_log` は**まだ存在しない。これで正しい。**
+> Firestore は空のコレクションを持てず、**最初の1件を書き込んだ瞬間にコレクションが生まれる**。
+> 姿が見えるのは S4 の手順2（保存）を通ってから。読み書きの確認も S4 でやる。
+>
+> **Firebase コンソールにも出ない。これも正しい。** GCP 側で作ったプロジェクトは
+> 「Firebase を追加」するまで Firebase コンソールの一覧に現れない。追加する必要はない
+> （理由は `docs/CONTEXT.md` の「GCPプロジェクト / Firebaseプロジェクト」）。
+> 見るのはこちら → https://console.cloud.google.com/firestore/databases/-default-/data?project=okane-kenko-507122
 
 ## S4 ローカルで一連の流れを通す（いちばん大事）
 
 ここが通らないうちは先に進まない。**本番に出してから直すのがいちばん高くつく。**
 
 1. `npm run dev` → `/wizard` を完了して `/result` へ。
-   **子の生年は「節目の1つ手前」にする**（節目年齢は `params` の教育費段階から導出。§S4補足）
+   **子の生年は「今年ちょうど節目の年齢になる」ものにする。**
+   節目は **3・6・12・15・18・22歳**（`params` の教育費段階から導出。コードには書かれていない）。
+   年齢は「今年 − 生年」の単純計算なので、**2026年なら生年 `2020`（＝6歳・小学校）** が分かりやすい。
+   §S4補足のとおり `lastCheckedAt` を1年戻すと「5歳→6歳」で節目をまたぐ。
 2. 「この結果を保存して〜」→ `/save` →「保存してお知らせを受け取る」
 3. Firestore コンソールで `households` に1件できていることを確認
    （`token` / `wizardSelections` / `lastDiagnosis` / `consentedAt`）
@@ -210,7 +225,26 @@ for S in slack-webhook-url watch-cron-secret; do
 done
 ```
 
+> **これは自分のターミナルで、1行ずつ貼らずにブロックごと実行する。**
+> AIエージェントには実行できない（`.env.local` の読み取りがフックでブロックされる。設計どおり）。
+> Claude Code のプロンプトから `!` を付けて流すのも同じ理由で通らない。
+>
+> **`!` を自分のターミナルに貼らない。** zsh では `!` がヒストリ展開の記号で、
+> `!cd ...` が「直前の `cd` で始まるコマンドの全文」に置き換わる。
+> 2026-09-20 にこれで `unrecognized arguments: /Users/.../okane-kenko` を踏んだ。
+> `${RUNTIME}` を使うので、`PROJECT` / `PROJNUM` / `RUNTIME` を定義したのと同じシェルで実行すること。
+
 **完了の合図**：`gcloud secrets list` に2つ並び、実行SAに accessor が付いている。
+
+**空でないことも確かめる**（値は表示されない。crc32c が `0` なら空）。
+
+```bash
+for S in slack-webhook-url watch-cron-secret; do
+  printf '%-20s crc32c=' "$S"
+  gcloud secrets versions access latest --secret=$S --project=$PROJECT \
+    --format="value(payload.dataCrc32c)"
+done
+```
 
 > `WATCH_BASE_URL` は Secret にしない。通知リンクを組み立てる公開URLで秘密ではないため、
 > `cloudbuild.yaml` の `--set-env-vars` で素のまま渡している。**URLを変えるときは `cloudbuild.yaml` を直す。**
