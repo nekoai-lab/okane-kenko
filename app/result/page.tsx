@@ -692,7 +692,7 @@ export default async function ResultPage({
           <li>
             <a
               className={s.link}
-              href="https://www.nenkin.go.jp/service/jukyu/izoku.html"
+              href="https://www.nenkin.go.jp/service/jukyu/seido/izokunenkin/jukyu-yoken/index.html"
               rel="noreferrer"
               target="_blank"
             >
@@ -702,7 +702,7 @@ export default async function ResultPage({
           <li>
             <a
               className={s.link}
-              href="https://www.kyoukaikenpo.or.jp/g3/cat310/sb3030/"
+              href="https://www.kyoukaikenpo.or.jp/g3/sb3030/"
               rel="noreferrer"
               target="_blank"
             >
