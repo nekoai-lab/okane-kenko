@@ -83,11 +83,21 @@ describe("checkApiKey（値そのものは扱わない）", () => {
 
   it("よくある貼り付け事故を、呼び出す前に言う", () => {
     expect(checkApiKey(`"${OK}"`).problem).toContain("引用符");
-    expect(checkApiKey("sk-ant-0123456789012345678901234567890").problem).toContain("AIza");
     expect(checkApiKey(`<${OK}>`).problem).toContain("山カッコ");
     expect(checkApiKey("AIzaShort").problem).toContain("短すぎる");
     expect(checkApiKey(OK).problem).toBeNull();
     expect(checkApiKey(OK).note).toBeNull();
+  });
+
+  /**
+   * 2026-09-20：AI Studio が発行した有効な鍵（Google に直接投げて 200）が
+   * `AIza` で始まらず、こちらの検査だけで拒否して半日止まった。
+   * 鍵の形式は Google の都合で増える。**知っている形を正解にしない。**
+   */
+  it("見慣れない形式でも止めない（妥当性の判断は Google に任せる）", () => {
+    const NEW_FORMAT = "AQ.Ab8RN6JabcdefghijklmnopqrstuvwxyZ0123456789";
+    expect(checkApiKey(NEW_FORMAT).problem).toBeNull();
+    expect(checkApiKey(NEW_FORMAT).note).toContain("新しい形式");
   });
 
   it("目に見えない文字（ゼロ幅・BOM・改行なし空白）は落として使い、落としたことを伝える", () => {
