@@ -235,7 +235,9 @@ T-01 算定エンジン ✅完了
 - [x] 通知着地画面(`/notice/{token}`)・削除API(SPEC.md US-10)
 
 - [x] 実機疎通(Task 11)：保存→`/api/watch/run`→Slack→着地画面→削除→二重通知しない、をローカルから実Firestore・実Slackで確認(2026-09-20)
-- [ ] 本番で1周＋Cloud Schedulerの定期実行(手順書 S8・S9)
+- [x] 本番で1周(手順書 S8)：`POST /api/watch/run` が 200 を返す(2026-09-20)
+- [ ] Cloud Scheduler の週次ジョブ(手順書 S9)。**本運用まで保留** — 世帯0件では空振りするだけなので、
+      再開条件は「実在の利用者が1件でも保存に同意したとき」(2026-09-20 判断)
 
 **完了条件**：Slack通知→着地画面→「詳しく見直す」→`/result`という一連の流れが、実際のFirestore・Slackで動作確認できる(Task 11)。**ローカルからは 2026-09-20 に確認済み**。本番URLでの1周と週次実行は [`docs/handoff/2026-09-20_t13-release-steps.md`](handoff/2026-09-20_t13-release-steps.md) S8・S9。
 
