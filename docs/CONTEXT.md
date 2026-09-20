@@ -57,6 +57,9 @@
 | **verdict** | 診断の結論。`sufficient`（足りている）/ `shortage`（足す）/ `excess`（減らせる）/ `adequate` | AI出力の結論がこれと一致しない場合は再生成（G-4） |
 | **assumptions[]** | 欠損値を既定値で補ったとき、その事実と理由を記録する配列 | 「推定で埋めた」ことを結果画面で隠さないため |
 | **取り消せない操作** | パラメータ版の有効化・本人データ全削除・BigQuery送出・インセンティブ配布 | 汎用スクリプトで実行しない。確認・監査・ゲートを付ける |
+| **GCPプロジェクト / Firebaseプロジェクト** | **同じ1つの実体**。Firebase プロジェクトという別種の箱は存在せず、コンソールが2つあるだけ | Firebase 側で作っても GCP プロジェクトが1つできる。逆に GCP 側で作ったものは「Firebase を追加」するまで Firebase コンソールに出ない（後から追加できる。**外すのは面倒**なので迷ったら足さない） |
+| **Admin SDK（`firebase-admin`）** | サーバーから Firestore を触る SDK。認証は ADC（Cloud Run の実行SA / `gcloud auth application-default login`） | 名前に Firebase と付くが **Firebase プロジェクト登録は不要**。本プロジェクトの `src/watch/store.firestore.ts` がこれ |
+| **セキュリティルール** | ブラウザ・アプリが Firestore を**直接**叩くときの認可層 | **Admin SDK は完全にバイパスする**。本プロジェクトは `/api/watch/*` 経由でしか触らせないため、ルールを書く必要がそもそも無い。クライアントから直接読ませたくなった瞬間に Firebase 登録とルールが必須になる |
 
 ---
 
