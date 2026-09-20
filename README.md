@@ -71,6 +71,29 @@ AIに副作用（DB書き込み・外部送信・削除）を持たせていな�
 
 設計 → [`docs/hackathon/2026-09-20_param-watch-design.md`](./docs/hackathon/2026-09-20_param-watch-design.md)
 
+## システム構成
+
+![システム構成図](./docs/hackathon/system.png)
+
+**秘密は Secret Manager にしかなく、制度パラメータはリポジトリにしかありません。**
+`main` への push で Cloud Build が lint → typecheck → ゴールデンテスト → デプロイを通し、
+`params/*.yaml` はコンテナに同梱されます（実行時に外から取ってくる値ではない）。
+
+## データモデル
+
+保存するのは**入力の区分コードと結果の要点だけ**で、実額・氏名・連絡先は持ちません。
+
+![データモデル](./docs/hackathon/datamodel.png)
+
+| コレクション | 何を残すか |
+|---|---|
+| `households` | 同意した世帯のスナップショット。**マジックリンクのトークンで本人だけが開ける** |
+| `notice_log` | 通知したか・しなかったか。**沈黙した回も残す** |
+| `param_proposals` | 制度の変更提案。根拠の引用・影響・**全ツール呼び出しの行動ログ**つき |
+| `param_watch_log` | 巡回の記録。提案しなかった理由もここに残る |
+
+> Firestore はドキュメント指向なので、図の線は外部キー制約ではなく**参照の向き**を表します。
+
 ## 継続性 ─ 節目に、こちらから声をかける
 
 診断して終わりでは「一度きりの健康診断」にしかならない。本人が同意したときだけ、
@@ -138,7 +161,8 @@ Secret Manager / Firestore / Gemini API / Slack Incoming Webhook。
 | [`docs/機能仕様書_MVP.md`](./docs/機能仕様書_MVP.md) | 画面・算定式・ガードレール・API・テスト |
 | [`docs/デザイン方針.md`](./docs/デザイン方針.md) | 色に持たせた意味・グラフの設計 |
 | [`docs/本番前チェックリスト.md`](./docs/本番前チェックリスト.md) | 本番化までの全宿題（GCP構成・Secret の作り方） |
-| [`docs/hackathon/`](./docs/hackathon/) | 方針・設計・デモの筋書き・アーキテクチャ図 |
+| [`docs/アーキテクチャ図.html`](./docs/アーキテクチャ図.html) | 上の3枚の図を1枚にまとめたもの（注記つき・単体で開ける） |
+| [`docs/hackathon/`](./docs/hackathon/) | 方針・設計・デモの筋書き・図の正本（`*.mmd`） |
 | [`docs/handoff/`](./docs/handoff/) | 申し送り（日付順） |
 
 ## 未確定であることを忘れない

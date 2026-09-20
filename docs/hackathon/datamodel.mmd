@@ -1,0 +1,44 @@
+%% お金の健康診断 ─ データモデル（Firestore／ドキュメント指向）
+%% 主張：保存するのはレンジ値と要点だけ。実額・氏名・連絡先は持たない。
+%% 注：Firestore は RDB ではないため、線は外部キー制約ではなく「参照の向き」を表す。
+erDiagram
+  households {
+    string id PK "自動採番"
+    string token UK "マジックリンク用。知っていれば開ける"
+    object wizardSelections "入力の区分コードのみ（実額は持たない）"
+    string lastDiagnosis_headlineKind "shortage / reducible / rebalanceable / all_covered"
+    string lastDiagnosis_paramVersion "どの版で診断したか"
+    string consentedAt "本人が保存に同意した日時"
+    string lastCheckedAt "ウォッチャーが最後に見た日時"
+    string lastNotifiedAt "最後に通知した日時（null なら未通知）"
+  }
+
+  notice_log {
+    string runAt "実行日時"
+    string householdId FK "どの世帯を見たか"
+    string triggerType "age_milestone"
+    string triggerDetail "例：お子さんが6歳"
+    string decision "notified / silent / failed（沈黙も残す）"
+  }
+
+  param_proposals {
+    string id PK
+    string watchKey "izokuKiso など"
+    array changes "キー・現行値・提案値"
+    string sourceUrl "取得元（許可リスト内）"
+    array matchedTexts "本文の引用そのまま"
+    array injectionSuspected "検出した指示（従っていない証跡）"
+    object impact "結論が変わる世帯数・不変条件の合否"
+    array actionLog "全ツール呼び出し（入力・出力・所要時間）"
+    string status "pending / approved / rejected"
+  }
+
+  param_watch_log {
+    string runAt "実行日時"
+    string watchKey "監視対象"
+    string decision "proposed / silent / blocked / failed"
+    string detail "黙った理由もここに残す"
+  }
+
+  households ||--o{ notice_log : "いつ見て、通知したか／しなかったか"
+  param_proposals ||--o{ param_watch_log : "同じ巡回の記録"
