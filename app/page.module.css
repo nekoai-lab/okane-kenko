@@ -37,6 +37,13 @@
   background: var(--color-surface-subtle);
 }
 
+/* 3枚が横並びで同じ濃さだと、どれから読めばいいか分からない。
+   **色は足さず**、先頭の1枚だけ罫を ink にして読み出しを作る
+   （ブランドの赤は CTA のもの。理由の強調には使わない）。 */
+.pointLead {
+  border-left-color: var(--color-text);
+}
+
 .pointTitle {
   font-weight: var(--font-weight-bold);
   margin: 0 0 var(--space-1);
@@ -45,6 +52,17 @@
 .pointBody {
   margin: 0;
   color: var(--color-text-secondary);
+}
+
+/* CTA は本文を読み終わる前に置く。囲いは作らず、余白で区切る。 */
+.ctaBlock {
+  margin: 0 0 var(--space-7);
+}
+
+.ctaNote {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-std-s);
 }
 
 /* Airbnb の button-primary：48px 高・8px 角丸・14×24px パディング・ウェイト500。
@@ -78,4 +96,11 @@
 
 .notes li {
   margin-bottom: var(--space-2);
+}
+
+@media (max-width: 480px) {
+  .cta {
+    display: flex;
+    width: 100%;
+  }
 }
