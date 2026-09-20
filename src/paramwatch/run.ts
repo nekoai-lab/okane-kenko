@@ -127,7 +127,12 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
           runAt: started.toISOString(),
           watchKey,
           decision: "silent",
-          detail: "一次情報の値は現行 params と同じ",
+          // **黙る回にも、指示を検出したことは残す。** 提案が生まれないと
+          // injectionSuspected の置き場が無くなり、「読んだが従わなかった」証跡が消える
+          detail:
+            injection.length > 0
+              ? `一次情報の値は現行 params と同じ／本文に指示らしき文字列を${injection.length}件検出（従っていない）`
+              : "一次情報の値は現行 params と同じ",
         });
         result.silent += 1;
         continue;
