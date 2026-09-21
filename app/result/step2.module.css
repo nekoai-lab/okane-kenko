@@ -30,14 +30,22 @@
   gap: var(--space-4);
 }
 
-/* ---------- 家計台帳 ---------- */
+/* ---------- 家計台帳 ----------
+
+  組版の3規約（モック result.html の台帳から読み取った文法・2026-09-21）：
+
+  1. **金額の階層**：行 < 計 < 差し引き。同じ太さ・同じ色で並べると、どれが結論か分からない
+  2. **色に意味を持たせる**：緑＝入ってくるお金／**橙＝幅を持つ＝推定の揺れ**／ink＝確定値。
+     製品全体で橙が「幅」を指しているので、台帳でもその意味を崩さない
+  3. **罫線の文法**：**破線＝小計の手前**、**実線＝セクションの区切り**。混ぜない
+*/
 .ledger {
   background: var(--sand);
   border-radius: 12px;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .ledgerTitle {
@@ -57,7 +65,7 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--green-deep);
-  margin: 4px 0 0;
+  margin: 6px 0 0;
 }
 
 .ledgerBlock .ledgerHead {
@@ -71,41 +79,85 @@
   gap: 10px;
   font-size: 13px;
   color: var(--muted-2);
+  padding: 2px 0;
 }
 
+/* 階層①：行の金額 */
 .ledgerValue {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--green-deep);
+  font-size: 15px;
+  font-weight: 600;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
+/* 色の意味（規約2） */
+.income {
+  color: var(--green-deep);
+}
+.range {
+  color: var(--amber-text);
+}
+.fixed {
+  color: var(--ink);
+}
+
+/* 罫線の文法（規約3）：破線＝小計の手前 */
 .ledgerSum {
   border-top: 1px dashed var(--dashed);
+  margin-top: 4px;
   padding-top: 8px;
+}
+
+.sumLabel {
   font-weight: 700;
   color: var(--green-deep);
 }
 
+/* 階層②：計 */
+.sumValue {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* 罫線の文法（規約3）：実線＝セクションの区切り */
 .ledgerBlock {
-  border-top: 1px solid var(--dashed);
+  border-top: 1px solid var(--hairline);
+  margin-top: 8px;
   padding-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* **差し引きは金額を主役に。** 視覚の DoD (b) */
+/*
+  階層③：差し引き。**3段組で、金額は折り返さない。**
+  1つの文字列で流すと 390px で述語の1文字だけが次行に落ちる（2026-09-21 に実際に落ちた）。
+*/
 .ledgerNet {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   margin: 2px 0 0;
-  line-height: 1.4;
+  flex-wrap: nowrap;
 }
 
-.ledgerNet strong {
+.netPrefix {
+  font-size: 12px;
+  flex: none;
+}
+
+.netAmount {
+  font-family: var(--font-display);
+  font-size: 19px;
   font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.netSuffix {
+  font-size: 12.5px;
+  flex: none;
 }
 
 .netShort {
@@ -113,6 +165,23 @@
 }
 .netOk {
   color: var(--green-deep);
+}
+
+/*
+  由来注記の減量（規約の外だが同じ趣旨）。
+  全行に付くので、本文と同じ重さだと台帳が注記で埋まる。**弱めるだけで、文言は変えない。**
+*/
+.ledgerLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.ledgerFrom {
+  font-size: 10px;
+  color: #8d968f;
+  line-height: 1.35;
 }
 
 /* ---------- 段差チャート ---------- */
@@ -304,20 +373,6 @@
   padding: 12px 16px;
   line-height: 1.7;
   margin: 0;
-}
-
-/* ラベルと「←どの回答から」を縦に積む。金額の列は右で固定して読み比べられるようにする */
-.ledgerLabel {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.ledgerFrom {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.5;
 }
 
 /* ---------- ことばの説明（#6d） ---------- */

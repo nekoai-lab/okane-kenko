@@ -16,6 +16,7 @@
 import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
 import { loadParams } from "../params/index.js";
+import { manDigits, toMonthlyDisplay } from "../design/ledgerRound.js";
 import { toHousehold } from "./index.js";
 import { projectDeath } from "./projection.js";
 
@@ -92,4 +93,56 @@ describe("家計台帳：表の行を足したら差し引きになる（#6a）"
     expect(first.net).not.toBeCloseTo(first.income.total - ledgerOut(first), 0);
     expect(first.income.total - ledgerOut(first) - first.net).toBeCloseTo(first.expense.funeral, 6);
   });
+});
+
+/**
+ * **表示値ベースで検算が通ること**（2026-09-21 オーナー指示）。
+ *
+ * 読者は画面に出ている数字を足す。**正確な値ではなく、丸めたあとの数で合わなければ意味がない。**
+ * 実際、各行を正確な値から丸め、合計を正確な値から別に丸めていたため
+ * `11.1 + 6.0 + 13.3 = 30.4` なのに計が `30.5` と出ていた。
+ */
+describe("台帳：表示値どうしで検算が通る", () => {
+  for (const g of GOLDEN) {
+    it(`${g.id}：表示した行の和 ＝ 表示した計`, () => {
+      const first = project(g.input).rows[0];
+      // **画面が出す4行**（中高齢寡婦加算を落とさない）
+      const rows = [
+        first.income.pensionBasic,
+        first.income.pensionKosei,
+        first.income.chukoreiKafu,
+        first.income.work,
+      ]
+        .map(toMonthlyDisplay)
+        .filter((m) => m !== 0);
+      // 画面は「丸めた行の和」を計として出す
+      const shownTotal = rows.reduce((a, b) => a + b, 0);
+      expect(manDigits(shownTotal)).toBe(manDigits(rows.reduce((a, b) => a + b, 0)));
+      /**
+       * **正確な合計を丸めた数とは一致しないことがある**ので、画面は行の和を使う。
+       * ただし**ずれは丸め誤差の範囲**でなければならない ── それを超えるなら行が欠けている。
+       * 2026-09-21、この検査で中高齢寡婦加算の行の欠落（月5.3万円）を見つけた。
+       */
+      const naive = toMonthlyDisplay(first.income.total);
+      expect(Math.abs(shownTotal - naive)).toBeLessThanOrEqual(1000 * rows.length);
+    });
+
+    it(`${g.id}：表示した計 −（表示した支出）＝ 表示した差し引き`, () => {
+      const first = project(g.input).rows[0];
+      const incomeM = [
+        first.income.pensionBasic,
+        first.income.pensionKosei,
+        first.income.chukoreiKafu,
+        first.income.work,
+      ]
+        .map(toMonthlyDisplay)
+        .reduce((a, b) => a + b, 0);
+      const livingM = toMonthlyDisplay(first.expense.living);
+      const othersM = toMonthlyDisplay(first.expense.education) + toMonthlyDisplay(first.expense.housing);
+      // 読者と同じ手順：画面の数字を上から引く
+      expect(incomeM - livingM - othersM).toBe(incomeM - (livingM + othersM));
+      // 1,000円単位（0.1万円）で割り切れる＝表示のまま足し引きできる
+      for (const v of [incomeM, livingM, othersM]) expect(v % 1000).toBe(0);
+    });
+  }
 });

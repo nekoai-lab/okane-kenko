@@ -17,21 +17,33 @@ export interface LedgerRow {
   from: string | null;
   /** 表示用の金額文字列（円は呼び出し側で整形済み） */
   value: string;
+  /**
+   * 金額の色。**色に意味を持たせる**（組版の規約2）：
+   * `income` ＝入ってくるお金（緑）／`range` ＝幅を持つ＝推定の揺れ（橙）／`fixed` ＝確定値（ink）
+   */
+  tone?: "income" | "range" | "fixed";
 }
 
 export function MonthlyLedger({
   incomes,
   incomeTotal,
   expenses,
-  netLabel,
-  netValue,
+  netPrefix,
+  netAmount,
+  netSuffix,
   netTone,
 }: {
   incomes: LedgerRow[];
   incomeTotal: string;
   expenses: LedgerRow[];
-  netLabel: string;
-  netValue: string;
+  /**
+   * 差し引きを**3つに分けて受け取る**（「毎月」／金額／「残ります」）。
+   * 1つの文字列だと 390px で折り返し、金額の途中や述語の1文字だけが次行に落ちる。
+   * **金額は折り返さない**（`white-space: nowrap`）。
+   */
+  netPrefix: string;
+  netAmount: string;
+  netSuffix: string;
   /** 差し引きが足りていれば `ok`、足りなければ `short` */
   netTone: "ok" | "short";
 }) {
@@ -49,12 +61,13 @@ export function MonthlyLedger({
                 同じ行に入れると金額に食い込んで折り返し、どちらも読めなくなる */}
             {r.from && <span className={s.ledgerFrom}>←{r.from}から</span>}
           </span>
-          <span className={s.ledgerValue}>{r.value}</span>
+          <span className={`${s.ledgerValue} ${s[r.tone ?? "income"]}`}>{r.value}</span>
         </div>
       ))}
+      {/* 破線＝小計の手前（罫線の文法：破線は小計、実線はセクションの区切り） */}
       <div className={`${s.ledgerRow} ${s.ledgerSum}`}>
-        <span>計</span>
-        <span className={s.ledgerValue}>{incomeTotal}</span>
+        <span className={s.sumLabel}>計</span>
+        <span className={`${s.ledgerValue} ${s.sumValue}`}>{incomeTotal}</span>
       </div>
 
       <div className={s.ledgerBlock}>
@@ -65,16 +78,18 @@ export function MonthlyLedger({
               {r.label}
               {r.from && <span className={s.ledgerFrom}>←{r.from}から</span>}
             </span>
-            <span className={s.ledgerValue}>{r.value}</span>
+            <span className={`${s.ledgerValue} ${s[r.tone ?? "fixed"]}`}>{r.value}</span>
           </div>
         ))}
       </div>
 
       <div className={s.ledgerBlock}>
         <p className={s.tiny}>差し引き</p>
+        {/* **3段組で、金額は折り返さない。** 述語の1文字だけが次行に落ちるのを防ぐ */}
         <p className={`${s.ledgerNet} ${netTone === "short" ? s.netShort : s.netOk}`}>
-          {netLabel}
-          <strong>{netValue}</strong>
+          <span className={s.netPrefix}>{netPrefix}</span>
+          <span className={s.netAmount}>{netAmount}</span>
+          <span className={s.netSuffix}>{netSuffix}</span>
         </p>
       </div>
     </div>

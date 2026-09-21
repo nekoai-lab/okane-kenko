@@ -26,13 +26,22 @@ const bare = (yenMonthly: number) => manDigits(yenMonthly);
  * 差し引きの文。**0 をまたぐ世帯を「ほぼ収支圏内」で誤魔化さない。**
  * 足りない側と残る側の両方を出す（どちらもあり得る、が事実）。
  */
-function netText(low: number, high: number): string {
+function netText(low: number, high: number): { prefix: string; amount: string; suffix: string } {
+  const p = "毎月";
   if (low === high) {
-    return low < 0 ? `約${manDigits(low)}万円 足りません` : `約${manDigits(low)}万円 残ります`;
+    return { prefix: p, amount: `約${manDigits(low)}万円`, suffix: low < 0 ? "足りません" : "残ります" };
   }
-  if (low >= 0) return `約${bare(low)}〜${bare(high)}万円 残ります`;
-  if (high <= 0) return `約${bare(high)}〜${bare(low)}万円 足りません`;
-  return `約${bare(low)}万円 足りない〜約${bare(high)}万円 残る の幅です`;
+  if (low >= 0) {
+    return { prefix: p, amount: `約${bare(low)}〜${bare(high)}万円`, suffix: "残ります" };
+  }
+  if (high <= 0) {
+    return { prefix: p, amount: `約${bare(high)}〜${bare(low)}万円`, suffix: "足りません" };
+  }
+  return {
+    prefix: p,
+    amount: `約${bare(low)}万円足りない〜約${bare(high)}万円残る`,
+    suffix: "の幅です",
+  };
 }
 
 export interface Step2Props {
@@ -115,6 +124,17 @@ export function Step2({
     { label: "遺族基礎年金＋子の加算", from: from.pension, m: toMonthlyDisplay(first.income.pensionBasic) },
     { label: "遺族厚生年金", from: from.kosei, m: toMonthlyDisplay(first.income.pensionKosei) },
     {
+      /**
+       * **中高齢寡婦加算の行を落とさない。**
+       * 2026-09-21、この行が無く、初年度から加算が出る世帯（お子さんがいない・遺族が40〜64歳）で
+       * **収入が月5.3万円ぶん丸ごと台帳から消えていた**。
+       * 子のいる世帯では初年度 0 なので行が出ず、サンプル世帯では気づけなかった。
+       */
+      label: "中高齢寡婦加算",
+      from: null,
+      m: toMonthlyDisplay(first.income.chukoreiKafu),
+    },
+    {
       label: `${survivorLabel}の収入（手取り）`,
       from: from.work,
       m: toMonthlyDisplay(first.income.work),
@@ -125,6 +145,7 @@ export function Step2({
     label: r.label,
     from: r.from,
     value: `約${bare(r.m)}万円`,
+    tone: "income" as const,
   }));
 
   /**
@@ -164,11 +185,14 @@ export function Step2({
         livingLowM === livingHighM
           ? `約${bare(livingLowM)}万円`
           : `約${bare(livingLowM)}〜${bare(livingHighM)}万円`,
+      // **橙＝幅を持つ＝推定の揺れ**（組版の規約2）。幅が無いなら確定値として ink
+      tone: (livingLowM === livingHighM ? "fixed" : "range") as "fixed" | "range",
     },
     ...otherRows.map((r) => ({
       label: r.label,
       from: r.from,
       value: r.m === 0 ? "0円" : `約${bare(r.m)}万円`,
+      tone: "fixed" as const,
     })),
   ];
 
@@ -213,9 +237,10 @@ export function Step2({
         expenses={expenses}
         incomeTotal={`約${bare(incomeTotalM)}万円`}
         incomes={incomes}
-        netLabel="毎月 "
+        netAmount={netText(netLowM, netHighM).amount}
+        netPrefix={netText(netLowM, netHighM).prefix}
+        netSuffix={netText(netLowM, netHighM).suffix}
         netTone={netLowM < 0 ? "short" : "ok"}
-        netValue={netText(netLowM, netHighM)}
       />
 
       <StepChart
