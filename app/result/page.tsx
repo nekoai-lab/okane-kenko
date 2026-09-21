@@ -30,6 +30,7 @@ import { CoverageCurve } from "./CoverageCurve.js";
 import { NumberLine } from "./NumberLine.js";
 import { Waterfall } from "./Waterfall.js";
 import { Narration } from "./Narration.js";
+import { ownStandardValueText } from "../../src/params/display.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
@@ -1443,12 +1444,17 @@ export default async function ResultPage({
           label="当社基準（公的出典のない当社の見立て）"
         >
           <ul className={s.list}>
-            {Object.entries(params.ownStandard).map(([key, e]) => (
-              <li key={key}>
-                {e.label ?? key}
-                {e.userAdjustable ? "（画面で動かせます）" : ""}
-              </li>
-            ))}
+            {/* **値も並べる**（2026-09-22）。名前だけ見せて値を隠すと開示の意味が半減する */}
+            {Object.entries(params.ownStandard).map(([key, e]) => {
+              const valueText = ownStandardValueText(e);
+              return (
+                <li key={key}>
+                  {e.label ?? key}
+                  {valueText ? `：${valueText}` : ""}
+                  {e.userAdjustable ? "（画面で動かせます）" : ""}
+                </li>
+              );
+            })}
           </ul>
         </Fold>
       </div>

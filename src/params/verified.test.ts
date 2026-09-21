@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
 import { diagnose } from "../calc/index.js";
 import { needForSickness } from "../calc/scenarios.js";
+import { ownStandardValueText } from "./display.js";
 import { assertUsable, loadParams, type ParamSet, unverifiedKeys } from "./index.js";
 
 /** 有効期間内の日付を使う（期限切れで落ちると、確認したい等価性が見えなくなる） */
@@ -78,11 +79,31 @@ describe("当社基準の在庫と、実際に使う値が一致する", () => {
     expect(p.ownStandard.fallbackFinancialAssets.value).toBe(p.inputRanges.assets.unknown);
   });
 
-  it("livingCostEstimateRatio ＝ 旧キー livingCostFromIncome（別名は同じ値を指す）", () => {
+  /**
+   * **同じ行を2回出さない**（2026-09-22）。旧キー `livingCostFromIncome` を別名で残していたため、
+   * 画面の一覧に同じ行が2回出て「全16件」の件数が嘘になっていた。別名は消し、参照を付け替えた。
+   */
+  it("在庫のラベルは重複しない（一覧の件数が実数と一致する）", () => {
     const p = loadParams();
-    expect(p.ownStandard.livingCostEstimateRatio.value).toBe(
-      p.ownStandard.livingCostFromIncome.value,
-    );
+    const labels = Object.values(p.ownStandard).map((e) => e.label);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it("在庫のラベルに Markdown の強調記号を入れない（画面にそのまま出る）", () => {
+    const p = loadParams();
+    for (const e of Object.values(p.ownStandard)) expect(e.label).not.toContain("*");
+  });
+
+  it("在庫はすべて単位を持ち、値を画面の文字列にできる（単位の無い数字を出さない）", () => {
+    const p = loadParams();
+    for (const e of Object.values(p.ownStandard))
+      expect(() => ownStandardValueText(e)).not.toThrow();
+    expect(ownStandardValueText(p.ownStandard.survivorLivingRatioChild)).toBe("0.7倍");
+    expect(ownStandardValueText(p.ownStandard.fallbackFinancialAssets)).toBe("300万円");
+    expect(ownStandardValueText(p.ownStandard.postIndepMinIncome)).toBe("年100万円");
+    expect(ownStandardValueText(p.ownStandard.sufficientTopUpMonthsHigh)).toBe("24か月");
+    expect(ownStandardValueText(p.ownStandard.lifestyleDialMultipliers)).toBe("0.9倍／1倍／1.1倍");
+    expect(ownStandardValueText(p.ownStandard.funeralFloorRule)).toBeNull();
   });
 
   it("**掛ける相手は手取り**であることがラベルに書いてある（年収と読めるラベルにしない）", () => {

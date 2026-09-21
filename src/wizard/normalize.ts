@@ -92,7 +92,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
     // M = 世帯手取り年収 × 生活費率 / 12（§4.2.1）。0.75 は当社基準（OI-06・要確認）。
     const householdIncome = self.income + (spouse?.income ?? 0);
     const net = householdIncome * v(p, "netIncomeRatio");
-    monthlyLiving = Math.round((net * v(p, "livingCostFromIncome")) / 12);
+    monthlyLiving = Math.round((net * v(p, "livingCostEstimateRatio")) / 12);
     estimations.push({
       field: "monthlyLiving",
       label: "毎月の生活費",
