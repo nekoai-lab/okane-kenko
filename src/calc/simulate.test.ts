@@ -54,14 +54,31 @@ describe("simulate('death')：既存 diagnose への委譲", () => {
     expect(r.notSupported).toBeNull();
   });
 
-  it("前提の目盛りを渡しても、いまは結果を変えない（受け取るだけ）", () => {
+  /**
+   * 暮らし方の目盛り（D-02・ADR-022）。
+   *
+   * 2026-09-21 まで、ここは「渡しても結果を変えない（受け取るだけ）」を固定していた。
+   * 目盛りを実装したので**その期待値は役目を終えた**が、
+   * **既定（`asis` と未指定）が `diagnose` と1ビットも変わらないこと**は引き続き守る
+   * ── ゴールデンの期待値が不変であることの根拠がこれなので、ここを緩めない。
+   */
+  it("既定（未指定＝いま通り）は diagnose と全フィールド一致する", () => {
     const base = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "death");
-    const roomy = simulate(
+    const asis = simulate(
       P,
-      { answers: GOLDEN[0].input, asOf: AS_OF, assumptions: { livingLevel: "roomy" } },
+      { answers: GOLDEN[0].input, asOf: AS_OF, assumptions: { livingLevel: "asis" } },
       "death",
     );
-    expect(roomy.death).toEqual(base.death);
+    expect(asis.death).toEqual(base.death);
+    expect(base.death).toEqual(diagnose(P, GOLDEN[0].input, AS_OF));
+  });
+
+  it("**目盛りを動かすと結果が変わる**（切り詰める < いま通り < ゆとり）", () => {
+    const total = (level: "tight" | "asis" | "roomy") =>
+      simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF, assumptions: { livingLevel: level } }, "death")
+        .death?.self.expense.total ?? 0;
+    expect(total("tight")).toBeLessThan(total("asis"));
+    expect(total("asis")).toBeLessThan(total("roomy"));
   });
 });
 

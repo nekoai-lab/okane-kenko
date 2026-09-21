@@ -131,8 +131,13 @@ export function projectDeath(
     const inDep = t < yDep;
     const inTerm = t < yTotal;
 
+    // 暮らし方の目盛り（ADR-022）。**総額側と同じ掛け方**にする（年次と総額がずれない）
+    const dial = h.lifestyleDial ?? 1;
     const livingBase = inTerm
-      ? h.monthlyLiving * v(p, inDep ? "survivorLivingRatioChild" : "survivorLivingRatioAlone") * 12
+      ? h.monthlyLiving *
+        v(p, inDep ? "survivorLivingRatioChild" : "survivorLivingRatioAlone") *
+        dial *
+        12
       : 0;
     const educationBase = agesNow.reduce(
       (s, age) => s + annualEducation(p.education, plan, age),

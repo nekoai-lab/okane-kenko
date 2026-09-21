@@ -150,8 +150,10 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
 
   // ---------- 支出 E ----------
   const M = h.monthlyLiving;
-  const livingChild = M * v(p, "survivorLivingRatioChild") * 12 * yDep;
-  const livingAlone = M * v(p, "survivorLivingRatioAlone") * 12 * yAlone;
+  // 暮らし方の目盛り（ADR-022）。率（人数）とは別に掛ける。既定 1.0 で挙動は変わらない
+  const dial = h.lifestyleDial ?? 1;
+  const livingChild = M * v(p, "survivorLivingRatioChild") * dial * 12 * yDep;
+  const livingAlone = M * v(p, "survivorLivingRatioAlone") * dial * 12 * yAlone;
 
   const education = children.reduce(
     (s, age) => s + educationRemaining(p.education, h.educationPlan, age),

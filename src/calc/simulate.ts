@@ -175,10 +175,22 @@ function statutory(
   };
 }
 
+/**
+ * 目盛り名 → 乗数。**値は params にある**（ADR-022）。
+ * 未指定・未知の名前は `asis`（1.0）に倒す ── 黙って別の水準で計算しない。
+ */
+export function dialFor(p: ParamSet, level?: "tight" | "asis" | "roomy"): number {
+  const values = p.ownStandard.lifestyleDialMultipliers?.values;
+  return values?.[level ?? "asis"] ?? 1;
+}
+
 export interface SimulateInput {
   /** 既存 `diagnose` に渡すのと**同じ形**。ここで詰め替えも補完もしない */
   answers: DiagnoseInput;
-  /** 前提の目盛り（仕様 §4-6）。タスク4で効かせる。いまは受け取るだけ */
+  /**
+   * 暮らし方の目盛り（D-02・ADR-022）。省略時は `asis`（＝乗数1.0）で出力は変わらない。
+   * **値は params が持つ**（`ownStandard.lifestyleDialMultipliers.values`）。ここで数字を書かない。
+   */
   assumptions?: { livingLevel?: "tight" | "asis" | "roomy" };
   /**
    * 貯蓄のレンジ（円）。ウィザードの「500〜1,000万円」をそのまま渡す。
@@ -201,7 +213,10 @@ export function simulate(p: ParamSet, input: SimulateInput, scenario: Scenario):
 
   // **入力をそのまま渡す。** 既定値の補完も丸めもここでは行わない
   const a = input.answers;
-  const d = diagnose(p, a, input.asOf);
+  // 目盛りの倍率は params から引く（画面にもエンジンにも数字を書かない）
+  const dial = dialFor(p, input.assumptions?.livingLevel);
+  const withDial = { ...a, lifestyleDial: dial };
+  const d = diagnose(p, withDial, input.asOf);
 
   // 年次キャッシュフロー。**結果画面と同じ引数で同じ関数を呼ぶ**（別経路で別の数を作らない）
   const projection = projectDeath(
@@ -215,6 +230,7 @@ export function simulate(p: ParamSet, input: SimulateInput, scenario: Scenario):
       deceased: a.self,
       survivor: a.spouse,
       currentCoverage: a.coverageSelf,
+      lifestyleDial: dial,
     },
     { asOfYear: jstYear(input.asOf ?? new Date()) },
   );

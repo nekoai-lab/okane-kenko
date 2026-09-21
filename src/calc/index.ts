@@ -34,6 +34,11 @@ export interface DiagnoseInput {
   coverageSelf: number | null;
   /** 配偶者を被保険者とする保障額（円）。未入力なら undefined = まだ聞いていない */
   coverageSpouse?: number | null;
+  /**
+   * 暮らし方の目盛り（D-02・ADR-022）。省略時は 1.0 で出力は一切変わらない。
+   * **率（0.70 / 0.50）とは別の変数**。率は人数、これは暮らし方の選好。
+   */
+  lifestyleDial?: number;
 }
 
 export function diagnose(
@@ -50,6 +55,8 @@ export function diagnose(
     assets: input.assets,
     monthlyLiving: input.monthlyLiving,
     educationPlan: input.educationPlan,
+    // 目盛りは両方の死亡ケースに同じものを掛ける（片方だけ別の水準で計算しない）
+    lifestyleDial: input.lifestyleDial,
   };
 
   const self = calcDeath(p, {

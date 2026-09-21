@@ -10,6 +10,8 @@ import { parse } from "yaml";
 
 export interface ParamEntry {
   value: number;
+  /** 多値の当社基準（暮らし方の目盛りなど）。1つの在庫行として見せたいときに使う */
+  values?: Record<string, number>;
   unit?: string;
   label?: string;
   source?: string;
@@ -66,10 +68,18 @@ export interface KogakuBracket {
  * レンジ選択→代表値の写像（DR-02）。制度パラメータではなく入力の正規化前提（当社基準）。
  * 値は円単位の整数。期限切れ・verified ゲートの対象外なので public/toBeSourced とは別に持つ。
  */
+/** 回答帯の上下端（D-01）。開いた区分（`gte35`）は `high` を持たない */
+export interface AnswerBand {
+  low: number;
+  high?: number;
+}
+
 export interface InputRanges {
   income: Record<string, number>;
   assets: Record<string, number>;
   monthlyLiving: Record<string, number>;
+  /** 回答帯の上下端（D-01）。**幅の出どころは利用者の回答** */
+  monthlyLivingBand: Record<string, AnswerBand>;
   loan: Record<string, number>;
   /** 現在の死亡保障額（被保険者ごと）。証券記載の具体額なので中央値ではない */
   coverage: Record<string, number>;

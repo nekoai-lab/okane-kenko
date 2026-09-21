@@ -31,6 +31,12 @@ export interface Household {
   educationPlan: EducationPlan;
   /** 現在の保障額（円）。不明なら null → 過不足判定を pending にする（FR-14） */
   currentCoverage: number | null;
+  /**
+   * 暮らし方の目盛り（D-02・ADR-022）。`0.9` / `1.0`（既定） / `1.1`。
+   * **率（0.70 / 0.50）とは別の変数**。率は人数、これは暮らし方の選好。
+   * 省略時は 1.0 で、出力は一切変わらない（ゴールデンの期待値は不変）。
+   */
+  lifestyleDial?: number;
 }
 
 export interface Person {
