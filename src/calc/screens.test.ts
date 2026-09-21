@@ -17,7 +17,7 @@ import { loadParams } from "../params/index.js";
 import { diagnose } from "./index.js";
 import { projectDeath } from "./projection.js";
 import { simulate } from "./simulate.js";
-import { verdict3 } from "./verdict3.js";
+import { householdSummary, verdict3 } from "./verdict3.js";
 
 const P = loadParams("2026-08");
 const AS_OF = new Date("2026-08-01T00:00:00+09:00");
@@ -204,4 +204,91 @@ describe("#4 前提トグル：3目盛りで整合する", () => {
       expect(summed).toBeCloseTo(r.death?.self.expense.total ?? 0, 0);
     });
   }
+});
+
+/**
+ * **④ ヒーローの差額は、滝・数直線と同じ端から導出する**（2026-09-21 オーナー指示）
+ *
+ * §1 / §5.3 の判定ルールは「減らせる」を**厳しめの端（必要額の高端）で計算しても
+ * 保障が上回るとき**だけ言い切ると定めた。判定をその端で出しているのに、
+ * **金額を別の端から引く**と、言い切りの根拠と表示額が食い違う。
+ *
+ * 2026-09-21、報告に添えたスクリーンショットが GT-01 ではない世帯のもので、
+ * 「1,800万のはずが4,800万」に見えた。**コードは正しく、スクショの世帯が違っただけ**
+ * だったが、**その取り違えを画面側で検出する手段が無かった**ので、ここに等式を置く。
+ *
+ * 軸名（CLAUDE.md）：ここで使うのは**過不足軸**（`Verdict3`）。ニーズ軸は出てこない。
+ */
+describe("④ ヒーローの差額 ＝ 滝・数直線と同じ端からの引き算", () => {
+  for (const g of GOLDEN) {
+    it(`${g.id}：減らせる額 ＝ 保障 −（滝の最終行の高端）`, () => {
+      const d = diagnose(P, g.input, AS_OF);
+      const people = [
+        {
+          coverage: g.input.coverageSelf,
+          needLow: d.self.range.low,
+          needHigh: d.self.range.high,
+        },
+        ...(d.spouse
+          ? [
+              {
+                coverage: g.input.coverageSpouse,
+                needLow: d.spouse.range.low,
+                needHigh: d.spouse.range.high,
+              },
+            ]
+          : []),
+      ];
+      const hh = householdSummary(people);
+
+      // 画面が引くのと同じ手順を、ここで独立に組み立てる
+      let reducible = 0;
+      let shortage = 0;
+      for (const p of people) {
+        const v3 = verdict3(p.coverage, p.needLow, p.needHigh);
+        // **減らせる側は高端から引く**（厳しめの端。判定と同じ端）
+        if (v3 === "reducible") reducible += (p.coverage as number) - p.needHigh;
+        // **足りない側は低端から引く**（控えめに言う側。過大な不足額を出さない）
+        if (v3 === "shortage") shortage += p.needLow - (p.coverage as number);
+      }
+      expect(hh.totalReducible).toBe(reducible);
+      expect(hh.totalShortage).toBe(shortage);
+    });
+
+    it(`${g.id}：その高端は、滝の最終行・数直線の帯の右端と同じ値`, () => {
+      const d = diagnose(P, g.input, AS_OF);
+      // 滝の最終行と数直線は `DeathResult.range` を見る（整合②と同じ出どころ）
+      const card = simulate(P, { answers: g.input, asOf: AS_OF }, "death");
+      expect(card.amounts?.needHigh).toBe(d.self.range.high);
+      expect(card.amounts?.needLow).toBe(d.self.range.low);
+    });
+  }
+
+  /**
+   * **旧「検査値パネル」と同じ金額になること。**
+   * `Vitals` を撤去してヒーローに一本化したので、**撤去前と後で数字が変わっていない**
+   * ことを1本で押さえる。式が同じでも呼ぶ場所が変われば、ずれは黙って入る。
+   */
+  it("撤去した Vitals（`householdHeadline`）と同じ金額を出す", () => {
+    for (const g of GOLDEN) {
+      const d = diagnose(P, g.input, AS_OF);
+      const hh = householdSummary([
+        { coverage: g.input.coverageSelf, needLow: d.self.range.low, needHigh: d.self.range.high },
+        ...(d.spouse
+          ? [
+              {
+                coverage: g.input.coverageSpouse,
+                needLow: d.spouse.range.low,
+                needHigh: d.spouse.range.high,
+              },
+            ]
+          : []),
+      ]);
+      // 旧実装は「過剰と呼ぶ閾値」だけが違い（`coverage > high * 1.5`）、**引き算の式は同じ**
+      if (d.householdHeadline.kind === "rebalanceable") {
+        expect(hh.totalReducible).toBe(d.householdHeadline.totalExcess);
+        expect(hh.totalShortage).toBe(d.householdHeadline.totalShortage);
+      }
+    }
+  });
 });
