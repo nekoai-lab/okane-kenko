@@ -43,6 +43,11 @@ export interface StatutorySource {
   /** 改正が判明しているが未反映のとき、何がどう変わるかを書く */
   pendingChange?: string;
   /**
+   * **計算には使わず、説明文にだけ出る制度値**（2026-09-22）。
+   * 使わなくても文中の値は陳腐化するので、出典と一緒に置いて監視・更新の対象にする
+   */
+  displayOnly?: boolean;
+  /**
    * 改定のサイクル（例：`毎年8月1日`）。
    * **書いておかないと「一度入れた値」で止まる。** 実際に基本手当日額が3改定ぶん遅れていた。
    */
@@ -134,6 +139,8 @@ export interface ParamSet {
     multipleOccurrence: Record<string, number>;
     /** 何か月目から減額上限に切り替わるか（＝4） */
     multipleOccurrenceFromMonth: number;
+    /** 世帯合算の足切り（displayOnly。説明文にだけ出る） */
+    householdAggregationMin: number;
     multipleOccurrenceSource: string;
     multipleOccurrenceVerified: boolean;
     sources: Record<string, StatutorySource>;
@@ -150,6 +157,10 @@ export interface ParamSet {
   /** 雇用保険 基本手当 */
   kihonTeate: {
     benefitRate: number;
+    /** 給付率の帯（displayOnly。説明文にだけ出る） */
+    benefitRateBandLow: number;
+    benefitRateBandHigh: number;
+    benefitRateBandLow60to64: number;
     dailyCapByAge: { fromAge: number; cap: number }[];
     daysGeneral: { insuredYearsFrom: number; days: number }[];
     /** 自己都合の給付制限（月）。会社都合には無い */

@@ -31,6 +31,8 @@ export interface Watch {
 export interface WatchSources {
   version: string;
   watches: Record<string, Watch>;
+  /** 巡回しない値と、その理由（2026-09-22）。巡回されない値を台帳から読めるようにする */
+  unwatched?: Array<{ key: string; reason: string }>;
 }
 
 const DEFAULT_PARAMS_DIR = join(process.cwd(), "params");
