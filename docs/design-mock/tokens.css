@@ -1,0 +1,34 @@
+/* okane-kenko デザイントークン — 2026-09-21 モック確定版 */
+:root {
+  /* 地と文字 */
+  --bg: #F2EFE8;            /* ページ地(温かい紙) */
+  --surface: #FFFFFF;       /* カード地 */
+  --surface-alt: #F2EFE8;   /* カード内の小箱 */
+  --ink: #1E2A26;           /* 本文・見出し */
+  --ink-2: #2C3833;         /* 本文やや薄 */
+  --muted: #5C6660;         /* 補足 */
+  --muted-2: #45514B;       /* ラベル */
+  --hairline: #E4E0D6;      /* カード枠 */
+  --hairline-2: #EDE9DF;    /* 罫線 */
+  --border-btn: #CFC9BB;    /* 非選択ボタン枠 */
+  /* 意味色: 緑=公的・カバー・大丈夫 / 橙=推定・要精査・備える額 / 赤=不足・支出 / 灰=未診断 */
+  --green: #2E6B52; --green-deep: #245640; --green-bg: #EAF3ED; --green-mid: #57906F; --green-light: #8FB6A0;
+  --amber: #A6690F; --amber-deep: #7A4A05; --amber-text: #8A5406; --amber-bg: #FBF3E4; --amber-border: #E8D5AC;
+  --red: #9C4633; --red-deep: #7E3526; --red-bg: #F9ECE8;
+  --grey-bg: #EDE9DF; --grey-border: #B9B2A2;
+  /* 塗り(透過) */
+  --fill-need: rgba(166, 105, 15, 0.24);   /* 必要額レンジ帯 */
+  --fill-deficit: rgba(156, 70, 51, 0.15); /* 不足の塗り */
+  --fill-overpay: rgba(46, 107, 82, 0.12); /* 見直し余地 */
+  /* 字 */
+  --font-display: 'Shippori Mincho', serif;   /* 見出し・数字の顔 */
+  --font-body: 'Zen Kaku Gothic New', sans-serif;
+  /* 形 */
+  --r-card: 16px; --r-box: 12px; --r-btn: 10px; --r-pill: 999px;
+  --touch: 44px; /* 最小タップ寸法 */
+}
+/* 判定バッジ: .b-check(圏内・要精査) .b-ok(大丈夫/減らせる) .b-short(不足) .b-none(未診断) */
+.b-ok    { background: var(--green-bg); border: 1.5px solid var(--green); color: var(--green-deep); }
+.b-check { background: var(--amber-bg); border: 1.5px solid var(--amber); color: var(--amber-deep); }
+.b-short { background: var(--red-bg);   border: 1.5px solid var(--red);   color: var(--red-deep); }
+.b-none  { background: var(--grey-bg);  border: 1.5px solid var(--grey-border); color: var(--muted); }

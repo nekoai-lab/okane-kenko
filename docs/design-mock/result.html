@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1320">
+<title>診断結果 — 参照実装</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; font-family: 'Zen Kaku Gothic New', sans-serif; background: #F2EFE8; color: #1E2A26; display: flex; justify-content: center; }
+a { color: #2E6B52; } a:hover { color: #245640; }
+.page { width: 1280px; box-sizing: border-box; padding: 56px 64px; display: flex; flex-direction: column; gap: 26px; }
+.serif { font-family: 'Shippori Mincho', serif; }
+.card { background: #FFFFFF; border: 1px solid #E4E0D6; border-radius: 16px; padding: 28px 40px; display: flex; flex-direction: column; gap: 18px; }
+.muted { color: #5C6660; }
+.circle { width: 34px; height: 34px; border-radius: 999px; background: #1E2A26; color: #F7F5F0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.sec-head { display: flex; align-items: center; gap: 14px; }
+.sec-title { font-family: 'Shippori Mincho', serif; font-size: 21px; font-weight: 700; }
+.sec-sub { font-size: 13px; color: #5C6660; }
+.chip { font-size: 13.5px; color: #2C3833; background: #FFFFFF; border: 1px solid #D8D2C4; border-radius: 999px; padding: 8px 16px; }
+.tab { font-size: 13px; text-decoration: none; padding: 9px 22px; border-radius: 999px; min-height: 40px; box-sizing: border-box; }
+.tab.on { font-weight: 700; background: #1E2A26; color: #F7F5F0; }
+.tab.off { font-weight: 500; background: #FFFFFF; border: 1.5px solid #CFC9BB; color: #45514B; }
+.btn { border-radius: 10px; font-family: inherit; cursor: pointer; min-height: 44px; font-size: 15px; padding: 11px 26px; }
+.btn.on { border: 2px solid #1E2A26; background: #1E2A26; color: #F7F5F0; font-weight: 700; }
+.btn.off { border: 1.5px solid #CFC9BB; background: #FFFFFF; color: #45514B; font-weight: 500; }
+.pillbtn { border-radius: 999px; font-family: inherit; cursor: pointer; min-height: 44px; font-size: 13px; padding: 9px 18px; }
+.pillbtn.on { border: 2px solid #1E2A26; background: #1E2A26; color: #F7F5F0; font-weight: 700; }
+.pillbtn.off { border: 1.5px solid #CFC9BB; background: #FFFFFF; color: #45514B; font-weight: 500; }
+.note { font-size: 12.5px; color: #45514B; background: #F2EFE8; border-radius: 10px; padding: 12px 18px; line-height: 1.7; }
+.wf-row { display: flex; align-items: center; gap: 16px; }
+.wf-label { width: 296px; flex-shrink: 0; display: flex; flex-direction: column; gap: 3px; }
+.wf-name { font-size: 14.5px; font-weight: 700; }
+.wf-src { font-size: 11.5px; color: #5C6660; line-height: 1.55; }
+.wf-ref { display: inline-block; font-size: 11px; color: #45514B; border: 1px solid #CFC9BB; border-radius: 999px; padding: 1px 9px; }
+.wf-track { position: relative; height: 34px; width: 700px; flex-shrink: 0; background: #EDE9DF; border-radius: 7px; }
+.wf-bar { position: absolute; top: 4px; bottom: 4px; border-radius: 5px; }
+.wf-amt { width: 130px; text-align: right; font-size: 15px; font-weight: 700; }
+.ledger-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; color: #45514B; }
+.ledger-v { font-size: 14px; font-weight: 700; color: #245640; }
+.tiny { font-size: 11px; color: #5C6660; }
+.dan { display: flex; gap: 10px; align-items: flex-start; }
+.dan .n { width: 22px; height: 22px; border-radius: 999px; background: #1E2A26; color: #F7F5F0; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div class="serif" style="font-size:21px; font-weight:700;">お金の健康診断</div>
+      <span style="font-size:12px; font-weight:700; color:#8A5406; background:#FBF3E4; border:1px solid #E8D5AC; border-radius:999px; padding:3px 12px;">参照実装 / 数値はサンプル</span>
+    </div>
+    <div class="muted" style="font-size:12.5px;">検証版 — 結果はすべて概算・要精査です</div>
+  </div>
+
+  <div style="display:flex; gap:8px;">
+    <a class="tab off" href="check.html">診断表</a>
+    <a class="tab on" href="result.html">死亡の詳細</a>
+    <a class="tab off" href="lab.html">もしもラボ</a>
+    <a class="tab off" href="roadmap.html">ロードマップ</a>
+  </div>
+
+  <div class="card" style="padding:34px 40px; gap:14px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="font-size:13px; font-weight:700; letter-spacing:0.12em; color:#5C6660;">診断結果</div>
+      <span style="font-size:12px; color:#45514B; background:#F2EFE8; border-radius:999px; padding:3px 12px;">サンプル: 40歳・会社員・配偶者38歳(パート)・子2人(8歳/5歳)</span>
+    </div>
+    <div><span id="badge"></span></div>
+    <h1 id="heroHead" class="serif" style="margin:0; font-size:33px; line-height:1.5; font-weight:700;"></h1>
+    <div style="display:flex; gap:40px; padding-top:4px;">
+      <div><div class="muted" style="font-size:12px;">いまの死亡保障</div><div style="font-size:20px; font-weight:700;">3,000万円</div></div>
+      <div><div class="muted" style="font-size:12px;">必要額のめやす(幅)</div><div id="statNeed" style="font-size:20px; font-weight:700; color:#8A5406;"></div></div>
+      <div><div class="muted" style="font-size:12px;">暮らし方の前提</div><div id="statMode" style="font-size:20px; font-weight:700;"></div></div>
+    </div>
+    <div class="muted" style="font-size:13px;">この数字がどう出たか、根拠をこのすぐ下に4ステップですべて示します。</div>
+  </div>
+
+  <div class="card" style="padding:20px 40px; flex-direction:row; align-items:center; gap:22px;">
+    <div style="font-size:14.5px; font-weight:700; flex-shrink:0;">暮らし方の前提</div>
+    <div id="modeBtns" style="display:flex; gap:10px;"></div>
+    <div class="muted" style="font-size:12.5px;">目盛りを動かすと、下の計算と判定がすべて連動して変わります。</div>
+  </div>
+
+  <div class="card" style="gap:20px;">
+    <div class="sec-head"><div class="circle">1</div><div><div class="sec-title">あなたが答えたこと</div><div class="sec-sub">10問の回答が計算の出発点です。答えなかった項目は「推定」として色を分けて残します。</div></div></div>
+    <div style="display:flex; gap:26px;">
+      <div style="flex-grow:1; display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start;">
+        <span class="chip">40歳(配偶者38歳)</span><span class="chip">会社員(厚生年金)</span><span class="chip">配偶者あり・パート勤務</span><span class="chip">子2人(8歳・5歳)</span><span class="chip">持ち家・住宅ローンあり</span><span class="chip">団信あり</span><span class="chip">貯蓄 500〜1,000万円</span><span class="chip">死亡保険 3,000万円(月払 約12,400円)</span>
+      </div>
+      <div style="width:400px; flex-shrink:0; background:#FBF3E4; border:1px solid #E8D5AC; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-size:13.5px; font-weight:700; color:#7A4A05;">推定で補った項目 (2件)</div>
+        <div><div style="font-size:13.5px; font-weight:700;">遺族の生活費水準</div><div style="font-size:12px; color:#6B5A38; line-height:1.6;">未回答 → 現在の生活費の70〜80%の幅で計算</div></div>
+        <div><div style="font-size:13.5px; font-weight:700;">教育費</div><div style="font-size:12px; color:#6B5A38; line-height:1.6;">未回答 → 公立中心〜私立混在の幅で計算</div></div>
+        <div style="font-size:11.5px; color:#6B5A38; border-top:1px solid #E8D5AC; padding-top:10px;">未回答は1つの数字で決めつけず、幅で計算して結果にも幅として残します。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec-head"><div class="circle">2</div><div><div class="sec-title">もしものとき、暮らしはこうなる</div><div class="sec-sub">金額の前に、起きることから。毎月の家計と、公的な収入が「いつ・なぜ」減るのかの段差です。</div></div></div>
+    <div style="display:flex; gap:26px;">
+      <div style="width:400px; flex-shrink:0; background:#F2EFE8; border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:9px;">
+        <div style="font-size:13.5px; font-weight:700;">毎月の家計 — 万一の翌月から</div>
+        <div class="tiny">最初の10年のすがた。その先の段差は右のグラフへ。</div>
+        <div style="font-size:12px; font-weight:700; color:#245640;">入ってくるお金</div>
+        <div class="ledger-row"><span>遺族基礎年金＋子の加算 <span class="tiny">←「子2人」から</span></span><span class="ledger-v">約9万円/月</span></div>
+        <div class="ledger-row"><span>遺族厚生年金 <span class="tiny">←「会社員」から</span></span><span class="ledger-v">約4万円/月</span></div>
+        <div class="ledger-row"><span>配偶者の収入 <span class="tiny">←「パート継続」から</span></span><span class="ledger-v">約11万円/月</span></div>
+        <div class="ledger-row" style="border-top:1px dashed #DDD8CC; padding-top:8px;"><span style="font-weight:700; color:#245640;">計</span><span class="ledger-v">約24万円/月</span></div>
+        <div style="border-top:1px solid #DDD8CC; padding-top:10px; display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:12px; font-weight:700; color:#45514B;">出ていくお金</div>
+          <div class="ledger-row"><span>生活費 <span class="tiny">(推定の幅)</span></span><span id="livingText" class="ledger-v" style="color:#8A5406;"></span></div>
+          <div class="ledger-row"><span>住宅ローン <span class="tiny">←「団信あり」から</span></span><span class="ledger-v">0円</span></div>
+        </div>
+        <div style="border-top:1px solid #DDD8CC; padding-top:10px;">
+          <div class="muted" style="font-size:12px;">差し引き</div>
+          <div id="gapLine" style="font-size:16px; font-weight:700; color:#8A5406;"></div>
+        </div>
+      </div>
+      <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:13.5px; font-weight:700;">公的な収入は、階段のように減っていきます — いつ・なぜ、が下の1〜3です</div>
+        <div style="display:flex; gap:18px; flex-wrap:wrap; align-items:center; font-size:11.5px; color:#45514B;">
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:22px; border-top:3.5px solid #2E6B52;"></span>公的年金(遺族年金)</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:22px; border-top:2px dashed #2E6B52;"></span>＋配偶者の収入</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:22px; border-top:3px solid #9C4633;"></span>生活費(前提で変動)</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:10px; background:rgba(156,70,51,0.15); border:1px solid #9C4633;"></span>保険で埋める不足</span>
+        </div>
+        <svg width="660" height="252" viewBox="0 0 660 252">
+          <line x1="46" y1="138.9" x2="616" y2="138.9" stroke="#EDE9DF"></line><line x1="46" y1="91.9" x2="616" y2="91.9" stroke="#EDE9DF"></line><line x1="46" y1="44.8" x2="616" y2="44.8" stroke="#EDE9DF"></line>
+          <text x="40" y="142" text-anchor="end" font-size="10" fill="#5C6660">10万</text><text x="40" y="95" text-anchor="end" font-size="10" fill="#5C6660">20万</text><text x="40" y="48" text-anchor="end" font-size="10" fill="#5C6660">30万</text>
+          <rect x="320" y="20" width="64" height="166" fill="rgba(156,70,51,0.07)"></rect>
+          <text x="352" y="14" text-anchor="middle" font-size="11" font-weight="700" fill="#7E3526">不足が最大</text>
+          <line x1="257" y1="20" x2="257" y2="186" stroke="#CFC9BB" stroke-dasharray="3 4"></line><line x1="320" y1="20" x2="320" y2="186" stroke="#CFC9BB" stroke-dasharray="3 4"></line><line x1="616" y1="20" x2="616" y2="186" stroke="#CFC9BB" stroke-dasharray="3 4"></line>
+          <path id="defPath" d="" fill="rgba(156,70,51,0.15)"></path>
+          <path id="expPath" d="" fill="none" stroke="#9C4633" stroke-width="3"></path>
+          <path d="M 46 73.1 H 257 V 82 H 320 V 93.3 H 616" fill="none" stroke="#2E6B52" stroke-width="2" stroke-dasharray="6 5"></path>
+          <path d="M 46 124.8 H 257 V 133.8 H 320 V 145.1 H 616" fill="none" stroke="#2E6B52" stroke-width="3.5"></path>
+          <line x1="46" y1="186" x2="616" y2="186" stroke="#B9B2A2" stroke-width="1.5"></line>
+          <g font-size="10.5" fill="#5C6660" text-anchor="middle">
+            <text x="46" y="205">いま(2026)</text><text x="46" y="218" font-size="10">妻38歳</text>
+            <text x="257" y="205">2036</text><text x="257" y="218" font-size="10">妻48歳</text>
+            <text x="320" y="205">2039</text><text x="320" y="218" font-size="10">妻51歳</text>
+            <text x="405" y="205">2043</text><text x="405" y="218" font-size="10">妻55歳</text>
+            <text x="616" y="205">2053</text><text x="616" y="218" font-size="10">妻65歳</text>
+          </g>
+          <circle cx="257" cy="129" r="9" fill="#1E2A26"></circle><text x="257" y="132.5" text-anchor="middle" font-size="10" font-weight="700" fill="#F7F5F0">1</text>
+          <circle cx="320" cy="140" r="9" fill="#1E2A26"></circle><text x="320" y="143.5" text-anchor="middle" font-size="10" font-weight="700" fill="#F7F5F0">2</text>
+          <circle cx="596" cy="145" r="9" fill="#1E2A26"></circle><text x="596" y="148.5" text-anchor="middle" font-size="10" font-weight="700" fill="#F7F5F0">3</text>
+          <line x1="236" y1="227" x2="236" y2="232" stroke="#A6690F" stroke-width="1.5"></line><line x1="236" y1="232" x2="384" y2="232" stroke="#A6690F" stroke-width="1.5"></line><line x1="384" y1="227" x2="384" y2="232" stroke="#A6690F" stroke-width="1.5"></line>
+          <text x="310" y="246" text-anchor="middle" font-size="10.5" font-weight="700" fill="#8A5406">大学の学費がかかる時期 (2035〜2042)</text>
+        </svg>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px;">
+      <div class="dan"><div class="n">1</div><div><div style="font-size:13px; font-weight:700;">2036年(妻48歳)</div><div style="font-size:12px; color:#45514B; line-height:1.65;">上のお子さんが18歳の年度末。子の加算が1人分終わり、月13.0万→11.1万円に。</div></div></div>
+      <div class="dan"><div class="n">2</div><div><div style="font-size:13px; font-weight:700;">2039年(妻51歳) — 最大の崖</div><div style="font-size:12px; color:#45514B; line-height:1.65;">下のお子さんが18歳の年度末。遺族基礎年金がまるごと終わり、中高齢寡婦加算に切り替わって月8.7万円に。大学費用と重なります。</div></div></div>
+      <div class="dan"><div class="n">3</div><div><div style="font-size:13px; font-weight:700;">2053年(妻65歳)</div><div style="font-size:12px; color:#45514B; line-height:1.65;">中高齢寡婦加算が終了。以後はご自身の老齢年金に切り替わります。</div></div></div>
+    </div>
+    <div style="border-top:1px solid #EDE9DF; padding-top:16px; display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:13.5px; font-weight:700;">ことばの説明 <span class="tiny" style="font-weight:400;">— 気になる用語を押してください</span></div>
+      <div id="termBtns" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+      <div id="termBody" style="background:#F2EFE8; border-radius:10px; padding:12px 18px; font-size:13px; line-height:1.8; color:#2C3833;"></div>
+      <div style="font-size:11.5px; color:#5C6660; line-height:1.7;">※2028年4月から遺族厚生年金の受け取り方が一部見直されます(お子さんのいない配偶者は原則有期に)。このご家庭はお子さんがいるため影響は限定的ですが、施行後の制度にもとづいて計算します。</div>
+    </div>
+    <div class="note">この「毎月の不足(赤い塗り)」と「大学の山」を、妻65歳までの全期間で足し合わせたものが、次のSTEP 3の「必要な総額」です。</div>
+  </div>
+
+  <div class="card">
+    <div class="sec-head"><div class="circle">3</div><div><div class="sec-title">その積み重ねが、この金額です</div><div class="sec-sub">STEP 2を足し合わせた「必要な総額」から、公的なしくみと家計でまかなえる分を引いた残りが、民間保険で備える額です。</div></div></div>
+    <div style="display:flex; gap:20px; padding-left:48px; font-size:12px; color:#45514B;">
+      <span style="display:flex; align-items:center; gap:7px;"><span style="width:12px; height:12px; border-radius:3px; background:#2E6B52; display:inline-block;"></span>公的年金・家計でまかなえる分</span>
+      <span style="display:flex; align-items:center; gap:7px;"><span style="width:12px; height:12px; border-radius:3px; background:#A6690F; display:inline-block;"></span>民間保険で備える額(幅は推定項目ぶん)</span>
+    </div>
+    <div id="wfRows" style="display:flex; flex-direction:column; gap:16px;"></div>
+    <div class="note">住居費 0円 — 「団信あり」の回答から、万一のとき住宅ローンは保険で完済されるため、住居費を総額に含めていません。</div>
+  </div>
+
+  <div class="card">
+    <div class="sec-head"><div class="circle">4</div><div><div class="sec-title">だからこの判定</div><div class="sec-sub">必要額の幅と、いまの保障を1本の数直線に重ねます。判定の根拠はこの位置関係だけです。</div></div></div>
+    <div style="position:relative; height:168px; margin-left:48px; width:960px;">
+      <div style="position:absolute; left:0; top:92px; width:900px; height:2px; background:#CFC9BB;"></div>
+      <div id="ticks"></div>
+      <div id="axisBand" style="position:absolute; top:66px; height:28px; background:rgba(166,105,15,0.24); border:1.5px solid #A6690F; border-radius:7px; box-sizing:border-box;"></div>
+      <div id="bandLabel" style="position:absolute; top:130px; font-size:12px; font-weight:700; color:#8A5406;"></div>
+      <div style="position:absolute; top:40px; height:60px; width:3px; border-radius:2px; left:539px; background:#1E2A26;"></div>
+      <div style="position:absolute; top:8px; left:445px; width:190px; text-align:center;"><span style="font-size:12px; font-weight:700; color:#F7F5F0; background:#1E2A26; border-radius:999px; padding:4px 14px;">いまの保障 3,000万円</span></div>
+    </div>
+    <div id="verdictCard" style="border-radius:14px; padding:20px 26px; display:flex; flex-direction:column; gap:8px;">
+      <div id="verdictTitle" style="font-size:17px; font-weight:700;"></div>
+      <div id="verdictBody" style="font-size:14px; line-height:1.85; color:#2C3833;"></div>
+    </div>
+    <div class="muted" style="font-size:12px; line-height:1.7;">判定のルール — 「減らせる」は、厳しめの前提(幅の右端)で計算しても保障が上回るときにだけ言い切ります。幅がいまの保障を跨ぐときは、言い切らずに「要精査」に降ろします。</div>
+    <div style="background:#F2EFE8; border-radius:12px; padding:20px 24px; display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:14.5px; font-weight:700;">あなたの判断ポイント — 3行で</div>
+      <div class="dan"><div class="n" style="background:#A6690F;">1</div><div style="font-size:13px; line-height:1.7;">正念場は2039〜2043年ごろ。遺族基礎年金が終わった直後に、下のお子さんの大学費用が重なります。</div></div>
+      <div class="dan"><div class="n" style="background:#A6690F;">2</div><div style="font-size:13px; line-height:1.7;">住まいは団信で守られています。住居費のための保障は要りません。</div></div>
+      <div class="dan"><div class="n" style="background:#A6690F;">3</div><div style="font-size:13px; line-height:1.7;">だから「総額」より「この期間の厚み」で選びます。年々減っていく収入保障型が、形として合いやすい前提です。</div></div>
+      <div class="muted" style="font-size:12px;">この3点を頭に置いて、上の「暮らし方の前提」を選び直してみてください。判定が連動して変わります。</div>
+      <a href="lab.html" style="align-self:flex-start; display:inline-block; margin-top:4px; padding:12px 26px; border-radius:10px; background:#1E2A26; color:#F7F5F0; font-size:14px; font-weight:700; text-decoration:none;">もしもラボで「この場合は?」を試す →</a>
+    </div>
+  </div>
+
+  <div class="card" style="padding:22px 40px; gap:12px;">
+    <div style="font-size:13.5px; font-weight:700;">使った前提と出典 — すべて結果に表示します</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; font-size:12px; color:#45514B;">
+      <span class="wf-ref" style="padding:5px 13px;">遺族年金の額: 日本年金機構 (令和8年度は一次情報未確認のため前年度値)</span>
+      <span class="wf-ref" style="padding:5px 13px;">高額療養費: 厚生労働省</span>
+      <span class="wf-ref" style="padding:5px 13px;">教育費: 文部科学省「子供の学習費調査」</span>
+      <span class="wf-ref" style="padding:5px 13px;">生活費水準: 総務省「家計調査」</span>
+    </div>
+    <div style="font-size:12.5px; font-weight:700; color:#8A5406;">このページは参照実装です。金額はすべてサンプル値で、実際の試算結果ではありません。</div>
+  </div>
+
+</div>
+<script>
+const PRESETS = {
+  tsume: { label: '切り詰める', total: 9100, low: 1600, high: 2400, livLow: 24, livHigh: 27 },
+  ima: { label: 'いま通り', total: 10100, low: 2600, high: 3400, livLow: 26, livHigh: 30 },
+  yutori: { label: 'ゆとりを持つ', total: 11100, low: 3600, high: 4400, livLow: 29, livHigh: 33 }
+};
+const COV = 3000, SC = 700 / 11500, AX = 900 / 5000;
+const DED = [
+  { label: '遺族年金でカバー', amt: 3900, color: '#2E6B52', source: '←「会社員(厚生年金)・子2人」の回答から', ref: '日本年金機構' },
+  { label: '配偶者の収入見込み', amt: 2400, color: '#57906F', source: '←「配偶者はパート勤務を継続」の回答から', ref: null },
+  { label: '貯蓄・死亡退職金', amt: 800, color: '#8FB6A0', source: '←「貯蓄 500〜1,000万円」の回答から(中央値で計上)', ref: null }
+];
+const TERMS = [
+  { id: 'kiso', label: '遺族基礎年金', body: '末のお子さんが18歳の年度末(高校を出るころ)まで続く、国からの毎月の仕送りです。お子さんの人数で金額が変わり、全員が18歳を超えるとまるごと終わります。' },
+  { id: 'kosei', label: '遺族厚生年金', body: '会社員・公務員だった方の遺族への上乗せ分です。金額はおおむねご本人の厚生年金の4分の3。お子さんのいるご家庭では原則続きます。' },
+  { id: 'kafu', label: '中高齢寡婦加算', body: 'お子さんが18歳を超えて遺族基礎年金が止まったあとの急減をやわらげる、65歳までの上乗せです。65歳からはご自身の老齢年金に切り替わります。' },
+  { id: 'danshin', label: '団信(団体信用生命保険)', body: '万一のとき住宅ローンが保険で完済されるしくみです。この診断で住まいの費用を保障の外に置いている理由です。' }
+];
+const V = {
+  reduce: { badge: '減らせる可能性', bc: '#2E6B52', bbg: '#EAF3ED', btx: '#245640' },
+  check: { badge: '圏内・要精査', bc: '#A6690F', bbg: '#FBF3E4', btx: '#7A4A05' },
+  short: { badge: '不足の可能性', bc: '#9C4633', bbg: '#F9ECE8', btx: '#7E3526' }
+};
+let state = { mode: 'ima', term: 'kiso' };
+const $ = (id) => document.getElementById(id);
+const fmt = (v) => v >= 10000 ? Math.floor(v / 10000) + '億' + (v % 10000 ? (v % 10000).toLocaleString('ja-JP') + '万' : '') + '円' : v.toLocaleString('ja-JP') + '万円';
+const rangeShort = (a, b) => fmt(a).replace('円', '') + '〜' + fmt(b);
+const CY = (v) => Math.round((186 - v * 160 / 34) * 10) / 10;
+const CX = (yr) => Math.round((46 + yr * 570 / 27) * 10) / 10;
+
+function render() {
+  const p = PRESETS[state.mode];
+  const needRange = rangeShort(p.low, p.high) + '円';
+  let verdict = COV >= p.high ? 'reduce' : (COV >= p.low ? 'check' : 'short');
+  const diff = verdict === 'reduce' ? rangeShort(COV - p.high, COV - p.low) : rangeShort(p.low - COV, p.high - COV);
+  const v = V[verdict];
+
+  $('badge').textContent = v.badge;
+  $('badge').style.cssText = 'display:inline-block; font-size:13px; font-weight:700; padding:5px 15px; border-radius:999px; background:' + v.bbg + '; border:1.5px solid ' + v.bc + '; color:' + v.btx + ';';
+  $('heroHead').textContent = verdict === 'reduce' ? 'いまの保障、' + diff + 'ぶん 減らせる可能性があります'
+    : verdict === 'check' ? 'いまの保障は、必要額の幅の圏内です — ここでは言い切りません'
+    : 'いまの保障では、' + diff + 'ほど 足りない可能性があります';
+  $('statNeed').textContent = needRange;
+  $('statMode').textContent = p.label;
+
+  $('modeBtns').innerHTML = Object.keys(PRESETS).map((id) =>
+    '<button class="btn ' + (id === state.mode ? 'on' : 'off') + '" onclick="setMode(\'' + id + '\')">' + PRESETS[id].label + '</button>').join('');
+
+  const gapLow = Math.max(0, p.livLow - 24), gapHigh = p.livHigh - 24;
+  $('livingText').textContent = p.livLow + '〜' + p.livHigh + '万円/月';
+  $('gapLine').textContent = gapLow === 0 ? '毎月 0〜' + gapHigh + '万円 の不足 (ほぼ収支圏内)' : '毎月 ' + gapLow + '〜' + gapHigh + '万円 が足りません';
+
+  const fam = (p.livLow + p.livHigh) / 2, fam2 = fam - 4;
+  const solo = { tsume: 15, ima: 17, yutori: 19 }[state.mode];
+  $('expPath').setAttribute('d', 'M ' + CX(0) + ' ' + CY(fam) + ' H ' + CX(14) + ' V ' + CY(fam2) + ' H ' + CX(17) + ' V ' + CY(solo) + ' H ' + CX(27));
+  $('defPath').setAttribute('d', 'M ' + CX(0) + ' ' + CY(fam) + ' H ' + CX(14) + ' V ' + CY(fam2) + ' H ' + CX(17) + ' V 93.3 H 320.4 V 82 H 257.1 V 73.1 H 46 Z');
+
+  const px = (x) => Math.round(x * SC);
+  let rows = [{ label: '遺されたご家族に必要な総額', source: 'STEP 2の毎月の不足と節目の山の合計(前提: ' + p.label + ')', ref: null, left: 0, width: px(p.total), color: '#4A5A53', amount: fmt(p.total), ac: '#1E2A26' }];
+  let r = p.total;
+  DED.forEach((d) => { rows.push({ label: d.label, source: d.source, ref: d.ref, left: px(r - d.amt), width: px(d.amt), color: d.color, amount: '▲' + fmt(d.amt), ac: '#2E6B52' }); r -= d.amt; });
+  const mid = p.total - 7100;
+  $('wfRows').innerHTML = rows.map((row) =>
+    '<div class="wf-row"><div class="wf-label"><div class="wf-name">' + row.label + '</div><div class="wf-src">' + row.source + '</div>' +
+    (row.ref ? '<div><span class="wf-ref">出典: ' + row.ref + '</span></div>' : '') +
+    '</div><div class="wf-track"><div class="wf-bar" style="left:' + row.left + 'px; width:' + row.width + 'px; background:' + row.color + ';"></div></div><div class="wf-amt" style="color:' + row.ac + ';">' + row.amount + '</div></div>').join('') +
+    '<div class="wf-row"><div class="wf-label"><div class="wf-name" style="color:#8A5406;">= 民間保険で備える額</div><div class="wf-src">幅は、推定で補った2項目(生活費水準・教育費)によるものです</div></div>' +
+    '<div class="wf-track"><div class="wf-bar" style="left:' + px(p.low) + 'px; width:' + px(p.high - p.low) + 'px; background:rgba(166,105,15,0.26); border:1.5px solid #A6690F; box-sizing:border-box;"></div>' +
+    '<div style="position:absolute; top:2px; bottom:2px; width:3px; border-radius:2px; left:' + (px(mid) - 1) + 'px; background:#A6690F;"></div></div>' +
+    '<div class="wf-amt" style="color:#8A5406;">' + needRange + '</div></div>';
+
+  $('ticks').innerHTML = [0, 1000, 2000, 3000, 4000, 5000].map((t) => {
+    const x = Math.round(t * AX);
+    return '<div style="position:absolute; top:86px; left:' + x + 'px; width:1px; height:14px; background:#B9B2A2;"></div>' +
+      '<div style="position:absolute; top:104px; left:' + (x - 40) + 'px; width:80px; text-align:center; font-size:11px; color:#5C6660;">' + (t === 0 ? '0' : t.toLocaleString('ja-JP') + '万') + '</div>'; }).join('');
+  $('axisBand').style.left = Math.round(p.low * AX) + 'px';
+  $('axisBand').style.width = Math.round((p.high - p.low) * AX) + 'px';
+  $('bandLabel').style.left = Math.round(p.low * AX) + 'px';
+  $('bandLabel').textContent = '必要額のめやす ' + needRange;
+
+  $('verdictCard').style.cssText = 'border-radius:14px; padding:20px 26px; display:flex; flex-direction:column; gap:8px; border:1.5px solid ' + v.bc + '; background:' + v.bbg + ';';
+  $('verdictTitle').style.color = v.btx;
+  $('verdictTitle').textContent = verdict === 'reduce' ? '判定: 減らせる可能性 — 厳しめに見ても上回っています'
+    : verdict === 'check' ? '判定: 要精査 — 幅がいまの保障を跨いでいます' : '判定: 不足の可能性 — 緩めに見ても届いていません';
+  $('verdictBody').textContent = verdict === 'reduce'
+    ? '厳しめの前提(幅の右端 ' + fmt(p.high) + ')で計算しても、いまの保障 3,000万円が上回っています。' + diff + 'の範囲で保障を減らせる可能性があります。ただし概算です。減額の手続きの前に、推定で補った2項目(生活費水準・教育費)を実際の値で答え直してください。'
+    : verdict === 'check'
+    ? '必要額の幅(' + needRange + ')が、いまの保障 3,000万円を跨いでいます。この位置関係のとき、診断は「減らせる」とも「足りない」とも言い切りません。推定で補った2項目(生活費水準・教育費)を実際の値で答えると幅が狭まり、判定が確定に近づきます。'
+    : 'ゆとりの前提では、緩めに見た幅の左端(' + fmt(p.low) + ')にも、いまの保障 3,000万円が届いていません。' + diff + 'の不足の可能性があります。前提を1目盛り戻すか、不足分の備え方(掛け捨て定期の上乗せなど)を検討する段階です。';
+
+  $('termBtns').innerHTML = TERMS.map((t) =>
+    '<button class="pillbtn ' + (t.id === state.term ? 'on' : 'off') + '" onclick="setTerm(\'' + t.id + '\')">' + t.label + '</button>').join('');
+  $('termBody').textContent = TERMS.find((t) => t.id === state.term).body;
+}
+function setMode(m) { state.mode = m; render(); }
+function setTerm(t) { state.term = t; render(); }
+render();
+</script>
+</body>
+</html>
