@@ -161,7 +161,10 @@ describe("runParamWatch", () => {
     // 差分は値の1行だけを変える
     expect(p.yamlPatch).toContain("-  restrictionMonthsVoluntary: 2");
     expect(p.yamlPatch).toContain("+  restrictionMonthsVoluntary: 1");
-    expect(p.yamlPatch?.split("\n").filter((l) => /^[-+][^-+]/.test(l))).toHaveLength(2);
+    // 適用後に自己整合する：温存の期限と改正予定が消え、施行日は一致文の和暦から（D4・2026-09-22）
+    expect(p.yamlPatch).toContain('-      expires: "2026-10-05"');
+    expect(p.yamlPatch).toContain("-      pendingChange: >-");
+    expect(p.yamlPatch).toContain('+      effectiveFrom: "2025-04-01"');
     expect(p.actionLog.map((a) => a.step)).toEqual([
       "fetch",
       "detect_instructions",

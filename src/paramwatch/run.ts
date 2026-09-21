@@ -11,7 +11,8 @@ import { assessImpact, type ParamChange, summarizeRows, type WatchCase } from ".
 import { describeLedger, resolveTarget } from "./paths.js";
 import type { ActionLogEntry, ProposalStore, RunDecision } from "./store.js";
 import type { WatchSources } from "./sources.js";
-import { buildYamlPatch } from "./yamlPatch.js";
+import { ledgerOps } from "./ledgerOps.js";
+import { buildYamlPatch, type YamlOp } from "./yamlPatch.js";
 
 export interface RunParamWatchResult {
   checked: number;
@@ -166,7 +167,7 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
       );
 
       const changes: ParamChange[] = [];
-      const edits: Array<{ path: string[]; value: number }> = [];
+      const ops: YamlOp[] = [];
       const matchedTexts: string[] = [];
       for (const r of extracted) {
         if (!r.ok) continue;
@@ -182,7 +183,15 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
             proposed: r.value,
             ...(watchTarget?.unit ? { unit: watchTarget.unit } : {}),
           });
-          edits.push({ path: target.path, value: r.value });
+          // 値の行に加えて、台帳を自己整合させる操作（材料は台帳と一致文だけ）
+          ops.push(
+            { kind: "set", path: target.path, value: r.value },
+            ...ledgerOps(target, {
+              matchedText: r.matchedText,
+              sourceUrl: fetched.page.url,
+              fetchedAt: fetched.page.fetchedAt,
+            }),
+          );
         }
       }
 
@@ -250,8 +259,8 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
        */
       const yamlPatch = await step(
         "build_yaml_patch",
-        `${deps.paramsYaml.file} の ${edits.length} か所（値の文字だけを置き換える）`,
-        () => buildYamlPatch(deps.paramsYaml.file, deps.paramsYaml.text, edits),
+        `${deps.paramsYaml.file} への ${ops.length} 操作（値の置換＋台帳の自己整合）`,
+        () => buildYamlPatch(deps.paramsYaml.file, deps.paramsYaml.text, ops),
         (patch) =>
           `unified diff ${patch.split("\n").length - 1} 行（承認しても当たらない。当てるのは人）`,
         "承認後に人がそのまま当てられる差分を用意するため（エージェントは当てない）",

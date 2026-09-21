@@ -13,3 +13,11 @@ const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 export function jstYear(d: Date): number {
   return new Date(d.getTime() + JST_OFFSET_MS).getUTCFullYear();
 }
+
+/**
+ * 基準日の「日本時間での日付」（YYYY-MM-DD）。
+ * `toISOString().slice(0, 10)` は UTC の日付なので、JST 0:00〜9:00 は前日になる（2026-09-22 に台帳の取得日で踏んだ）。
+ */
+export function jstDate(d: Date): string {
+  return new Date(d.getTime() + JST_OFFSET_MS).toISOString().slice(0, 10);
+}

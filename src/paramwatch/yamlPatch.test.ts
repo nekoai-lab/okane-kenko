@@ -58,6 +58,23 @@ describe("buildYamlPatch：git apply がそのまま通る", () => {
     execFileSync("git", ["apply", "--check", "p.diff"], { cwd: dir });
   });
 
+  it("行の削除を含む差分も git apply --check に通る（台帳の自己整合・D4）", () => {
+    const dir = mkdtempSync(join(tmpdir(), "yamlpatch-"));
+    mkdirSync(join(dir, "params"));
+    writeFileSync(join(dir, file), text);
+    const base = ["kihonTeate", "sources", "restrictionMonthsVoluntary"];
+    const patch = buildYamlPatch(file, text, [
+      { kind: "set", path: ["kihonTeate", "restrictionMonthsVoluntary"], value: 1 },
+      { kind: "replace", path: [...base, "effectiveFrom"], value: "2025-04-01" },
+      { kind: "delete", path: [...base, "pendingChange"] },
+      { kind: "delete", path: [...base, "expires"] },
+      { kind: "replace", path: [...base, "note"], value: "テスト" },
+    ]);
+    writeFileSync(join(dir, "p.diff"), patch);
+    execFileSync("git", ["init", "-q"], { cwd: dir });
+    execFileSync("git", ["apply", "--check", "p.diff"], { cwd: dir });
+  });
+
   it("変更が無ければ空の差分", () => {
     expect(buildYamlPatch(file, text, [])).toBe("");
   });
