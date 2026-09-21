@@ -112,7 +112,7 @@ export function needForSickness(
     premises: [
       {
         // **上端の4割前後をこの1項目が作る。** 公的出典が無いので、必ず見出し語を付けて前に出す
-        label: "保険外の自己負担は月10万円",
+        label: `保険外の自己負担は月${(v(p, "uncoveredMedicalMonthly") / 10000).toLocaleString()}万円`,
         note: `差額ベッド・交通費などを月${(v(p, "uncoveredMedicalMonthly") / 10000).toLocaleString()}万円と置いた扱いです（当社基準・公的出典なし）。実際が少なければ必要額は減ります。`,
       },
       {

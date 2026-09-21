@@ -42,6 +42,8 @@ function buildSurvivorAssumptions(x: {
   yTotal: number;
   yAlone: number;
   hasChildren: boolean;
+  /** 算定期間の終わり（`pensionAge`）。文言に書き写すと式を変えたとき文だけ古く残る */
+  pensionAge: number;
 }): Assumption[] {
   const man = (yen: number) => Math.round(yen / 10000).toLocaleString("ja-JP");
   const out: Assumption[] = [];
@@ -53,7 +55,7 @@ function buildSurvivorAssumptions(x: {
       value: x.survivorIncome,
       reason: "estimated",
       // **額面と手取りの役割を書き分ける。** 額面はユーザーが答えた値、手取りは計算に使う値
-      note: `年収${man(x.survivorIncome)}万円（手取りに換算して計算）が65歳まで途切れない扱いです。下がれば必要額は増えます。`,
+      note: `年収${man(x.survivorIncome)}万円（手取りに換算して計算）が${x.pensionAge}歳まで途切れない扱いです。下がれば必要額は増えます。`,
     });
   }
   if (x.hasSurvivor && x.yAlone > 0) {
@@ -93,10 +95,10 @@ function buildSurvivorAssumptions(x: {
   if (x.hasSurvivor) {
     out.push({
       field: "period.end",
-      label: "対象は65歳まで",
-      value: 65,
+      label: `対象は${x.pensionAge}歳まで`,
+      value: x.pensionAge,
       reason: "default",
-      note: `見ているのは${x.survivorLabel}が65歳になるまでの${x.yTotal}年間です（以降は老齢年金の領域）。`,
+      note: `見ているのは${x.survivorLabel}が${x.pensionAge}歳になるまでの${x.yTotal}年間です（以降は老齢年金の領域）。`,
     });
   }
   out.push({
@@ -218,6 +220,7 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
     yTotal,
     yAlone,
     hasChildren: children.length > 0,
+    pensionAge,
   });
 
   const assets = h.assets;
@@ -234,8 +237,8 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
 
   if (rawNeed >= v(p, "shortageThreshold")) {
     verdict = "shortage";
-    low = roundToUnit(rawNeed * 0.8, unit);
-    high = roundToUnit(rawNeed * 1.2, unit);
+    low = roundToUnit(rawNeed * v(p, "shortageRangeLowFactor"), unit);
+    high = roundToUnit(rawNeed * v(p, "shortageRangeHighFactor"), unit);
   } else if (!survivor && children.length === 0) {
     // 扶養家族がいない：上乗せの概念がない
     verdict = "not_needed";
@@ -253,8 +256,14 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
     assumptions.push(...survivorAssumptions);
   } else {
     verdict = "sufficient";
-    low = roundToUnit(funeral + M * v(p, "survivorLivingRatioChild") * 12, unit);
-    high = roundToUnit(funeral + M * v(p, "survivorLivingRatioChild") * 24, unit);
+    low = roundToUnit(
+      funeral + M * v(p, "survivorLivingRatioChild") * v(p, "sufficientTopUpMonthsLow"),
+      unit,
+    );
+    high = roundToUnit(
+      funeral + M * v(p, "survivorLivingRatioChild") * v(p, "sufficientTopUpMonthsHigh"),
+      unit,
+    );
   }
 
   // ---------- 現在の保障との比較 ----------
@@ -269,7 +278,7 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
     });
   } else if (h.currentCoverage < low) {
     gap = { kind: "shortage", amount: low - h.currentCoverage };
-  } else if (h.currentCoverage > high * 1.5) {
+  } else if (h.currentCoverage > high * v(p, "excessCoverageRatio")) {
     gap = { kind: "excess", amount: h.currentCoverage - high };
   } else {
     gap = { kind: "adequate", amount: 0 };
