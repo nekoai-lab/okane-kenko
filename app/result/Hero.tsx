@@ -23,6 +23,14 @@ export interface HeroProps {
   diffText: string | null;
   /** 必要額が葬儀費用だけになる世帯に添える1行（仕様 §5.3）。無ければ null */
   funeralOnlyNote: string | null;
+  /**
+   * `組み替えの余地` の世帯に添える金額の1行（仕様 §5.3・2026-09-21）。
+   *
+   * **見出しだけでは金額が1つも出ない。** 旧「検査値パネル」（`Vitals`）は
+   * 「減らせる額（世帯）約1,800万円 ／ 一方で約200万円足りません」と両方を出していた。
+   * ヒーローに一本化するにあたり、その2つを落とさないための行。
+   */
+  rebalanceNote: string | null;
   /** 3列。ラベルも値もモックの並びのまま */
   coverageText: string;
   needText: string;
@@ -50,14 +58,23 @@ function headline(v: HeroVerdict, diff: string | null): string {
     case "shortage":
       return `いまの保障では、${diff}ほど 足りない可能性があります`;
     case "rebalanceable":
-      return "保障の総量は足りています。配分を組み替える余地があります";
+      return "保障の総量は足りていますが、置き場所に組み替えの余地があります";
     case "pending":
       return "いまの保障が分からないので、過不足はまだ出していません";
   }
 }
 
 export function Hero(props: HeroProps) {
-  const { verdict, caption, diffText, funeralOnlyNote, coverageText, needText, modeText } = props;
+  const {
+    verdict,
+    caption,
+    diffText,
+    funeralOnlyNote,
+    rebalanceNote,
+    coverageText,
+    needText,
+    modeText,
+  } = props;
 
   return (
     <section className={s.hero} aria-labelledby="hero-head">
@@ -76,6 +93,9 @@ export function Hero(props: HeroProps) {
 
       {/* 必要額が葬儀費用だけの世帯は、その理由を先に言う（仕様 §5.3） */}
       {funeralOnlyNote && <p className={s.funeral}>{funeralOnlyNote}</p>}
+
+      {/* 組み替えの余地：どちらにいくら動かす話なのかを、見出しの直下で言う（仕様 §5.3） */}
+      {rebalanceNote && <p className={s.funeral}>{rebalanceNote}</p>}
 
       <div className={s.stats}>
         <div>

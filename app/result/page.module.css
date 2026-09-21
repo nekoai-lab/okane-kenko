@@ -631,15 +631,6 @@
   overflow-wrap: anywhere;
 }
 
-/* 色を使うのは過不足のセルだけ。4つとも色を付けると要点が消える */
-.vitalGood {
-  color: var(--color-success-text);
-}
-
-.vitalWarn {
-  color: var(--color-warning-text);
-}
-
 .vitalNote {
   font-size: var(--font-size-dense);
   color: var(--color-text-muted);

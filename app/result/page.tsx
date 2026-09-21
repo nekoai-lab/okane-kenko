@@ -28,8 +28,6 @@ import { NumberLine } from "./NumberLine.js";
 import { Waterfall } from "./Waterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
-import type { Vital } from "./Vitals.js";
-import { Vitals } from "./Vitals.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
@@ -660,65 +658,6 @@ export default async function ResultPage({
 
   // 減らせる箇所（無ければ「見つかりませんでした」と明示する＝沈黙で誤解させない）
   const totalExcess = result.householdHeadline.totalExcess;
-  const totalShortage = result.householdHeadline.totalShortage;
-
-  /**
-   * 検査値パネル（拾い読みの入口）。
-   *
-   * **判定はここに置かない。** すぐ上の h1 が結論そのもので、繰り返しになる。
-   * ここは測定値だけにして4つの性格をそろえ、「目安の額 → いまの保障 → 過不足 → 時期」
-   * の順に並べる。**同じ内容はすべて下の本文と図が根拠つきで持っている。**
-   *
-   * ラベルには必ず「あなた」「世帯」のどちらかを書く。範囲が混ざったまま数字を並べると、
-   * どこの話をしているのか読み手に分からない。
-   *
-   * **色を付けるのは過不足のセルだけ。** 年のセルにも色を付けてみたが、4つのうち2つが
-   * 色付きになると、どれが要点か分からなくなった。年が重い事実であることは言葉が伝える。
-   */
-  const selfCurve = coverageCurve(selfProjection, result.self.income.assets);
-  const cov = input.coverageSelf;
-  const coveredFrom = cov === null ? null : (selfCurve.find((pt) => pt.need <= cov) ?? null);
-  const tightest = selfProjection.tightest;
-  /**
-   * 世帯の過不足を1枚で出す。**足りない側と減らせる側が同時にあるなら、両方を名指しする。**
-   *
-   * 以前は `totalShortage > 0` なら不足額だけを出していた。組み替えで済む世帯
-   * （本人が過剰・配偶者が不足）では、見出しが「世帯全体で見直せそうです」なのに
-   * 目が最初に行く場所には不足額だけがオレンジで立っていて、**結論と逆のことを言っていた**。
-   * 大きく出すのは額の大きい側（＝その世帯で効く側）にし、もう一方は必ず注記に残す。
-   */
-  const gapVital: Vital =
-    cov === null && result.spouse === null
-      ? { label: "世帯の過不足", value: "—", note: "いまの保障が分かれば出せます" }
-      : totalShortage > 0 && totalExcess > 0
-        ? totalExcess >= totalShortage
-          ? {
-              label: "減らせる額（世帯）",
-              value: `約${money(totalExcess)}`,
-              note: `一方で約${money(totalShortage)}足りません。組み替えで対応できる見込みです`,
-              tone: "good",
-            }
-          : {
-              label: "足りない額（世帯）",
-              value: `約${money(totalShortage)}`,
-              note: `別のところで約${money(totalExcess)}減らせます`,
-              tone: "warn",
-            }
-        : totalShortage > 0
-          ? {
-              label: "足りない額（世帯）",
-              value: `約${money(totalShortage)}`,
-              note: "いまの保障との差",
-              tone: "warn",
-            }
-          : totalExcess > 0
-            ? {
-                label: "減らせる額（世帯）",
-                value: `約${money(totalExcess)}`,
-                note: "保険料が浮きます",
-                tone: "good",
-              }
-            : { label: "世帯の過不足", value: "0円", note: "過不足なし", tone: "good" };
 
   /**
    * リスク別健康診断表の6行（仕様 §5.3）。
@@ -979,38 +918,6 @@ export default async function ResultPage({
     ),
   ];
 
-  const vitals: Vital[] = [
-    {
-      // 金額の呼び名は verdict で変える（同じ名前で別の数を出さない・2026-08-30 の修正と同じ理由）
-      label: `${AMOUNT_LABEL[result.self.verdict] ?? AMOUNT_LABEL.sufficient}（あなた）`,
-      value: formatRange(result.self.range.low, result.self.range.high),
-      note: "下の内訳が根拠です",
-    },
-    {
-      label: "いまの保障（あなた）",
-      value: cov === null ? "未入力" : `約${money(cov)}`,
-      note: cov === null ? "証券が見つかったら再診断できます" : "ご申告の死亡保障額",
-    },
-    gapVital,
-    selfProjection.depletedAt
-      ? {
-          label: "貯蓄が尽きる年",
-          value: `${selfProjection.depletedAt.year}年ごろ`,
-          note: "この前提のままだと",
-        }
-      : coveredFrom
-        ? {
-            label: "いまの保障で足りる年",
-            value: `${coveredFrom.year}年ごろ`,
-            note: "これ以降は上乗せ不要の見込み",
-          }
-        : {
-            label: "いちばん細い年",
-            value: tightest ? `${tightest.year}年ごろ` : "—",
-            note: tightest ? "その年の収支がいちばん小さい" : "算定期間が短いため出せません",
-          },
-  ];
-
   // 進路 what-if（子がいる世帯だけ）：公立/私立で必要額（あなた）がどう変わるか
   const eduWhatIf =
     input.children.length > 0
@@ -1046,6 +953,38 @@ export default async function ResultPage({
    * 必要額が葬儀費用だけになる世帯に添える1行（仕様 §5.3）。
    * 本人と配偶者のどちらもその状態のときだけ出す。片方だけなら世帯の話にならない。
    */
+  /**
+   * `組み替えの余地` に添える金額の1行（仕様 §5.3・2026-09-21）。
+   *
+   * **旧「検査値パネル」（`Vitals`）の「世帯の過不足」タイルの移し先。**
+   * あちらは「減らせる額（世帯）約1,800万円 ／ 一方で約200万円足りません」と
+   * 両方の金額を出していたが、ヒーローの見出しは**金額を1つも出さない**。
+   * 撤去にあたって、その2つをここで復元する。
+   *
+   * **不足している側は過不足軸（`Verdict3`）で名指す。** ニーズ軸ではない
+   * （CLAUDE.md「判定には必ず軸名を添える」）。
+   */
+  const rebalanceNote = (() => {
+    if (hh.verdict !== "rebalanceable") return null;
+    const shortSides = [
+      verdict3(input.coverageSelf, result.self.range.low, result.self.range.high) === "shortage"
+        ? "あなたの保障"
+        : null,
+      result.spouse &&
+      verdict3(
+        input.coverageSpouse ?? null,
+        result.spouse.range.low,
+        result.spouse.range.high,
+      ) === "shortage"
+        ? "配偶者の保障"
+        : null,
+    ].filter((x): x is string => x !== null);
+    // 名指す相手が取れないときは、どこに足りないのかを言えないので出さない
+    if (shortSides.length === 0) return null;
+    const where = shortSides.join("と");
+    return `約${money(hh.totalReducible)}は減らせる一方、${where}に約${money(hh.totalShortage)}足りません。`;
+  })();
+
   const deathResults = [result.self, ...(result.spouse ? [result.spouse] : [])];
   const funeralOnlyNote = deathResults.every((r) => r.verdict === "ample")
     ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。上乗せで要るのは葬儀費用だけです。この判定は、遺されたご家族が働き続ける前提に立っています（前提は下の各行に出しています）。"
@@ -1067,6 +1006,7 @@ export default async function ResultPage({
               : null
         }
         funeralOnlyNote={funeralOnlyNote}
+        rebalanceNote={rebalanceNote}
         coverageText={hh.totalCoverage === null ? "未入力" : `約${money(hh.totalCoverage)}`}
         needText={formatRange(hh.totalNeed.low, hh.totalNeed.high)}
         modeText="いま通り"
@@ -1081,11 +1021,6 @@ export default async function ResultPage({
 
       {/* 3. 玄関：リスク別健康診断表（仕様 §5.3）。この下に死亡の詳細が縦1本で続く */}
       <RiskTable caption={caption} rows={riskRows} />
-
-      {/* 検査値パネル。健康診断書がまず数値の表を出すのと同じ順序にする */}
-      <div className={s.wide}>
-        <Vitals items={vitals} />
-      </div>
 
       <p className={s.meta}>
         これは<strong>概算・要精査</strong>です／算定基準日：{new Date().toISOString().slice(0, 10)}
