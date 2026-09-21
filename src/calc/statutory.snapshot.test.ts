@@ -46,3 +46,23 @@ describe("statutory 3行のスナップショット（T-C）", () => {
     });
   }
 });
+
+/**
+ * 温存を時限化するための置き石（T-G・2026-09-21 オーナー決定）。
+ *
+ * 給付制限 `restrictionMonthsVoluntary: 2` は **2025-04-01 施行の改正（原則1か月）を反映していない**。
+ * これは見落としではなく、**制度監視ウォッチャーが「改正を見つけて提案する」デモ素材として
+ * わざと温存している**。`params/2026-08.yaml` の `sources.restrictionMonthsVoluntary.expires`
+ * に期限（2026-10-05）を入れてある。
+ *
+ * **期待レンジを先に書いておく。** 更新したときに「なんとなく下がった」で通さないため。
+ */
+describe("T-G：給付制限 2→1 か月（未適用・温存中）", () => {
+  it.todo(
+    "サンプル世帯（40歳会社員・生活費27.5万/月・加入18年）の失業は 約17〜45万円 になる（いまは 約17〜72万円）",
+  );
+  it.todo(
+    "ゴールデン10世帯の needHigh が 20.0〜40.0万円 下がる。needLow と過不足の判定は動かない",
+  );
+  it.todo("params の sources.restrictionMonthsVoluntary から expires と pendingChange を外す");
+});

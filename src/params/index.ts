@@ -40,6 +40,12 @@ export interface StatutorySource {
   verified: boolean;
   /** 改正が判明しているが未反映のとき、何がどう変わるかを書く */
   pendingChange?: string;
+  /**
+   * **旧値をいつまで置いておくかの期限**（YYYY-MM-DD）。
+   * 改正が判明しているのに更新しないと決めた値に付ける。
+   * 期限を書かない「あとでやる」は、**理由もろとも消えて恒久化する**。
+   */
+  expires?: string;
 }
 
 export interface KogakuBracket {

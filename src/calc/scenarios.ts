@@ -151,8 +151,9 @@ export function needForUnemployment(p: ParamSet, input: ScenarioInput): Scenario
         note: `所定給付日数${teate.days}日と同じ期間で再就職する扱いです。長引けば、その分だけ必要額は増えます。`,
       },
       {
-        label: `給付制限は${restriction}か月`,
-        note: "幅の下端は会社都合（給付制限なし）、上端は自己都合を想定した扱いです。",
+        label: `給付制限は${restriction}か月で計算（改正の反映は準備中）`,
+        // **黙って旧値で出さない。** 改正を知っていて未反映であることを、利用者に先に言う
+        note: `幅の下端は会社都合（給付制限なし）、上端は自己都合を想定した扱いです。2025年4月の改正で原則1か月に短縮されていますが、この試算はまだ${restriction}か月で計算しています（反映後は上端が下がります）。`,
       },
       ...teate.assumptions.map((note) => ({ note })),
     ],
