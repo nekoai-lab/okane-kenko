@@ -15,6 +15,8 @@ import { kogakuCap } from "./medical.js";
 /** 1か月を何日として日額に割るか。健康保険の標準報酬は月額なので30日で割る */
 const DAYS_PER_MONTH = 30;
 
+const pct = (r: number) => Math.round(r * 100);
+
 export interface SourcedAmount {
   /** 円 */
   amount: number;
@@ -72,7 +74,7 @@ export function kogakuBurden(
 
   assumptions.push(
     `月あたりの医療費を${(p.kogaku.assumedMonthlyMedicalCost / 10000).toLocaleString()}万円として上限を計算した`,
-    "世帯合算・21,000円ルールは見込んでいない（自己負担は実際にはこれより下がりうる）",
+    `世帯合算・${p.kogaku.householdAggregationMin.toLocaleString()}円ルールは見込んでいない（自己負担は実際にはこれより下がりうる）`,
   );
 
   return {
@@ -155,7 +157,7 @@ export function shobyoTeate(
 /**
  * 失業したときに受け取れる見込み額。
  *
- * 基本手当日額 ＝ 賃金日額 × 給付率（実際は賃金日額に応じ 45〜80%）。
+ * 基本手当日額 ＝ 賃金日額 × 給付率（実際は賃金日額に応じ 50〜80%。60〜64歳のみ 45〜80%）。
  * **v1 は中位の給付率で概算し、年齢別の日額上限で頭打ちにする。**
  *
  * 所定給付日数は**自己都合など一般の受給資格者**の表（加入期間のみで決まる）。
@@ -187,11 +189,18 @@ export function kihonTeate(
   const raw = wageDaily * t.benefitRate;
   const daily = Math.min(raw, cap);
 
-  if (daily === cap && raw > cap) {
-    assumptions.push(`年齢${input.age}歳の日額上限（${cap.toLocaleString()}円）で頭打ちにした`);
-  }
+  /**
+   * **日額上限を先に出す。** 上限で頭打ちになる世帯では、給付率より上限のほうが額を決めている。
+   * 頭打ちにならない世帯でも、上限がいくらかは先に言う（順番が世帯によって変わらないようにする）。
+   */
   assumptions.push(
-    `給付率を${Math.round(t.benefitRate * 100)}%として概算した（実際は賃金日額に応じ45〜80%）`,
+    daily === cap && raw > cap
+      ? `年齢${input.age}歳の日額上限（${cap.toLocaleString()}円）で頭打ちにした`
+      : `年齢${input.age}歳の日額上限（${cap.toLocaleString()}円）には届いていない`,
+  );
+  assumptions.push(
+    // 帯の値は params（displayOnly）から描く。文に書き写すと改定で黙って古くなる
+    `給付率を${pct(t.benefitRate)}%として概算した（実際は賃金日額に応じ${pct(t.benefitRateBandLow)}〜${pct(t.benefitRateBandHigh)}%。60〜64歳のみ${pct(t.benefitRateBandLow60to64)}〜${pct(t.benefitRateBandHigh)}%）`,
     "自己都合など一般の受給資格者の給付日数で計算した（会社都合ならこれより長い）",
   );
 

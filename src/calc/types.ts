@@ -14,6 +14,13 @@ export interface Household {
   deceased: Person;
   /** 遺される側。独身なら null */
   survivor: Person | null;
+  /**
+   * 前提の文面で遺族をどう呼ぶか。**本人が亡くなるケースなら「遺されたご家族」、
+   * 配偶者が亡くなるケースなら「あなた」。**
+   * `calcDeath` はどちらのケースで呼ばれたかを知らないので、呼び出し側が渡す
+   * （ここを固定文にすると、配偶者死亡のカードで「配偶者が働き続ける」と事実が逆になる）。
+   */
+  survivorLabel?: string;
   /** 子の現在年齢 */
   children: number[];
   housing: Housing;
@@ -24,6 +31,12 @@ export interface Household {
   educationPlan: EducationPlan;
   /** 現在の保障額（円）。不明なら null → 過不足判定を pending にする（FR-14） */
   currentCoverage: number | null;
+  /**
+   * 暮らし方の目盛り（D-02・ADR-022）。`0.9` / `1.0`（既定） / `1.1`。
+   * **率（0.70 / 0.50）とは別の変数**。率は人数、これは暮らし方の選好。
+   * 省略時は 1.0 で、出力は一切変わらない（ゴールデンの期待値は不変）。
+   */
+  lifestyleDial?: number;
 }
 
 export interface Person {
@@ -89,6 +102,12 @@ export interface DeathResult {
 
 export interface Assumption {
   field: string;
+  /**
+   * 拾い読みのための見出し語（数語）。**画面ではなくここで持つ**
+   * ── 式を変えたときに文だけ古いまま残るのを防ぐ。
+   * 見出し語が無いと、前提の一覧は全部読まないと何の話か分からない壁になる。
+   */
+  label?: string;
   value: string | number;
   reason: "estimated" | "default" | "unknown";
   note: string;

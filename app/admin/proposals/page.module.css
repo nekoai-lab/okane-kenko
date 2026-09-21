@@ -119,6 +119,14 @@
   align-items: center;
 }
 
+/* 差分は横に長い行を折り返さない（折り返すと +/- の行頭がずれて読めない）。はみ出す分は横スクロール */
+.patch {
+  overflow-x: auto;
+  font-size: var(--font-size-dense);
+  line-height: var(--line-height-dense);
+  white-space: pre;
+}
+
 .actions {
   display: flex;
   gap: var(--space-3);

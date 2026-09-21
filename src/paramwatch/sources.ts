@@ -15,6 +15,8 @@ export interface WatchTarget {
   label: string;
   /** 金額を1つだけ捕まえる正規表現（捕捉グループ1が値） */
   pattern: string;
+  /** 画面に出す単位（既定は「円」）。金額でない値（給付制限の月数など）に付ける */
+  unit?: string;
   /** 取り違え検知の幅。外れたら提案を作らず止める */
   min: number;
   max: number;
@@ -22,6 +24,11 @@ export interface WatchTarget {
 
 export interface Watch {
   label: string;
+  /**
+   * **デモ専用の watch**（罠ページなど・2026-09-22）。既定の読み込みでは除外する。
+   * 本番の巡回（Scheduler）の許可リストに、デモ用のドメインを入れないため
+   */
+  demo?: boolean;
   sources: string[];
   targets: WatchTarget[];
 }
@@ -29,13 +36,27 @@ export interface Watch {
 export interface WatchSources {
   version: string;
   watches: Record<string, Watch>;
+  /** 巡回しない値と、その理由（2026-09-22）。巡回されない値を台帳から読めるようにする */
+  unwatched?: Array<{ key: string; reason: string }>;
 }
 
 const DEFAULT_PARAMS_DIR = join(process.cwd(), "params");
 
-export function loadWatchSources(dir = DEFAULT_PARAMS_DIR): WatchSources {
+/**
+ * 監視の台帳を読む。**デモ用の watch は `includeDemo` を明示したときだけ入れる**（2026-09-22・D3）。
+ * 既定で入れると、罠ページのドメインが本番の許可リストに乗る。
+ */
+export function loadWatchSources(
+  opts: { includeDemo?: boolean } = {},
+  dir = DEFAULT_PARAMS_DIR,
+): WatchSources {
   const raw = readFileSync(join(dir, "watch-sources.yaml"), "utf-8");
-  return parse(raw) as WatchSources;
+  const all = parse(raw) as WatchSources;
+  if (opts.includeDemo) return all;
+  return {
+    ...all,
+    watches: Object.fromEntries(Object.entries(all.watches).filter(([, w]) => !w.demo)),
+  };
 }
 
 /**

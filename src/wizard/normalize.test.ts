@@ -144,3 +144,54 @@ describe("normalize：欠損時の推定フラグ（DR-03）", () => {
     expect(fields).toEqual(["assets", "loan", "selfIncome"]);
   });
 });
+
+/**
+ * **STEP1 の橙ボックスの契約**（照合表 #5・2026-09-21）
+ *
+ * 画面は `estimations[]` を「推定で補った項目（N件）」として見出しつきで並べる。
+ * 見出しを画面側で持つと、仮置きの値や設問を変えたときに**文だけ古いまま残る**ので、
+ * `label` はこの層で持つ約束にした（`Assumption.label` と同じ理由）。
+ *
+ * **算定側の `assumptions[]` とは別物。** あちらには回答の有無と無関係な前提
+ * （65歳まで／新しい貯蓄はゼロ）が入っており、混ぜると
+ * **答えたはずの項目まで「推定で補った」と名指す**ことになる。
+ */
+describe("推定で補った項目の記録（STEP1 の橙）", () => {
+  it("全項目が見出し語を持ち、本文は です・ます で終わる", () => {
+    // 未回答を最大限に含む選択（答えたくない・分からない・未定）
+    const { estimations } = normalize(
+      P,
+      {
+        ...base,
+        selfIncome: "prefer_not",
+        spouseIncome: "prefer_not",
+        assets: "unknown",
+        livingCost: "estimate",
+        loan: "unknown",
+        educationPlan: "undecided",
+      },
+      AS_OF,
+    );
+    expect(estimations.length).toBeGreaterThan(0);
+    for (const e of estimations) {
+      expect(e.label.length).toBeGreaterThan(0);
+      expect(e.label.endsWith("。")).toBe(false);
+      expect(e.note.endsWith("。")).toBe(true);
+    }
+  });
+
+  it("**答えた項目は1件も入らない**（橙が付くのは未回答だけ）", () => {
+    const { estimations } = normalize(P, base, AS_OF);
+    expect(estimations).toEqual([]);
+  });
+
+  it("見出し語は項目ごとに違う（同じ見出しが2つ並ばない）", () => {
+    const { estimations } = normalize(
+      P,
+      { ...base, selfIncome: "prefer_not", spouseIncome: "prefer_not", assets: "unknown" },
+      AS_OF,
+    );
+    const labels = estimations.map((e) => e.label);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+});

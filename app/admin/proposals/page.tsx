@@ -5,9 +5,11 @@
  * 承認は「人間が確認した」という記録で、YAML の更新は人間が PR で行う。
  * そのことを画面にも書く（裏で適用されていると誤解されたら、この設計の意味が消える）。
  */
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, checkToken } from "../../../src/paramwatch/auth.js";
+import { summarizeRows } from "../../../src/paramwatch/judge.js";
 import { createFirestoreProposalStore } from "../../../src/paramwatch/store.firestore.js";
 import s from "./page.module.css";
 
@@ -55,8 +57,14 @@ export default async function ProposalsPage() {
                 {p.changes.map((c) => (
                   <tr key={c.key}>
                     <td>{c.label}</td>
-                    <td className={s.num}>{c.current.toLocaleString()}円</td>
-                    <td className={s.num}>{c.proposed.toLocaleString()}円</td>
+                    <td className={s.num}>
+                      {c.current.toLocaleString()}
+                      {c.unit ?? "円"}
+                    </td>
+                    <td className={s.num}>
+                      {c.proposed.toLocaleString()}
+                      {c.unit ?? "円"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -64,7 +72,7 @@ export default async function ProposalsPage() {
 
             <h3 className={s.h3}>影響（10世帯で再計算した結果）</h3>
             <p className={s.impact}>
-              結論が変わる世帯：<strong>{p.impact.changedCount}</strong> /{" "}
+              世帯の結論（過不足軸）が変わる世帯：<strong>{p.impact.changedCount}</strong> /{" "}
               {p.impact.households.length} 件
               {p.impact.changedCount === 0 ? "（＝利用者への通知はしません）" : null}
             </p>
@@ -79,6 +87,15 @@ export default async function ProposalsPage() {
                   </li>
                 ))}
             </ul>
+
+            {/* 2026-09-22（D2）。行ごとの前後を軸名つきで。それ以前の提案には rows が無いので出ない */}
+            {summarizeRows(p.impact).length > 0 ? (
+              <ul className={s.list}>
+                {summarizeRows(p.impact).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
 
             <h3 className={s.h3}>根拠</h3>
             <p className={s.basis}>
@@ -105,12 +122,34 @@ export default async function ProposalsPage() {
               </p>
             ) : null}
 
+            {/* 2026-09-22 追加。それ以前の提案には無いので、あるときだけ出す */}
+            {p.ledger && p.ledger.length > 0 ? (
+              <>
+                <h3 className={s.h3}>台帳（params の sources に書いてあること）</h3>
+                <ul className={s.list}>
+                  {p.ledger.map((l) => (
+                    <li key={l}>{l}</li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            {p.yamlPatch ? (
+              <details className={s.log}>
+                <summary>
+                  適用する差分（承認しても当たりません。当てるのは人のコミットです）
+                </summary>
+                <pre className={s.patch}>{p.yamlPatch}</pre>
+              </details>
+            ) : null}
+
             <details className={s.log}>
               <summary>行動ログ（{p.actionLog.length} 件）</summary>
               <ol className={s.list}>
                 {p.actionLog.map((a) => (
                   <li key={`${a.at}-${a.step}`}>
                     <code>{a.step}</code>（{a.ms}ms）：{a.input} → {a.output}
+                    {a.reason ? <div>判断理由：{a.reason}</div> : null}
                   </li>
                 ))}
               </ol>
@@ -127,8 +166,17 @@ export default async function ProposalsPage() {
               </form>
             ) : (
               <p className={s.blocked}>
-                <strong>不変条件に落ちているため、承認ボタンは出しません。</strong>
-                {p.impact.invariantFailures.map((f) => `${f.id}: ${f.what}`).join(" / ")}
+                <strong>
+                  {p.impact.injectionBlocked
+                    ? "取得した本文に指示らしき文字列があったため、承認ボタンは出しません。"
+                    : "検算に落ちているため、承認ボタンは出しません。"}
+                </strong>
+                {[
+                  ...p.impact.invariantFailures.map((f) => `不変条件 ${f.id}: ${f.what}`),
+                  ...(p.impact.baselineFailures ?? []).map(
+                    (f) => `現行 params で green でない ${f.id}: ${f.what}`,
+                  ),
+                ].join(" / ")}
               </p>
             )}
           </section>
@@ -136,6 +184,11 @@ export default async function ProposalsPage() {
       )}
 
       <h2 className={s.h2}>実行ログ（沈黙も残す）</h2>
+      <p>
+        <Link className={s.link} href="/admin/runs">
+          全ツール呼び出しを時系列で見る（監査ログ）
+        </Link>
+      </p>
       <ul className={s.list}>
         {runLog.map((r) => (
           <li key={`${r.runAt}-${r.watchKey}`}>

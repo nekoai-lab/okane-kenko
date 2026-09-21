@@ -32,8 +32,13 @@ export function detectInstructions(text: string): string[] {
   return INSTRUCTION_MARKERS.filter((m) => lower.includes(m.toLowerCase()));
 }
 
+/**
+ * **全角の数字も読む。** 厚労省の Q&A は「原則１か月」のように全角で書いている（2026-09-22）。
+ * 読めないと NaN になり、`not_found` として止まる（黙って誤るのではなく止まる側だが、監視できない）。
+ */
 function toNumber(raw: string): number {
-  return Number(raw.replace(/,/g, ""));
+  const ascii = raw.replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xfee0));
+  return Number(ascii.replace(/[,，]/g, ""));
 }
 
 export function extractOne(text: string, target: WatchTarget): ExtractOutcome {

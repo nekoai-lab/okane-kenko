@@ -1,0 +1,462 @@
+/*
+  STEP2「もしものとき、暮らしはこうなる」（家計台帳＋段差チャート）
+
+  色と字は移植元 `docs/design-mock/tokens.css` から取る。
+  **このセクションの中だけに閉じて定義する。** 旧トークンが残っている区画と混ぜない
+  （旧→新の全面切り替えは、死亡詳細を全部組み直したときにまとめてやる）。
+*/
+.step2 {
+  /* 差し引きの「足りません」専用（符号色チャンネル。必要額のレンジとは別枠） */
+
+  color: var(--mk-ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---------- 家計台帳 ----------
+
+  組版の3規約（モック result.html の台帳から読み取った文法・2026-09-21）：
+
+  1. **金額の階層**：行 < 計 < 差し引き。同じ太さ・同じ色で並べると、どれが結論か分からない
+  2. **色に意味を持たせる**：緑＝入ってくるお金／**橙＝幅を持つ＝推定の揺れ**／ink＝確定値。
+     製品全体で橙が「幅」を指しているので、台帳でもその意味を崩さない
+  3. **罫線の文法**：**破線＝小計の手前**、**実線＝セクションの区切り**。混ぜない
+*/
+.ledger {
+  background: var(--mk-surface-alt);
+  border-radius: 12px;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ledgerTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.tiny {
+  font-size: 11.5px;
+  color: var(--mk-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.ledgerHead {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mk-green-deep);
+  margin: 6px 0 0;
+}
+
+.ledgerBlock .ledgerHead {
+  color: var(--mk-muted-2);
+}
+
+.ledgerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--mk-muted-2);
+  padding: 2px 0;
+}
+
+/* 階層①：行の金額 */
+.ledgerValue {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  色の意味（規約2・2026-09-21 の色監査で1つに絞った）。
+
+  **橙は必要額のレンジ専用**にした。以前は生活費の幅も橙で出していたが、
+  台帳の生活費は必要額ではないので、橙が「必要額の揺れ」と「生活費の揺れ」の
+  2つを指していた。**幅であることは「約17.5〜21.0万円」という書き方が既に言っている**ので、
+  色まで使う必要がない。
+*/
+.income {
+  color: var(--mk-green-deep);
+}
+.fixed {
+  color: var(--mk-ink);
+}
+
+/* 罫線の文法（規約3）：破線＝小計の手前 */
+.ledgerSum {
+  border-top: 1px dashed var(--mk-dashed);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.sumLabel {
+  font-weight: 700;
+  color: var(--mk-green-deep);
+}
+
+/* 階層②：計 */
+.sumValue {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* 罫線の文法（規約3）：実線＝セクションの区切り */
+.ledgerBlock {
+  border-top: 1px solid var(--mk-hairline);
+  margin-top: 8px;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/*
+  階層③：差し引き。**3段組で、金額は折り返さない。**
+  1つの文字列で流すと 390px で述語の1文字だけが次行に落ちる（2026-09-21 に実際に落ちた）。
+*/
+.ledgerNet {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 2px 0 0;
+  flex-wrap: nowrap;
+}
+
+.netPrefix {
+  font-size: 12px;
+  flex: none;
+}
+
+.netAmount {
+  font-family: var(--mk-font-display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.netSuffix {
+  font-size: 12.5px;
+  flex: none;
+}
+
+.netShort {
+  color: var(--mk-amber-text);
+}
+.netOk {
+  color: var(--mk-green-deep);
+}
+
+/*
+  出どころのキャプション（`回答: 子2人`）。実体は `KeyCaption`（全画面で共通）。
+  全行に付くので、本文と同じ重さだと台帳がキャプションで埋まる。
+*/
+.ledgerLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+
+/* ---------- 段差チャート ---------- */
+.chartWrap {
+  margin: 0;
+}
+
+.chartTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 0 0 var(--space-2);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11.5px;
+  color: var(--mk-muted-2);
+  margin-bottom: var(--space-2);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend i {
+  display: inline-block;
+  flex: none;
+}
+
+/* 凡例の見本は、図の中の線とそのまま同じ見た目にする */
+.lgPension {
+  width: 20px;
+  border-top: 3.5px solid var(--mk-green);
+}
+.lgWork {
+  width: 20px;
+  border-top: 2px dashed var(--mk-green);
+}
+.lgLiving {
+  width: 20px;
+  border-top: 3px solid var(--mk-red);
+}
+.lgGap {
+  width: 14px;
+  height: 10px;
+  background: rgb(156 70 51 / 15%);
+  border: 1px solid var(--mk-red);
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.grid {
+  stroke: var(--mk-hairline-2);
+}
+
+.axis {
+  stroke: var(--mk-grey-border);
+  stroke-width: 1.5;
+}
+
+.axisText {
+  font-size: 10px;
+  fill: var(--mk-muted);
+}
+
+.axisSub {
+  font-size: 9.5px;
+  fill: var(--mk-muted);
+}
+
+.worstBand {
+  fill: rgb(156 70 51 / 7%);
+}
+
+.worstLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--mk-red-deep);
+}
+
+.stepLine {
+  stroke: #cfc9bb;
+  stroke-dasharray: 3 4;
+}
+
+/* 保険で埋める不足。**塗りだけで、輪郭線は引かない**（線を引くと階段と競合する） */
+.gap {
+  fill: rgb(156 70 51 / 15%);
+}
+
+.living {
+  fill: none;
+  stroke: var(--mk-red);
+  stroke-width: 3;
+}
+
+.work {
+  fill: none;
+  stroke: var(--mk-green);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.pension {
+  fill: none;
+  stroke: var(--mk-green);
+  stroke-width: 3.5;
+}
+
+.stepDot {
+  fill: var(--mk-ink);
+}
+
+.stepNum {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #f7f5f0;
+}
+
+/*
+  **貯蓄が尽きる年**の縦マーカー（`Vitals` からの移設・2026-09-21）。
+  段差の縦線（`.stepLine`）とは別の見た目にする ── 段差は「公的収入が減った」、
+  こちらは「受け皿が無くなった」で、種類が違う。
+  色は **ink**。赤は生活費の階段と不足の塗りが既に使っており、同じ赤で別のことを言うと
+  「生活費の線の一部」に読める。橙は必要額のレンジ専用にしたので使えない
+  （2026-09-21 の色監査）。CLAUDE.md の「情報アクセントは ink」に従う。
+*/
+.depletedLine {
+  stroke: var(--mk-ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 3;
+}
+
+.depletedLabel {
+  font-size: 9.5px;
+  font-weight: 700;
+  fill: var(--mk-ink);
+}
+
+/*
+  大学の学費期間のブレース。**期間の目印であって必要額ではない**ので、
+  橙（必要額のレンジ専用）を使わない（2026-09-21 の色監査）。
+*/
+.brace {
+  fill: none;
+  stroke: var(--mk-grey-border);
+  stroke-width: 1.5;
+}
+
+.braceText {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--mk-muted-2);
+}
+
+/* ---------- 段差の説明 ---------- */
+.steps {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stepItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.stepBadge {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--mk-ink);
+  color: #f7f5f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  flex: none;
+}
+
+.stepWhen {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.stepWhat {
+  font-size: 12.5px;
+  color: var(--mk-muted-2);
+  line-height: 1.65;
+  margin: 2px 0 0;
+}
+
+/* ---------- 接続文 ---------- */
+/* 接続文の数字。上の図が出した数を、文に埋めずに立てる（DoD (b) と同じ組版） */
+.bridgeNums {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+  color: var(--mk-ink);
+}
+
+.bridgeNum {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bridgeUnit {
+  font-size: 12px;
+  color: var(--mk-muted-2);
+}
+
+.bridgeSep {
+  font-size: 13px;
+  color: var(--mk-border-btn);
+  margin: 0 2px;
+}
+
+.bridge {
+  font-size: 12.5px;
+  color: var(--mk-muted-2);
+  background: var(--mk-surface-alt);
+  border-radius: 10px;
+  padding: 12px 16px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ---------- ことばの説明（#6d） ---------- */
+.terms {
+  background: var(--mk-surface-alt);
+  border-radius: 12px;
+  padding: var(--space-4);
+}
+
+.termsHead {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--mk-muted-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin: 0;
+}
+
+.term {
+  border-top: 1px solid var(--mk-dashed);
+}
+
+.term summary {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mk-green-deep);
+  cursor: pointer;
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+}
+
+.termNote {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--mk-muted-2);
+  margin: 0 0 var(--space-3);
+}
+
+.reform {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--mk-muted);
+  margin: var(--space-3) 0 0;
+  border-top: 1px solid var(--mk-dashed);
+  padding-top: var(--space-3);
+}

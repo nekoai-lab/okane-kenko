@@ -18,6 +18,11 @@ export interface ActionLogEntry {
   input: string;
   /** 出力の要約 */
   output: string;
+  /**
+   * 判断理由：なぜこの手を打ったか／結果から次に何をするか（2026-09-22・D3）。
+   * 決まった文か台帳・抽出結果から組み立てた文だけ（AI の作文ではない）。それ以前の記録には無い
+   */
+  reason?: string;
   ms: number;
 }
 
@@ -36,6 +41,16 @@ export interface ProposalRecord {
   injectionSuspected: string[];
   impact: Impact;
   actionLog: ActionLogEntry[];
+  /**
+   * 対象ごとの台帳（出典・施行日・期限・改正予定）を1行ずつ。**判断はせず、書いてあることを見せる**。
+   * 2026-09-22 追加。それ以前の提案には無い
+   */
+  ledger?: string[];
+  /**
+   * `git apply` がそのまま通る unified diff。**承認しても当たらない。当てるのは人**（コミット・push）。
+   * 2026-09-22 追加。それ以前の提案には無い
+   */
+  yamlPatch?: string;
   status: ProposalStatus;
   createdAt: string;
   decidedAt: string | null;
@@ -49,6 +64,8 @@ export interface WatchRunLogEntry {
   watchKey: string;
   decision: RunDecision;
   detail: string;
+  /** その回の全ツール呼び出し（2026-09-22・D3）。**提案を作らなかった回も残す**。それ以前の記録には無い */
+  actionLog?: ActionLogEntry[];
 }
 
 export interface CreateProposalInput {
@@ -61,6 +78,8 @@ export interface CreateProposalInput {
   injectionSuspected: string[];
   impact: Impact;
   actionLog: ActionLogEntry[];
+  ledger: string[];
+  yamlPatch: string;
   createdAt: string;
 }
 

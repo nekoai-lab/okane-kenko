@@ -62,6 +62,12 @@ export interface WizardSelections {
 /** 「答えたくない／分からない／推定」で補った項目の記録（DR-03） */
 export interface Estimation {
   field: string;
+  /**
+   * 拾い読みのための見出し語（設問の呼び名）。**画面ではなくここで持つ**
+   * ── 設問や仮置きの値を変えたときに、画面の見出しだけ古いまま残るのを防ぐ。
+   * `Assumption.label` と同じ理由・同じ約束（`src/calc/types.ts`）。
+   */
+  label: string;
   reason: "prefer_not" | "unknown" | "estimated_from_income" | "undecided";
   note: string;
 }

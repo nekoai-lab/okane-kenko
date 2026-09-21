@@ -10,6 +10,8 @@ import { parse } from "yaml";
 
 export interface ParamEntry {
   value: number;
+  /** 多値の当社基準（暮らし方の目盛りなど）。1つの在庫行として見せたいときに使う */
+  values?: Record<string, number>;
   unit?: string;
   label?: string;
   source?: string;
@@ -17,6 +19,49 @@ export interface ParamEntry {
   verified?: boolean;
   core?: boolean;
   userAdjustable?: boolean;
+}
+
+/**
+ * 制度式パラメータの出どころ（statutory 3行・2026-09-21 新設）
+ *
+ * **`source` の文字列だけでは、いつの制度かも、どこで確かめられるかも分からない。**
+ * 値と同じ場所に**一次情報のURLと施行日**を置く（`params/*.yaml` の `verified` 機構を流用）。
+ *
+ * `effectiveFrom` は**その値が施行された日**であって、パラメータ版の有効期間ではない。
+ * 2026-09-21、`restrictionMonthsVoluntary: 2` が 2025-04-01 施行の改正を反映しないまま
+ * 残っていたのを、施行日の欄が無かったせいで見落としていた。
+ */
+export interface StatutorySource {
+  /** 機関名＋制度名 */
+  label: string;
+  /** 一次情報のURL。**二次情報を書かない** */
+  url: string;
+  /**
+   * その値が施行された日（YYYY-MM-DD）。
+   * **一次情報に記載が無ければ null**（2026-09-22）。無い日付を台帳に作らない。理由は note に書く
+   */
+  effectiveFrom: string | null;
+  /** 一次情報に当たって確認したか。false のまま本番に出さない */
+  verified: boolean;
+  /** 改正が判明しているが未反映のとき、何がどう変わるかを書く */
+  pendingChange?: string;
+  /**
+   * **計算には使わず、説明文にだけ出る制度値**（2026-09-22）。
+   * 使わなくても文中の値は陳腐化するので、出典と一緒に置いて監視・更新の対象にする
+   */
+  displayOnly?: boolean;
+  /**
+   * 改定のサイクル（例：`毎年8月1日`）。
+   * **書いておかないと「一度入れた値」で止まる。** 実際に基本手当日額が3改定ぶん遅れていた。
+   */
+  revisionCycle?: string;
+  /**
+   * **その値をいつまで置いておけるかの期限**（YYYY-MM-DD）。
+   * 定期改定のある値には次の改定日を、改正が判明しているのに更新しないと決めた値には温存の期限を入れる。
+   * 改正が判明しているのに更新しないと決めた値に付ける。
+   * 期限を書かない「あとでやる」は、**理由もろとも消えて恒久化する**。
+   */
+  expires?: string;
 }
 
 export interface KogakuBracket {
@@ -31,10 +76,18 @@ export interface KogakuBracket {
  * レンジ選択→代表値の写像（DR-02）。制度パラメータではなく入力の正規化前提（当社基準）。
  * 値は円単位の整数。期限切れ・verified ゲートの対象外なので public/toBeSourced とは別に持つ。
  */
+/** 回答帯の上下端（D-01）。開いた区分（`gte35`）は `high` を持たない */
+export interface AnswerBand {
+  low: number;
+  high?: number;
+}
+
 export interface InputRanges {
   income: Record<string, number>;
   assets: Record<string, number>;
   monthlyLiving: Record<string, number>;
+  /** 回答帯の上下端（D-01）。**幅の出どころは利用者の回答** */
+  monthlyLivingBand: Record<string, AnswerBand>;
   loan: Record<string, number>;
   /** 現在の死亡保障額（被保険者ごと）。証券記載の具体額なので中央値ではない */
   coverage: Record<string, number>;
@@ -89,8 +142,11 @@ export interface ParamSet {
     multipleOccurrence: Record<string, number>;
     /** 何か月目から減額上限に切り替わるか（＝4） */
     multipleOccurrenceFromMonth: number;
+    /** 世帯合算の足切り（displayOnly。説明文にだけ出る） */
+    householdAggregationMin: number;
     multipleOccurrenceSource: string;
     multipleOccurrenceVerified: boolean;
+    sources: Record<string, StatutorySource>;
   };
   /** 健康保険 傷病手当金 */
   shobyoTeate: {
@@ -99,14 +155,22 @@ export interface ParamSet {
     maxMonths: number;
     source: string;
     verified: boolean;
+    sources: Record<string, StatutorySource>;
   };
   /** 雇用保険 基本手当 */
   kihonTeate: {
     benefitRate: number;
+    /** 給付率の帯（displayOnly。説明文にだけ出る） */
+    benefitRateBandLow: number;
+    benefitRateBandHigh: number;
+    benefitRateBandLow60to64: number;
     dailyCapByAge: { fromAge: number; cap: number }[];
     daysGeneral: { insuredYearsFrom: number; days: number }[];
+    /** 自己都合の給付制限（月）。会社都合には無い */
+    restrictionMonthsVoluntary: number;
     source: string;
     verified: boolean;
+    sources: Record<string, StatutorySource>;
   };
   ownStandard: Record<string, ParamEntry>;
   toBeSourced: Record<string, ParamEntry>;
@@ -143,6 +207,15 @@ const DEFAULT_PARAMS_DIR = join(process.cwd(), "params");
 export function loadParams(version = "2026-08", dir = DEFAULT_PARAMS_DIR): ParamSet {
   const raw = readFileSync(join(dir, `${version}.yaml`), "utf-8");
   return parse(raw) as ParamSet;
+}
+
+/**
+ * `loadParams` と同じファイルの全文とリポジトリ上のパス。
+ * 制度監視が「適用できる差分」を作るためだけに使う（2026-09-22）。ここから書き戻す口は作らない。
+ */
+export function loadParamsText(version = "2026-08"): { file: string; text: string } {
+  const file = `params/${version}.yaml`;
+  return { file, text: readFileSync(join(DEFAULT_PARAMS_DIR, `${version}.yaml`), "utf-8") };
 }
 
 /** 便宜アクセサ：セクションをまたいで値だけ引く */

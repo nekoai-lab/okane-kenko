@@ -62,7 +62,17 @@
 .meta {
   font-size: var(--font-size-std-s);
   color: var(--color-text-secondary);
-  margin: var(--space-2) 0;
+  margin: var(--space-1) 0;
+}
+
+/* 基準日・パラメータ版。既にある数字を、あるべき声量で */
+.metaValue {
+  font-family: var(--mk-font-display);
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
 }
 
 .list {
@@ -87,8 +97,14 @@
   text-underline-offset: 2px;
 }
 
+/*
+  セクション間隔。**40px → 32px に詰めた**（2026-09-21・視覚の DoD (a)）。
+  散文のセクションが続く区間で、余白だけで1画面ぶんの空白が積み上がっていた。
+  **DoD のためにアンカーを飾りとして足すのは本末転倒**（「汎用ビジュアルで代替しない」の裏面）
+  なので、図を増やすのではなく間隔を詰めて画面に収める。
+*/
 .section {
-  margin: var(--space-7) 0;
+  margin: var(--space-5) 0;
 }
 
 .caseCard {
@@ -191,33 +207,146 @@
   margin-top: var(--space-1);
 }
 
-/* やさしい説明（AI言語化・サンプル） */
+/* この結果のよみとき（AI言語化）。露出は冒頭1文だけ */
 .narration {
   font-size: var(--font-size-std-m);
   line-height: var(--line-height-body-loose);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-card);
   background: var(--color-surface-subtle);
+}
+
+/*
+  参照材の折りたたみ見出し（進路 what-if・当社基準一覧）。
+  **露出は件数つきの1行だけ。** 開いた中が完全な記録であることは変えない（開示の規約）。
+*/
+.foldHead {
+  cursor: pointer;
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/*
+  よみときの既定露出サマリー。**持っている数字を、あるべき声量で出す**（DoD (a)(b)）。
+  金額は算定結果から来ており、ここで作っていない。
+*/
+/*
+  **台帳の文法にそろえる**（2026-09-21）── ラベルは小さく、値は明朝で行頭から。
+  390px で横2列にすると、右の値が折れて右端に張り付いた（実際に崩れた）。
+  数字の再掲は DoD (a) の解なので消さず、**組み方だけ台帳に合わせて縦積みにする**。
+*/
+.narrationSummary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.narrationBadge {
+  font-size: var(--font-size-std-s);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  border: 1.5px solid var(--mk-grey-border);
+  color: var(--mk-muted-2);
+  white-space: nowrap;
+}
+.narrationBadge.ok {
+  border-color: var(--mk-green);
+  color: var(--mk-green-deep);
+  background: var(--mk-green-bg);
+}
+.narrationBadge.check {
+  border-color: var(--mk-amber);
+  color: var(--mk-amber-deep);
+  background: var(--mk-amber-bg);
+}
+.narrationBadge.short {
+  border-color: var(--mk-red);
+  color: var(--mk-red-deep);
+  background: var(--mk-red-bg);
+}
+
+/* 台帳の行と同じ：ラベル（小）の下に値（明朝）。行頭でそろえる */
+.narrationStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+}
+
+.narrationStatLabel {
+  font-size: var(--font-size-std-xs);
+  color: var(--color-text-secondary);
+}
+
+.narrationStatValue {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 折りたたみ見出しの件数。**既にある数字**なので、あるべき声量で出す */
+.foldCount {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  margin: 0 1px;
+}
+
+/* 折りたたみの中の全文。露出部と同じ読み味にそろえる */
+.narrationFull {
+  font-size: var(--font-size-std-m);
+  line-height: var(--line-height-body-loose);
+  margin: var(--space-3) 0 0;
 }
 
 /* この診断で分かること/分からないこと（先に線を引く） */
 .scope {
   border-left: 6px solid var(--color-accent);
   background: var(--color-surface-subtle);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-control);
   font-size: var(--font-size-std-s);
 }
+/* 診たリスクの件数。既にある数字を、あるべき声量で */
+.scopeCount {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.scopeNum {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.scopeUnit {
+  font-size: var(--font-size-std-s);
+}
+
 .scope p {
-  margin: var(--space-2) 0;
+  margin: var(--space-1) 0;
 }
 
 /* 「もっと知りたい：選ぶ基準」の開閉 */
 .criteria {
-  margin: var(--space-3) 0;
+  margin: var(--space-2) 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
 }
 .criteria > summary {
   cursor: pointer;
@@ -230,9 +359,19 @@
 .reduce {
   border-left: 6px solid var(--color-success);
   background: var(--color-surface-subtle);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-control);
 }
+/* 既にある金額を、あるべき声量で（文章に埋めない・DoD (b)） */
+.reduceAmount {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  margin: 0 2px;
+}
+
 .reduceNone {
   border-left: 6px solid var(--color-border);
   background: var(--color-surface-subtle);
@@ -248,44 +387,20 @@
   color: var(--color-text-secondary);
 }
 
-.sources {
-  font-size: var(--font-size-std-xs);
-  color: var(--color-text-secondary);
-  margin-top: var(--space-3);
+/* 折りたたみの中の根拠本文。露出の1行と同じ読み味にそろえる */
+.reformBody {
+  margin: var(--space-2) 0 0;
 }
-
-/* 当社基準スライダー（前提を動かす） */
-.sliderBox {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  padding: var(--space-5);
-  background: var(--color-surface-subtle);
-}
-.sliderLabel {
-  display: block;
-  margin: var(--space-2) 0;
-}
-.slider {
-  display: block;
-  width: 100%;
+.reformDetails {
   margin-top: var(--space-2);
-  accent-color: var(--color-primary);
-  min-height: var(--target-min);
 }
-.sliderResult {
-  font-size: var(--font-size-std-m);
-  margin: var(--space-2) 0;
-}
-.resetBtn {
-  margin-left: var(--space-3);
-  min-height: var(--target-min);
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-  color: var(--color-link);
-  font: inherit;
+.reformDetails > summary {
   cursor: pointer;
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* 制度改正（2028）の該当/非該当。事実として中立に出す（煽らない） */
@@ -415,53 +530,17 @@
   margin-bottom: var(--space-1);
 }
 
+/* 「残高」が何を指すかの但し書き。診断表の「いまの貯蓄」と取り違えさせない */
+.cfNote {
+  display: block;
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+}
+
 .cfEvents {
   font-size: var(--font-size-dense);
   color: var(--color-text-secondary);
   margin: var(--space-2) 0 var(--space-3);
-}
-
-/* 幅393pxに6列は入らないので、表だけ横スクロールさせる（ページ自体は横に流さない） */
-.cfTableWrap {
-  overflow-x: auto;
-  margin-top: var(--space-3);
-}
-
-.cfTable {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 460px;
-  font-size: var(--font-size-dense);
-  font-variant-numeric: tabular-nums;
-}
-
-.cfTable th,
-.cfTable td {
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-divider);
-  text-align: right;
-  white-space: nowrap;
-}
-
-.cfTable thead th {
-  text-align: right;
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
-  border-bottom: 2px solid var(--color-border);
-}
-
-.cfTable tbody th {
-  text-align: left;
-  font-weight: var(--font-weight-normal);
-}
-
-.cfRowNeg {
-  background: var(--color-surface-subtle);
-}
-
-.cfRowNeg td,
-.cfRowNeg th {
-  color: var(--color-warning-text);
 }
 
 /* 必要保障額の推移（US-04d）。棒＝必要額、横線＝いまの保障。同じ縦軸で2軸にしない */
@@ -566,79 +645,8 @@
   margin-top: var(--space-8);
 }
 
-/* ------------------------------------------------------------
- * 検査値パネル
- *
- * **1枚の表として組む。** 独立したカードを4つ浮かべるのではなく、1px の罫線で仕切る。
- * 検査値表は罫線で区切られた1つの表であって、チップの集まりではない。
- * 罫線は grid の gap に背景色を透かせて作る（セルごとに border を付けると
- * 端の1本が二重になり、角丸と噛み合わない）。
- *
- * モバイルで2列、デスクトップで4列。1列に潰れると縦の羅列に戻るので2列を下限にする。
- * ------------------------------------------------------------ */
-.vitals {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--color-border);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  overflow: hidden;
-  margin: var(--space-5) 0;
-}
-
 @media (min-width: 768px) {
-  .vitals {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-}
-
-/* セルの地をページと同じ色にすることで、gap だけが罫線として見える */
-.vitalTile {
-  background: var(--color-surface);
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-}
-
-/* ラベルは2行ぶんの高さを確保する。
-   モバイル2列では「足りない保障額の目安（あなた）」のような長いラベルが折り返し、
-   確保していないとセルごとに数字の高さがずれて、表に見えなくなる。 */
-.vitalLabel {
-  font-size: var(--font-size-dense);
-  line-height: 1.4;
-  min-height: 2.8em;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-/* 値の行は高さを固定して、4つのセルの数字が同じ高さにそろうようにする
-   （補足の行数が違っても数字の位置がずれない） */
-.vitalValue {
-  font-size: var(--font-size-std-s);
-  font-weight: var(--font-weight-bold);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--line-height-heading);
-  color: var(--color-text);
-  margin: var(--space-2) 0 0;
-  overflow-wrap: anywhere;
-}
-
-/* 色を使うのは過不足のセルだけ。4つとも色を付けると要点が消える */
-.vitalGood {
-  color: var(--color-success-text);
-}
-
-.vitalWarn {
-  color: var(--color-warning-text);
-}
-
-.vitalNote {
-  font-size: var(--font-size-dense);
-  color: var(--color-text-muted);
-  margin: auto 0 0;
-  padding-top: var(--space-2);
-}
 
 /* ------------------------------------------------------------
  * 全幅ブロックの抜き出し（full-bleed グリッド）
@@ -672,16 +680,8 @@
   max-width: var(--layout-reading-max);
 }
 
-/* 前提の before/after は2列固定（デスクトップでも4列にしない） */
-.vitalsTwo {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 @media (min-width: 768px) {
-  .vitalsTwo {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
 /* ------------------------------------------------------------
  * 配偶者のケース（要約＋開閉）
@@ -727,13 +727,6 @@
  * ------------------------------------------------------------ */
 .keyYears {
   margin: var(--space-5) 0;
-}
-
-/* 「なぜ見ておくか」「できごと」は文章なので、数字の右寄せから外す */
-.cfWhy {
-  text-align: left !important;
-  white-space: normal !important;
-  min-width: 12em;
 }
 
 /* ------------------------------------------------------------
@@ -810,4 +803,32 @@
   font-size: var(--font-size-std-xs);
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-normal);
+}
+
+/*
+  照合表 #10：`check.html` 末尾の黒帯。**ページ最下部に置く。**
+  全部読み終えた人への一文なので、玄関の直後には置かない。
+  色はモック（`docs/design-mock/tokens.css`）の ink / 反転テキストをそのまま使う。
+*/
+.statement {
+  background: #1e2a26;
+  border-radius: 16px;
+  padding: var(--space-6) var(--space-5);
+  margin: var(--space-7) 0 0;
+}
+
+.statementHead {
+  font-family: "Shippori Mincho", serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #f7f5f0;
+  line-height: 1.5;
+  margin: 0 0 var(--space-2);
+}
+
+.statementBody {
+  font-size: 13px;
+  color: #b9c4bd;
+  line-height: 1.8;
+  margin: 0;
 }

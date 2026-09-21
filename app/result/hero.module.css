@@ -1,0 +1,133 @@
+/*
+  冒頭ヒーロー（移植元 docs/design-mock/result.html 冒頭の .card）
+
+  色と字は再設計のトークン（docs/design-mock/tokens.css）から取る。
+  **このセクションの中だけに閉じて定義する。** ページ下半分（死亡の詳細）はまだ旧トークンなので、
+  グローバルに上書きすると既存の画面が崩れる（riskTable.module.css と同じ理由）。
+*/
+.hero {
+
+  background: var(--mk-surface);
+  border: 1px solid var(--mk-hairline);
+  border-radius: 16px;
+  color: var(--mk-ink);
+  padding: var(--space-5) var(--space-4);
+  margin: 0 0 var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.topline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--mk-muted);
+}
+
+.sample {
+  align-self: flex-start;
+  font-size: 12px;
+  color: var(--mk-muted-2);
+  background: var(--mk-surface-alt);
+  border-radius: 999px;
+  padding: 4px 12px;
+  line-height: 1.6;
+}
+
+/* 判定は「ラベル＋色」。色だけで意味を伝えない */
+.badge {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 15px;
+  border-radius: 999px;
+}
+
+.reducible {
+  background: var(--mk-green-bg);
+  border: 1.5px solid var(--mk-green);
+  color: var(--mk-green-deep);
+}
+.uncertain,
+.rebalanceable {
+  background: var(--mk-amber-bg);
+  border: 1.5px solid var(--mk-amber);
+  color: var(--mk-amber-deep);
+}
+.shortage {
+  background: var(--mk-red-bg);
+  border: 1.5px solid var(--mk-red);
+  color: var(--mk-red-deep);
+}
+.pending {
+  background: var(--mk-grey-bg);
+  border: 1.5px solid var(--mk-grey-border);
+  color: var(--mk-muted);
+}
+
+/* モックは 33px（1280px幅）。390px では 26px に落とすが、書体と太さは変えない */
+.head {
+  font-family: var(--mk-font-display);
+  font-size: 26px;
+  line-height: 1.5;
+  font-weight: 700;
+  margin: 0;
+}
+
+.funeral {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--mk-ink-2);
+  background: var(--mk-surface-alt);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 0;
+}
+
+/*
+  モックは3列を 40px の間隔で横並び。390px では潰れるので、
+  **列の数と順序は保ったまま**グリッドで折り返す（構成要素は変えない）。
+*/
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+  padding-top: var(--space-2);
+}
+
+.stats > div:last-child {
+  grid-column: 1 / -1;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--mk-muted);
+  margin: 0;
+}
+
+.statValue {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.need {
+  color: var(--mk-amber-text);
+}
+
+.lead {
+  font-size: 13px;
+  color: var(--mk-muted);
+  margin: 0;
+  line-height: 1.7;
+}

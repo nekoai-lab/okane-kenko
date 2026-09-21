@@ -1,0 +1,203 @@
+/*
+  STEP3 滝グラフ（移植元 docs/design-mock/result.html の #wfRows）
+
+  1280px のモックは「ラベル296px ＋ トラック700px ＋ 金額130px」の横並び。
+  390px では横に並ばないので、**ラベルと金額を1行目、トラックを2行目**に積む。
+  棒の意味（どこからどこまでを切り取るか）は変えない。
+*/
+.wf {
+
+  color: var(--mk-ink);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11.5px;
+  color: var(--mk-muted-2);
+  margin-bottom: var(--space-3);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.lgCover {
+  background: var(--mk-green);
+}
+.lgNeed {
+  background: var(--mk-amber);
+}
+.lgSurplus {
+  background: #cfe0d5;
+  border: 1.5px dashed var(--mk-green);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.label {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.labelResult {
+  color: var(--mk-amber-text);
+}
+
+/* 金額は明朝。視覚の DoD (b)：滝でも金額が主役 */
+.amount {
+  font-family: var(--mk-font-display);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.amountCover {
+  color: var(--mk-green-deep);
+}
+.amountNeed {
+  font-size: 20px;
+  color: var(--mk-amber-text);
+}
+.amountSurplus {
+  color: var(--mk-green-mid);
+}
+
+/* 出どころのキャプション行（`回答: …` / `出典: …`）。**枠は付けずテキストのみ** */
+.from {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+/* 回答でも出典でもない導出の説明。キャプションと同じ薄さにそろえる */
+.note {
+  font-size: 10px;
+  color: #8d968f;
+  line-height: 1.4;
+}
+
+.track {
+  position: relative;
+  height: 22px;
+  background: var(--mk-hairline-2);
+  border-radius: 5px;
+  margin-top: 2px;
+}
+
+.bar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 3px;
+}
+
+.barTotal {
+  background: #4a5a53;
+}
+.cover1 {
+  background: var(--mk-green);
+}
+.cover2 {
+  background: var(--mk-green-mid);
+}
+.cover3 {
+  background: var(--mk-green-light);
+}
+
+/*
+  余る分。**控除の緑とは別の見た目にする。**
+  同じ緑で塗ると「これもまかなった分」に見えるが、
+  これは総額を超えて余ったぶんで、性質が違う。
+*/
+.barSurplus {
+  background: #cfe0d5;
+  border: 1.5px dashed var(--mk-green);
+}
+
+/* 民間保険で備える額。T-B でレンジが復活したら、この帯が幅を持つ */
+.barNeed {
+  background: rgb(166 105 15 / 26%);
+  border: 1.5px solid var(--mk-amber);
+  box-sizing: border-box;
+}
+
+/* 幅のない必要額。帯と混同しないよう、塗りではなく目盛りで出す */
+.barNeedTick {
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--mk-amber);
+  border-radius: 2px;
+}
+
+.rowResult {
+  border-top: 1px solid var(--mk-dashed);
+  padding-top: var(--space-3);
+}
+
+.overflow {
+  font-size: 11.5px;
+  color: var(--mk-muted);
+  line-height: 1.6;
+  margin: 2px 0 0;
+}
+
+.surplusNote {
+  font-size: 12px;
+  color: var(--mk-muted-2);
+  line-height: 1.7;
+  background: var(--mk-surface-alt);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 4px 0 0;
+}
+
+.resultNote {
+  font-size: 12.5px;
+  color: var(--mk-muted-2);
+  line-height: 1.75;
+  margin: 4px 0 0;
+}
+
+.footnote {
+  font-size: 12.5px;
+  color: var(--mk-muted-2);
+  background: var(--mk-surface-alt);
+  border-radius: 10px;
+  padding: 12px 16px;
+  line-height: 1.7;
+  margin: var(--space-4) 0 0;
+}

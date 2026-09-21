@@ -93,12 +93,17 @@ describe("shobyoTeate：傷病手当金", () => {
 });
 
 describe("kihonTeate：雇用保険 基本手当", () => {
+  /**
+   * 上限は**毎年8月1日に改定される**。期待値は官報準拠の厚労省資料から取る
+   * （令和8年8月1日：30〜44歳は 8,270円）。
+   * `params/2026-08.yaml` の `sources.dailyCapByAge` に URL・施行日・次の改定日がある。
+   */
   it("年齢別の日額上限で頭打ちになる", () => {
-    // 年収600万 → 賃金日額 16,438 → ×0.6 ＝ 9,863 だが、40歳の上限 7,715 で頭打ち
+    // 年収600万 → 賃金日額 16,438 → ×0.6 ＝ 9,863 だが、40歳の上限 8,270 で頭打ち
     const r = kihonTeate(P, { annualIncome: INCOME_U, age: 40, insuredYears: 10 });
-    expect(r.dailyAmount).toBe(7_715);
+    expect(r.dailyAmount).toBe(8_270);
     expect(r.days).toBe(120); // 加入10年以上20年未満
-    expect(r.amount).toBe(7_715 * 120);
+    expect(r.amount).toBe(8_270 * 120);
     expect(r.assumptions.join()).toContain("頭打ち");
   });
 

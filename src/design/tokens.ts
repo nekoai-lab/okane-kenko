@@ -112,13 +112,41 @@ export const CHART_INK = {
   axisTextDark: "#CCCCCC",
 } as const;
 
-/** 円を万円単位の表示文字列にする。単位を必ず付ける（情報設計のルール）。 */
+/**
+ * 円を万円単位の表示文字列にする。単位を必ず付ける（情報設計のルール）。
+ *
+ * **1億以上は「億」で折る。** 万円のまま押し通すと `17,689万円` のような、
+ * 桁を数えないと読めない数字が画面に出る（2026-09-21 に配偶者死亡ケースの開示で実際に出た）。
+ * 読み手が暗算を強いられる表示は、正しくても伝わっていない。
+ * モックの `result.html` も同じ折り方をしている（`fmt()`）。
+ */
 export function formatMan(yen: number): string {
-  return `${Math.round(yen / 10_000).toLocaleString("ja-JP")}万円`;
+  const man = Math.round(yen / 10_000);
+  if (Math.abs(man) < 10_000) return `${man.toLocaleString("ja-JP")}万円`;
+  const sign = man < 0 ? "-" : "";
+  const abs = Math.abs(man);
+  const oku = Math.floor(abs / 10_000);
+  const rest = abs % 10_000;
+  return rest === 0
+    ? `${sign}${oku.toLocaleString("ja-JP")}億円`
+    : `${sign}${oku.toLocaleString("ja-JP")}億${rest.toLocaleString("ja-JP")}万円`;
 }
 
-/** レンジ表示。点で断定せず、必ず「約」を付ける（FR-16 / CR-04） */
+const OKU_IN_MAN = 10_000;
+
+/**
+ * レンジ表示。点で断定せず、必ず「約」を付ける（FR-16 / CR-04）。
+ *
+ * **下端の単位は、上端と単位が同じときだけ省く。**
+ * `約8,000〜1億2,000万円` のように単位をまたぐと、裸の 8,000 が億側の数字に読める。
+ */
 export function formatRange(low: number, high: number): string {
   if (low === high) return `約${formatMan(low)}`;
-  return `約${Math.round(low / 10_000).toLocaleString("ja-JP")}〜${formatMan(high)}`;
+  const sameUnit =
+    Math.abs(Math.round(low / 10_000)) < OKU_IN_MAN ===
+    Math.abs(Math.round(high / 10_000)) < OKU_IN_MAN;
+  const lowText = sameUnit
+    ? Math.round(low / 10_000).toLocaleString("ja-JP")
+    : formatMan(low).replace(/円$/, "");
+  return `約${lowText}〜${formatMan(high)}`;
 }

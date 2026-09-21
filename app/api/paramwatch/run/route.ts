@@ -6,7 +6,7 @@
  */
 import { NextResponse } from "next/server";
 import { GOLDEN } from "../../../../src/__tests__/households.js";
-import { loadParams } from "../../../../src/params/index.js";
+import { loadParams, loadParamsText } from "../../../../src/params/index.js";
 import { runParamWatch } from "../../../../src/paramwatch/run.js";
 import { loadWatchSources } from "../../../../src/paramwatch/sources.js";
 import { createFirestoreProposalStore } from "../../../../src/paramwatch/store.firestore.js";
@@ -23,10 +23,13 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const result = await runParamWatch({
       params: loadParams(),
-      sources: loadWatchSources(),
+      // デモ用の watch（罠ページ）は ?demo=1 を明示したときだけ。定期実行には入れない
+      sources: loadWatchSources({ includeDemo: new URL(req.url).searchParams.get("demo") === "1" }),
       // 影響を測る世帯は、算定の正本と同じ10世帯を使う（別の corpus を作らない）
-      cases: GOLDEN.map((g) => ({ id: g.id, label: g.label, input: g.input })),
+      // 期待値は「現行 params で green か」を確かめるためだけに渡す（候補値とは比べない）
+      cases: GOLDEN.map((g) => ({ id: g.id, label: g.label, input: g.input, expect: g.expect })),
       store: createFirestoreProposalStore(),
+      paramsYaml: loadParamsText(),
       now: () => new Date(),
     });
     return NextResponse.json(result);

@@ -1,0 +1,212 @@
+/*
+  STEP4 数直線＋判定カード＋判断ポイント（移植元 docs/design-mock/result.html の STEP 4）
+
+  モックは 900px の絶対配置。390px では目盛りが潰れるので、
+  **目盛りの刻みをデータに合わせて選び直す**（構成要素は変えない）。
+*/
+.wrap {
+
+  color: var(--mk-ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lead {
+  font-size: 13px;
+  color: var(--mk-muted-2);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.lineBox {
+  background: var(--mk-surface-alt);
+  border-radius: 12px;
+  padding: var(--space-4) var(--space-3);
+}
+
+.line {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.axis {
+  stroke: var(--mk-border-btn);
+  stroke-width: 2;
+}
+
+.tick {
+  stroke: var(--mk-grey-border);
+}
+
+.tickText {
+  font-size: 10px;
+  fill: var(--mk-muted);
+}
+
+/* 必要額の幅。滝・診断表と同じ橙 */
+.band {
+  fill: rgb(166 105 15 / 26%);
+  stroke: var(--mk-amber);
+  stroke-width: 1.5;
+}
+
+/* 幅が無いときの描画。帯と混同しないよう線で出す */
+.needTick {
+  stroke: var(--mk-amber);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* いまの保障。診断表のミニ数直線と同じ黒の縦線 */
+.cov {
+  stroke: var(--mk-ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: var(--space-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.markNeed {
+  color: var(--mk-amber-text);
+}
+
+.markCov {
+  color: var(--mk-ink);
+}
+
+/* 判定カード。色だけで意味を伝えないので、必ずラベル文字が入る */
+.verdict {
+  border-radius: 14px;
+  padding: var(--space-4);
+  border: 1.5px solid var(--mk-grey-border);
+  background: var(--mk-grey-bg);
+}
+
+.ok {
+  border-color: var(--mk-green);
+  background: var(--mk-green-bg);
+}
+.check {
+  border-color: var(--mk-amber);
+  background: var(--mk-amber-bg);
+}
+.short {
+  border-color: var(--mk-red);
+  background: var(--mk-red-bg);
+}
+
+.verdictTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 var(--space-2);
+}
+
+.ok .verdictTitle {
+  color: var(--mk-green-deep);
+}
+.check .verdictTitle {
+  color: var(--mk-amber-deep);
+}
+.short .verdictTitle {
+  color: var(--mk-red-deep);
+}
+
+.verdictBody {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #2c3833;
+  margin: 0;
+}
+
+.rule {
+  font-size: 11.5px;
+  color: var(--mk-muted);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ---------- 判断ポイント ---------- */
+.points {
+  background: var(--mk-surface-alt);
+  border-radius: 12px;
+  padding: var(--space-4);
+}
+
+.pointsHead {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 var(--space-3);
+}
+
+.pointList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.point {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+/* 通し番号であって必要額ではないので、橙を使わない（2026-09-21 の色監査） */
+.pointNum {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--mk-ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  flex: none;
+}
+
+/*
+  判断ポイントの見出し語。**既にある数字を、あるべき声量にする**（2026-09-21）。
+  「正念場は2042〜2045年ごろ」「緩衝材の約2,732万円は…」と数字を持っているのに
+  16px級で、視覚アンカーとして数えられていなかった。
+  DoD (b)（金額は明朝で主役に）と同じ組版を当てるだけで、**内容は1字も変えていない**。
+*/
+.pointLabel {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.pointBody {
+  font-size: 12.5px;
+  color: var(--mk-muted-2);
+  line-height: 1.7;
+  margin: 2px 0 0;
+}
+
+.pending {
+  font-size: 12.5px;
+  color: var(--mk-muted);
+  margin: var(--space-3) 0 0;
+}
+
+/* 閉じ文。#4 のトグルとセットで真になる文 */
+.closing {
+  font-size: 12.5px;
+  color: var(--mk-muted-2);
+  line-height: 1.75;
+  margin: var(--space-3) 0 0;
+}

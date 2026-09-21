@@ -6,7 +6,9 @@
  */
 import type { ParamSet } from "../params/index.js";
 import { assertUsable } from "../params/index.js";
+import { jstYear } from "../time/jstYear.js";
 import { calcDeath } from "./death.js";
+import { reform2028 as judgeReform2028 } from "./reform2028.js";
 import { calcMedical } from "./medical.js";
 import type {
   DeathResult,
@@ -32,6 +34,41 @@ export interface DiagnoseInput {
   coverageSelf: number | null;
   /** 配偶者を被保険者とする保障額（円）。未入力なら undefined = まだ聞いていない */
   coverageSpouse?: number | null;
+  /**
+   * 暮らし方の目盛り（D-02・ADR-022）。省略時は 1.0 で出力は一切変わらない。
+   * **率（0.70 / 0.50）とは別の変数**。率は人数、これは暮らし方の選好。
+   */
+  lifestyleDial?: number;
+}
+
+/**
+ * `DiagnoseInput` から `Household` を作る。**画面が手で組み立てない**ための入口。
+ *
+ * 2026-09-21、結果画面が `projectDeath` に渡す `Household` を手で組んでおり、
+ * **暮らし方の目盛り（`lifestyleDial`）を1つ落としていた**。
+ * その結果、必要額だけが動いて年次（台帳・段差チャート）は古いまま残った
+ * ── #4 で最も起きやすい「部分更新の取り残し」そのもの。
+ *
+ * テストでは画面の手組みを見られないので、**構造で塞ぐ**。
+ * 入力に項目が増えても、ここを通していれば落ちない。
+ */
+export function toHousehold(
+  input: DiagnoseInput,
+  who: "self" | "spouse",
+): Household {
+  const deceased = who === "self" ? input.self : input.spouse;
+  if (!deceased) throw new Error("配偶者がいない世帯で配偶者の死亡ケースは作れない");
+  return {
+    children: input.children,
+    housing: input.housing,
+    assets: input.assets,
+    monthlyLiving: input.monthlyLiving,
+    educationPlan: input.educationPlan,
+    lifestyleDial: input.lifestyleDial,
+    deceased,
+    survivor: who === "self" ? input.spouse : input.self,
+    currentCoverage: who === "self" ? input.coverageSelf : (input.coverageSpouse ?? null),
+  };
 }
 
 export function diagnose(
@@ -42,29 +79,12 @@ export function diagnose(
   // 期限切れの中核パラメータでは診断しない（PR-04）。古い値で黙って出さない。
   assertUsable(p, asOf);
 
-  const base = {
-    children: input.children,
-    housing: input.housing,
-    assets: input.assets,
-    monthlyLiving: input.monthlyLiving,
-    educationPlan: input.educationPlan,
-  };
-
-  const self = calcDeath(p, {
-    ...base,
-    deceased: input.self,
-    survivor: input.spouse,
-    currentCoverage: input.coverageSelf,
-  });
+  const self = calcDeath(p, toHousehold(input, "self"));
 
   let spouse: DeathResult | null = null;
   if (input.spouse && input.coverageSpouse !== undefined) {
-    spouse = calcDeath(p, {
-      ...base,
-      deceased: input.spouse,
-      survivor: input.self,
-      currentCoverage: input.coverageSpouse,
-    });
+    // 配偶者が亡くなるケースで遺されるのは**本人**
+    spouse = calcDeath(p, { ...toHousehold(input, "spouse"), survivorLabel: "あなた" });
   }
 
   const medical = calcMedical(
@@ -73,18 +93,15 @@ export function diagnose(
     input.assets,
   );
 
-  const hasChild = input.children.length > 0;
-  const reform2028 = hasChild
-    ? {
-        applicable: false,
-        reason:
-          "遺族厚生年金の5年有期化（2028年4月〜）は子のいない配偶者が対象です。お子さんがいるこの世帯は当面これまで通りで、直撃しません。",
-      }
-    : {
-        applicable: true,
-        reason:
-          "遺族厚生年金の5年有期化（2028年4月〜）は、子のいない配偶者が対象です。この世帯は該当します。",
-      };
+  /**
+   * 2028年改正の該当判定。**子の有無ではなく配偶者の生年コホートで決まる**（`reform2028.ts`）。
+   * 子がいることは末子が18歳になるまでの猶予にしかならない。
+   */
+  const reform2028 = judgeReform2028({
+    survivorAge: input.spouse?.age ?? null,
+    asOfYear: jstYear(asOf),
+    hasChildren: input.children.length > 0,
+  });
 
   return {
     paramVersion: p.version,
