@@ -292,3 +292,64 @@ describe("④ ヒーローの差額 ＝ 滝・数直線と同じ端からの引�
     }
   });
 });
+
+/**
+ * **⑤ 減らせる額は、ページに1箇所だけ、かつ必ず1箇所ある**（2026-09-21 オーナー確定）
+ *
+ * CLAUDE.md「出力に必ず含めること」の「必須」は
+ * **ページのどこかに必ず1回出ること**であって、何度も出すことではない。
+ * ヒーローが同じ金額を出している世帯で単独セクションも出すと、
+ * **同一事実の2回表示**になる（分担文の統合と同じ裁定基準）。
+ *
+ * 軸名（CLAUDE.md）：ここで使うのは**過不足軸**（`Verdict3` の世帯集約）。
+ */
+describe("⑤ 減らせる額はページに1箇所だけ、かつ必ず1箇所ある", () => {
+  /** 画面と同じ分岐をここで独立に組み立てる（画面のロジックを書き写さない） */
+  function exposures(g: (typeof GOLDEN)[number]) {
+    const d = diagnose(P, g.input, AS_OF);
+    const hh = householdSummary([
+      { coverage: g.input.coverageSelf, needLow: d.self.range.low, needHigh: d.self.range.high },
+      ...(d.spouse
+        ? [
+            {
+              coverage: g.input.coverageSpouse,
+              needLow: d.spouse.range.low,
+              needHigh: d.spouse.range.high,
+            },
+          ]
+        : []),
+    ]);
+    const heroShowsReducible = hh.verdict === "reducible" || hh.verdict === "rebalanceable";
+    const totalExcess = d.householdHeadline.totalExcess;
+    return {
+      hero: heroShowsReducible && hh.totalReducible > 0 ? 1 : 0,
+      // 単独セクション：ヒーローが出していないときだけ出す。0円なら「見つかりませんでした」を出す
+      section: totalExcess > 0 && heroShowsReducible ? 0 : 1,
+      totalExcess,
+      hh,
+    };
+  }
+
+  for (const g of GOLDEN) {
+    it(`${g.id}：露出は1箇所（0箇所にも2箇所にもならない）`, () => {
+      const e = exposures(g);
+      // 「減らせる額そのもの」か「見つかりませんでした」のどちらかが、必ず1回出る
+      expect(e.hero + e.section).toBe(1);
+    });
+  }
+
+  it("**減らせる額がある世帯では、ヒーローか単独セクションのどちらか一方が出す**", () => {
+    const withExcess = GOLDEN.filter((g) => exposures(g).totalExcess > 0);
+    expect(withExcess.length).toBeGreaterThan(0);
+    for (const g of withExcess) {
+      const e = exposures(g);
+      expect(e.hero + e.section).toBe(1);
+    }
+  });
+
+  it("**0円の世帯でも必ず1箇所出る**（沈黙で置き換えない）", () => {
+    for (const g of GOLDEN.filter((x) => exposures(x).totalExcess === 0)) {
+      expect(exposures(g).section).toBe(1);
+    }
+  });
+});

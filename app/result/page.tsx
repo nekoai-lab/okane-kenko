@@ -18,6 +18,8 @@ import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
 import { decisionPoints } from "../../src/calc/decisionPoints.js";
 import { reform2028 } from "../../src/calc/reform2028.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
+import { Fold } from "./Fold.js";
+import { SoloCase } from "./SoloCase.js";
 import { HERO_BADGE, HERO_TONE, Hero } from "./Hero.js";
 import { LivingDial } from "./LivingDial.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
@@ -969,6 +971,16 @@ export default async function ResultPage({
    * **段差チャートの段差①と同じ材料**（`projectDeath` の年次）から取る。
    * 画面で年を作らない ── 図と導線で別の年を出すと、どちらが正か分からなくなる。
    */
+  /**
+   * ヒーローが既に「減らせる額」を出しているか（同一事実の2回表示を避ける）。
+   *
+   * ヒーローの見出しは `reducible` のとき差額を、`rebalanceable` のときは
+   * `rebalanceNote` が「約◯◯は減らせる一方…」を出す。
+   * どちらでもない世帯（`uncertain` / `shortage` / `pending`）では、
+   * 減らせる額はヒーローに出ないので、下の単独セクションが唯一の露出になる。
+   */
+  const heroShowsReducible = hh.verdict === "reducible" || hh.verdict === "rebalanceable";
+
   const watchYear = (() => {
     const rows = selfProjection.rows;
     for (let i = 1; i < rows.length; i++) {
@@ -988,11 +1000,8 @@ export default async function ResultPage({
         ? "あなたの保障"
         : null,
       result.spouse &&
-      verdict3(
-        input.coverageSpouse ?? null,
-        result.spouse.range.low,
-        result.spouse.range.high,
-      ) === "shortage"
+      verdict3(input.coverageSpouse ?? null, result.spouse.range.low, result.spouse.range.high) ===
+        "shortage"
         ? "配偶者の保障"
         : null,
     ].filter((x): x is string => x !== null);
@@ -1117,6 +1126,14 @@ export default async function ResultPage({
       {/* この診断で分かること／分からないこと（先に線を引く・T-06） */}
       <div className={s.section}>
         <div className={s.scope}>
+          {/*
+            **診た件数は既にある数字**（診断表の行数）。あるべき声量で出す（DoD (a)(b)）。
+            「何を診たか」を先に線引きするこの節の、いちばん要約された数でもある。
+          */}
+          <p className={s.scopeCount}>
+            <span className={s.scopeNum}>{riskRows.length}</span>
+            <span className={s.scopeUnit}>つのリスクを診ました</span>
+          </p>
           <p>
             <strong>この診断で分かること：</strong>{" "}
             あなたに万一のとき、遺されたご家族の生活・教育・住まいに必要なお金と、いまの保険との過不足の目安です。
@@ -1128,9 +1145,19 @@ export default async function ResultPage({
         </div>
       </div>
 
-      {/* 減らせる箇所 */}
+      {/*
+        減らせる箇所（CLAUDE.md「出力に必ず含めること」）。
+
+        **必須＝ページのどこかに必ず1回出ること。**
+        ヒーローの見出し（`いまの保障、約◯◯ぶん 減らせる可能性があります`）や
+        `rebalanceNote`（`約◯◯は減らせる一方…`）が同じ金額を出している世帯では、
+        **単独セクションを出さない** ── 同一事実の2回表示は反復であって開示ではない
+        （分担文の統合と同じ裁定基準・2026-09-21 オーナー確定）。
+
+        **0件のときは必ず出す。** 「見つかりませんでした」を沈黙で置き換えない。
+      */}
       <div className={s.section}>
-        {totalExcess > 0 ? (
+        {totalExcess > 0 && heroShowsReducible ? null : totalExcess > 0 ? (
           <div className={s.reduce}>
             {/* **既にある金額を、あるべき声量にする**（DoD (b) の組版を (a) の解に使う） */}
             <strong>減らせそうな箇所：</strong> 世帯全体で、いまの保障を
@@ -1155,10 +1182,9 @@ export default async function ResultPage({
         <div className={s.reformNote}>
           <strong>2028年の年金改正について：</strong>{" "}
           {result.reform2028.applicable ? "この改正の対象になります。" : "この改正の対象外です。"}
-          <details className={s.reformDetails}>
-            <summary>この判断の根拠を読む（{result.reform2028.reason.length} 字）</summary>
+          <Fold count={`（${result.reform2028.reason.length}字）`} label="この判断の根拠を読む">
             <p className={s.reformBody}>{result.reform2028.reason}</p>
-          </details>
+          </Fold>
         </div>
       </div>
 
@@ -1167,24 +1193,37 @@ export default async function ResultPage({
           図を広げると軸の文字まで拡大されて崩れる。30本の棒も6列の表も720pxで足りており、
           実際に幅を必要としていたのは検査値パネル（4列）だけだった。 */}
       <div className={`${s.section} ${s.sectionMajor}`} id="death-detail">
-        <CaseCard
-          childCount={input.children.length}
-          chips={answerChips(input, input.coverageSelf)}
-          coverage={input.coverageSelf}
-          danshinCovered={danshinCovered}
-          editHref={editHref}
-          estimations={estimations}
-          terms={terms}
-          koseiFrom={input.self.employment === "employee" ? "会社員" : null}
-          pj={selfProjection}
-          r={result.self}
-          livingBand={livingBand}
-          loan={input.housing.loan ?? null}
-          reform2028Reason={result.reform2028.reason}
-          survivorLabel="配偶者"
-          title="あなたが亡くなった場合"
-          workFrom={input.spouse && input.spouse.income > 0 ? "配偶者の年収" : null}
-        />
+        {/*
+          **単身世帯は「正直な空欄」の型に置き換える**（仕様 §5.3・2026-09-21）。
+          遺す相手がいない世帯では算定期間が0年で、STEP2〜4 は描く材料を持たない。
+          空データで図を描くと、壊れた絵になる。
+        */}
+        {result.self.years.total === 0 ? (
+          <SoloCase
+            needLabel={AMOUNT_LABEL[result.self.verdict] ?? AMOUNT_LABEL.sufficient}
+            needText={formatRange(result.self.range.low, result.self.range.high)}
+            title="あなたが亡くなった場合"
+          />
+        ) : (
+          <CaseCard
+            childCount={input.children.length}
+            chips={answerChips(input, input.coverageSelf)}
+            coverage={input.coverageSelf}
+            danshinCovered={danshinCovered}
+            editHref={editHref}
+            estimations={estimations}
+            terms={terms}
+            koseiFrom={input.self.employment === "employee" ? "会社員" : null}
+            pj={selfProjection}
+            r={result.self}
+            livingBand={livingBand}
+            loan={input.housing.loan ?? null}
+            reform2028Reason={result.reform2028.reason}
+            survivorLabel="配偶者"
+            title="あなたが亡くなった場合"
+            workFrom={input.spouse && input.spouse.income > 0 ? "配偶者の年収" : null}
+          />
+        )}
         {/* 配偶者側は**要約1行＋開閉**にする。
             同じ長さのカードが2つ続くと、体感の長さが倍になって読まれなくなる。
             ただしタブにはしない ── 世帯の結論（rebalanceable）は両方を見ないと意味が伝わらず、
@@ -1242,41 +1281,43 @@ export default async function ResultPage({
         **参照材なので畳む**（2026-09-21・視覚の DoD (a)）。件数を露出に出す。
       */}
       {eduWhatIf.length > 0 && (
-        <details className={s.section}>
-          <summary className={s.foldHead}>
-            進路で教育費はこう変わる（<span className={s.foldCount}>{eduWhatIf.length}</span>
-            通り・お子さん合計）
-          </summary>
-          <div className={s.rows}>
-            {eduWhatIf.map((w) => (
-              <div className={s.row} key={w.label}>
-                <span className={s.rowLabel}>{w.label}</span>
-                <span className={s.rowAmount}>{money(w.education)}</span>
-              </div>
-            ))}
-          </div>
-          <p className={s.basis}>
-            ※ 進路が未定なら公立中心で計算しています。私立にするほど教育費が増え、その分
-            必要な保障額も上がります。
-          </p>
-        </details>
+        <div className={s.section}>
+          <Fold
+            count={`（${eduWhatIf.length}通り・お子さん合計）`}
+            label="進路で教育費はこう変わる"
+          >
+            <div className={s.rows}>
+              {eduWhatIf.map((w) => (
+                <div className={s.row} key={w.label}>
+                  <span className={s.rowLabel}>{w.label}</span>
+                  <span className={s.rowAmount}>{money(w.education)}</span>
+                </div>
+              ))}
+            </div>
+            <p className={s.basis}>
+              ※ 進路が未定なら公立中心で計算しています。私立にするほど教育費が増え、その分
+              必要な保障額も上がります。
+            </p>
+          </Fold>
+        </div>
       )}
 
       {/*
         平均の中立併記（社会的証明＝煽りにしない。平均は目標ではない）。
         **参照材なので畳む**（2026-09-21・視覚の DoD (a)）。
       */}
-      <details className={s.section}>
-        <summary className={s.foldHead}>ご参考：世帯の死亡保険金額の平均</summary>
-        <div className={s.reformNote}>
-          <strong>ご参考：</strong> 世帯の死亡保険金額の平均は約
-          {formatMan(v(params, "householdDeathCoverageAvg"))}
-          です（生命保険文化センター）。ただし
-          <strong>平均は目標ではありません</strong>
-          。必要な額は世帯の前提で大きく変わります。額の大小ではなく、
-          <strong>あなたの前提での必要額（上の目安）</strong>で見てください。
-        </div>
-      </details>
+      <div className={s.section}>
+        <Fold label="ご参考：世帯の死亡保険金額の平均">
+          <div className={s.reformNote}>
+            <strong>ご参考：</strong> 世帯の死亡保険金額の平均は約
+            {formatMan(v(params, "householdDeathCoverageAvg"))}
+            です（生命保険文化センター）。ただし
+            <strong>平均は目標ではありません</strong>
+            。必要な額は世帯の前提で大きく変わります。額の大小ではなく、
+            <strong>あなたの前提での必要額（上の目安）</strong>で見てください。
+          </div>
+        </Fold>
+      </div>
 
       {/* 次の一歩（T-06）。文面は保険業法の自己診断サンプル（正式レビュー前） */}
       <div className={s.section}>
@@ -1322,8 +1363,7 @@ export default async function ResultPage({
 
         {/* 選ぶ基準（もっと知りたい）。押したときだけ開く。押下記録は T-09（計測）で対応 */}
         {result.householdHeadline.kind !== "all_covered" && (
-          <details className={s.criteria}>
-            <summary>もっと知りたい：保険を選ぶときの基準</summary>
+          <Fold count="（4点）" label="もっと知りたい：保険を選ぶときの基準">
             <ul className={s.list}>
               <li>いくらの保障が必要か（この診断の目安）</li>
               <li>いつまで必要か（末子の独立・配偶者の年齢）</li>
@@ -1334,7 +1374,7 @@ export default async function ResultPage({
               ※
               具体的な商品名・会社名・ランキングは出しません。判断はご本人と、契約する保険会社・窓口で。
             </p>
-          </details>
+          </Fold>
         )}
 
         <p className={s.basis}>
@@ -1353,12 +1393,12 @@ export default async function ResultPage({
           お知らせが効いてくるのはこの年なので、再掲であって装飾ではない。
           年は段差チャートと同じ `projectDeath` の出力から来ている。
         */}
-        {selfProjection.rows.length > 1 && (
+        {selfProjection.rows.length > 0 && (
           <p className={s.narrationSummary}>
             <span className={s.narrationStat}>
               <span className={s.narrationStatLabel}>
-              {watchYear === null ? "お知らせが対象にする期間" : "次にお知らせが要りそうな時期"}
-            </span>
+                {watchYear === null ? "お知らせが対象にする期間" : "次にお知らせが要りそうな時期"}
+              </span>
               <span className={s.narrationStatValue}>
                 {watchYear === null
                   ? // 公的収入が動かない世帯（遺族がいない等）では節目が無い。
@@ -1397,20 +1437,21 @@ export default async function ResultPage({
         （時期の根拠がどの文書にも無いと全文確認で分かったため）。
       */}
       {/* **参照材なので畳む**（視覚の DoD (a)）。在庫であることが要点なので件数を露出に出す */}
-      <details className={s.section}>
-        <summary className={s.foldHead}>
-          当社基準（公的出典のない当社の見立て・全
-          <span className={s.foldCount}>{Object.keys(params.ownStandard).length}</span>件）
-        </summary>
-        <ul className={s.list}>
-          {Object.entries(params.ownStandard).map(([key, e]) => (
-            <li key={key}>
-              {e.label ?? key}
-              {e.userAdjustable ? "（画面で動かせます）" : ""}
-            </li>
-          ))}
-        </ul>
-      </details>
+      <div className={s.section}>
+        <Fold
+          count={`（全${Object.keys(params.ownStandard).length}件）`}
+          label="当社基準（公的出典のない当社の見立て）"
+        >
+          <ul className={s.list}>
+            {Object.entries(params.ownStandard).map(([key, e]) => (
+              <li key={key}>
+                {e.label ?? key}
+                {e.userAdjustable ? "（画面で動かせます）" : ""}
+              </li>
+            ))}
+          </ul>
+        </Fold>
+      </div>
 
       <div className={s.draftNote}>
         次の一歩・選ぶ基準の文面は、保険業法の正式な弁護士レビュー（OI-01）後に確定します（現在はサンプル）。

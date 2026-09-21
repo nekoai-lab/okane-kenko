@@ -23,6 +23,7 @@
 import { useEffect, useState } from "react";
 import type { PlaceholderValues } from "../../src/narrate/stream.js";
 import { renderStreamed } from "../../src/narrate/stream.js";
+import { Fold } from "./Fold.js";
 import s from "./page.module.css";
 
 type Mode = "waiting" | "streaming" | "done" | "fallback";
@@ -169,14 +170,9 @@ export function Narration({
       </div>
 
       {hasMore && (
-        <details className={s.criteria}>
-          {/* **件数（ここでは文字数）を出す。** 数の無い「すべて見る」は開示ではなく隠蔽に近い */}
-          {/* 字数は**既にある数字**。あるべき声量で出す（DoD (b) の組版を (a) の解に使う） */}
-          <summary>
-            続きを読む（全文 <span className={s.foldCount}>{body.length}</span> 字）
-          </summary>
+        <Fold count={`（全文${body.length}字）`} label="続きを読む">
           <p className={s.narrationFull}>{body}</p>
-        </details>
+        </Fold>
       )}
       {/* 断り書きは「実際に起きたこと」を書く。AI が動く前から「AI が書いています」と
           出すと、定型文が出ている場面で嘘になる（JS が動かない環境ではそれが常に起きる）。 */}

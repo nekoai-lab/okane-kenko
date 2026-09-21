@@ -16,6 +16,7 @@
  * **ラベルとURLは `params` から受け取る。** 画面で出典名を手打ちしない
  * ── 制度側が変わったときに、値だけ更新されて出典表示が古いまま残る。
  */
+import { Fold } from "./Fold.js";
 import s from "./usedSources.module.css";
 
 export interface UsedSource {
@@ -42,8 +43,7 @@ export function UsedSources({ items, note }: { items: UsedSource[]; note: string
         使った前提と出典 — 全<span className={s.count}>{items.length}</span>件をここに残しています
       </h2>
       {/* 参照材なので畳む（視覚の DoD (a)）。露出は件数を含む見出しだけ */}
-      <details className={s.fold}>
-        <summary className={s.summary}>出典を全{items.length}件見る</summary>
+      <Fold count={`（全${items.length}件）`} label="出典を見る">
         <ul className={s.chips}>
           {items.map((x) => {
             const body = (
@@ -68,7 +68,7 @@ export function UsedSources({ items, note }: { items: UsedSource[]; note: string
           })}
         </ul>
         <p className={s.note}>{note}</p>
-      </details>
+      </Fold>
     </section>
   );
 }

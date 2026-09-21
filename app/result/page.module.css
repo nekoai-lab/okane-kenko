@@ -235,11 +235,16 @@
   よみときの既定露出サマリー。**持っている数字を、あるべき声量で出す**（DoD (a)(b)）。
   金額は算定結果から来ており、ここで作っていない。
 */
+/*
+  **台帳の文法にそろえる**（2026-09-21）── ラベルは小さく、値は明朝で行頭から。
+  390px で横2列にすると、右の値が折れて右端に張り付いた（実際に崩れた）。
+  数字の再掲は DoD (a) の解なので消さず、**組み方だけ台帳に合わせて縦積みにする**。
+*/
 .narrationSummary {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
   margin: var(--space-3) 0;
 }
 
@@ -268,10 +273,13 @@
   background: var(--mk-red-bg);
 }
 
+/* 台帳の行と同じ：ラベル（小）の下に値（明朝）。行頭でそろえる */
 .narrationStat {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 1px;
+  width: 100%;
 }
 
 .narrationStatLabel {
@@ -311,6 +319,24 @@
   border-radius: var(--radius-control);
   font-size: var(--font-size-std-s);
 }
+/* 診たリスクの件数。既にある数字を、あるべき声量で */
+.scopeCount {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.scopeNum {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.scopeUnit {
+  font-size: var(--font-size-std-s);
+}
+
 .scope p {
   margin: var(--space-1) 0;
 }

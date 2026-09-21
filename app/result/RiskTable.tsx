@@ -15,6 +15,7 @@
  * **金額はここで作らない。** 受け取った文字列を描くだけ（CLAUDE.md「本番UIに金額をハードコードしない」）。
  */
 import Link from "next/link";
+import { Fold } from "./Fold.js";
 import {
   PremiseDisclosure,
   type PremiseSensitivity,
@@ -213,8 +214,8 @@ export function RiskTable({ rows, caption }: { rows: RiskRow[]; caption: string 
         カードの図が終わったあとに文字だけの区間を作っていた。
         露出は件数を明示した1行、中身はそのまま（開示の規約）。
       */}
-      <details className={s.legendFold}>
-        <summary className={s.legendSummary}>この表の読み方（判定・図・精度の3点）</summary>
+      <div className={s.legendFold}>
+        <Fold count="（3点）" label="この表の読み方">
         <dl className={s.legend}>
           <dt>判定</dt>
           <dd>
@@ -239,7 +240,8 @@ export function RiskTable({ rows, caption }: { rows: RiskRow[]; caption: string 
             「計算未対応」は正直な空欄です。
           </dd>
         </dl>
-      </details>
+        </Fold>
+      </div>
     </section>
   );
 }

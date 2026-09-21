@@ -1,0 +1,62 @@
+/*
+  折りたたみの見出し（全画面共通の型）
+
+  **下線を使わない。** 開閉の合図はシェブロン。
+  下線はリンクと誤読され、長い見出しが折り返したときに崩れて見える。
+*/
+.fold {
+  margin: var(--space-2) 0;
+}
+
+.summary {
+  cursor: pointer;
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  color: var(--mk-ink);
+}
+
+/* Safari の既定マーカーを消す（シェブロンを自前で出すため） */
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+/* 開閉の合図。閉＝右向き、開＝下向き */
+.chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--mk-muted);
+  border-bottom: 2px solid var(--mk-muted);
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+  margin-left: 2px;
+}
+
+.fold[open] .chevron {
+  transform: rotate(45deg);
+  margin-top: -3px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/*
+  件数。**分割不可**（「（3通り・お子さん合計）」が行末で割れないように）。
+  数そのものは明朝で立てず、見出し語と同じ重さにする
+  ── 件数は「何件あるか」の目印で、この節の主役の数ではない。
+*/
+.count {
+  white-space: nowrap;
+  color: var(--mk-muted-2);
+  font-weight: 400;
+}
+
+.body {
+  margin-top: var(--space-3);
+}

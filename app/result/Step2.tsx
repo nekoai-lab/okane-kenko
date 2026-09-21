@@ -7,6 +7,7 @@
 import { manDigits, toMonthlyDisplay } from "../../src/design/ledgerRound.js";
 import type { Projection } from "../../src/calc/projection.js";
 import { REFORM_2028_NOT_APPLIED_TAIL } from "../../src/calc/reform2028.js";
+import { Fold } from "./Fold.js";
 import { MonthlyLedger } from "./MonthlyLedger.js";
 import { StepChart, type StepYear } from "./StepChart.js";
 import s from "./step2.module.css";
@@ -302,8 +303,8 @@ export function Step2({
         用語ごとの `<details>` が縦に並ぶだけで、図も大きな数字も無い区間を作っていた。
         露出は**件数を明示した1行**だけにして、中身（完全な記録）はそのまま残す。
       */}
-      <details className={s.terms}>
-        <summary className={s.termsHead}>ことばの説明（{TERMS.length}語）と2028年改正の注記</summary>
+      <Fold count={`（${TERMS.length}語＋2028年改正の注記）`} label="ことばの説明">
+        <div className={s.terms}>
         {TERMS.map((t) => (
           <details className={s.term} key={t.term}>
             <summary>{t.term}</summary>
@@ -320,7 +321,8 @@ export function Step2({
           ※{reform2028Reason}
           {REFORM_2028_NOT_APPLIED_TAIL}
         </p>
-      </details>
+        </div>
+      </Fold>
 
       {/*
         接続文。**文の中の数字を、あるべき声量にする**（2026-09-21・視覚の DoD (a)）。
