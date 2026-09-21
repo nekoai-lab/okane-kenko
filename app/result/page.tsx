@@ -22,11 +22,11 @@ import { Hero } from "./Hero.js";
 import { LivingDial } from "./LivingDial.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
 import { Step1, type AnswerChip } from "./Step1.js";
+import { UsedSources, type UsedSource } from "./UsedSources.js";
 import { Step2 } from "./Step2.js";
 import { CoverageCurve } from "./CoverageCurve.js";
 import { NumberLine } from "./NumberLine.js";
 import { Waterfall } from "./Waterfall.js";
-import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
@@ -985,6 +985,53 @@ export default async function ResultPage({
     return `約${money(hh.totalReducible)}は減らせる一方、${where}に約${money(hh.totalShortage)}足りません。`;
   })();
 
+  /**
+   * 使った前提と出典（照合表 #9）。**ラベルとURLは `params` から取る。**
+   * 画面で出典名を手打ちすると、制度側が変わったときに値だけ更新されて表示が古く残る。
+   *
+   * **モックの4チップを書き写さない。** モックは「生活費水準: 総務省 家計調査」を挙げるが、
+   * この実装の生活費は**利用者の回答**（幅）に当社基準の率を掛けたもので、家計調査は使っていない。
+   */
+  const usedSources: UsedSource[] = [
+    {
+      what: "遺族年金の額",
+      label: params.public.izokuKisoBase.source ?? "日本年金機構",
+      url: "https://www.nenkin.go.jp/service/jukyu/seido/izokunenkin/jukyu-yoken/index.html",
+      verified: params.public.izokuKisoBase.verified !== false,
+    },
+    {
+      what: "高額療養費",
+      label: params.kogaku.sources.brackets.label,
+      url: params.kogaku.sources.brackets.url,
+      verified: params.kogaku.sources.brackets.verified,
+    },
+    {
+      what: "傷病手当金",
+      label: params.shobyoTeate.sources.rate.label,
+      url: params.shobyoTeate.sources.rate.url,
+      verified: params.shobyoTeate.sources.rate.verified,
+    },
+    {
+      what: "雇用保険 基本手当",
+      label: params.kihonTeate.sources.daysGeneral.label,
+      url: params.kihonTeate.sources.daysGeneral.url,
+      verified: params.kihonTeate.sources.daysGeneral.verified,
+    },
+    {
+      what: "教育費",
+      label: "文部科学省「子供の学習費調査」",
+      url: "https://www.mext.go.jp/b_menu/toukei/chousa03/gakushuuhi/1268091.htm",
+      verified: false,
+    },
+    {
+      what: "高校生等への就学支援",
+      label: "文部科学省「高校生等への修学支援」",
+      url: "https://www.mext.go.jp/a_menu/shotou/mushouka/index.htm",
+      verified: params.education.shien.verified !== false,
+    },
+  ];
+  const sourcesNote = `制度パラメータ版 ${result.paramVersion} に、各値の出典URLと施行日を記録しています。下の当社基準には公的出典がありません。`;
+
   const deathResults = [result.self, ...(result.spouse ? [result.spouse] : [])];
   const funeralOnlyNote = deathResults.every((r) => r.verdict === "ample")
     ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。上乗せで要るのは葬儀費用だけです。この判定は、遺されたご家族が働き続ける前提に立っています（前提は下の各行に出しています）。"
@@ -1144,15 +1191,6 @@ export default async function ResultPage({
         )}
       </div>
 
-      {/* 前提を動かす：生活費スライダー（当社基準・ADR-014） */}
-      <div className={s.section}>
-        <LivingCostSlider
-          input={input}
-          initialLow={result.self.range.low}
-          initialHigh={result.self.range.high}
-        />
-      </div>
-
       {/* 進路 what-if（子がいる世帯だけ） */}
       {eduWhatIf.length > 0 && (
         <div className={s.section}>
@@ -1243,45 +1281,17 @@ export default async function ResultPage({
         <p className={s.basis}>※ 保存しなくても、この結果はURLをブックマークすれば見返せます。</p>
       </div>
 
-      {/* 参考リンク（公的機関のみ・商品導線は置かない＝受入基準A-4） */}
+      {/*
+        照合表 #9「使った前提と出典」。**移植元は result.html の同名ブロック。**
+        ここで旧「参考（公的機関）」のリンク箇条書きと、その下の散文1段落を**置換**した
+        ── 同じ出典がリスト・散文・滝のキャプションの3か所に散っていた。
+      */}
       <div className={s.section}>
-        <h2 className={s.h2}>参考（公的機関）</h2>
-        <ul className={s.list}>
-          <li>
-            <a
-              className={s.link}
-              href="https://www.nenkin.go.jp/service/jukyu/seido/izokunenkin/jukyu-yoken/index.html"
-              rel="noreferrer"
-              target="_blank"
-            >
-              遺族年金（日本年金機構）
-            </a>
-          </li>
-          <li>
-            <a
-              className={s.link}
-              href="https://www.kyoukaikenpo.or.jp/g3/sb3030/"
-              rel="noreferrer"
-              target="_blank"
-            >
-              高額療養費（全国健康保険協会）
-            </a>
-          </li>
-          <li>
-            <a
-              className={s.link}
-              href="https://www.mext.go.jp/a_menu/shotou/mushouka/index.htm"
-              rel="noreferrer"
-              target="_blank"
-            >
-              高校生等への就学支援（文部科学省）
-            </a>
-          </li>
-        </ul>
+        <UsedSources items={usedSources} note={sourcesNote} />
       </div>
 
       {/*
-        照合表 #9「使った前提と出典」。
+        当社基準（照合表 #9 の後半）。
         **当社基準は手書きで並べない。** `params` の `ownStandard` を**在庫一覧としてそのまま出す**
         ── 散らばった当社基準が一覧されていないと、増えたときに画面だけ古くなる。
         2026-09-21、葬儀・予備費の「床として使う置き方」をここに昇格させた
@@ -1296,13 +1306,6 @@ export default async function ResultPage({
           </li>
         ))}
       </ul>
-
-      <p className={s.sources}>
-        出典：遺族年金は日本年金機構・厚生年金保険法（令和8年度の年金額は報道値ベースで確定前）、教育費は文部科学省
-        子供の学習費調査、高額療養費・傷病手当金・雇用保険は各制度の一次情報（制度パラメータ版{" "}
-        {result.paramVersion}{" "}
-        に出典URLと施行日を記録しています）。上の当社基準には公的出典がありません。
-      </p>
 
       <div className={s.draftNote}>
         次の一歩・選ぶ基準の文面は、保険業法の正式な弁護士レビュー（OI-01）後に確定します（現在はサンプル）。
