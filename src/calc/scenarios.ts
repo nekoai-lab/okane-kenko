@@ -57,14 +57,22 @@ export interface ScenarioInput {
  * 病気・けがで働けない期間の必要額。
  *
  * **レンジの作り方**：
- * - `low` … 医療費の自己負担だけを見込む（高額療養費の上限 × 月数）。**いちばん軽く済んだ場合**
- * - `high` … そこに保険外の自己負担（差額ベッド・交通費など）と、
+ * - `low` … 医療費の自己負担を**1か月ぶんだけ**見込む。**いちばん軽く済んだ場合**
+ * - `high` … 全期間ぶんの自己負担に、保険外の自己負担（差額ベッド・交通費など）と、
  *   傷病手当金で埋まらない収入の減少を足す。**重なったときの姿**
  *
  * 幅そのものが「ここは確かなことが言えない」という表示になる。点で出さない。
+ *
+ * **低端の意味を 2026-09-21 に変えた（オーナー承認）。**
+ * それまでは低端も全期間ぶん（3か月なら上限 × 3）で積んでいたが、
+ * それは「休んだ期間ずっと高額療養費の上限に当たり続ける」という、**低端としては重すぎる前提**だった。
+ * 「入院・〜3か月の休み」の下端は、**医療費がかかったのが1か月だけで済んだ場合**を指す。
+ * 幅の下端は「いちばん軽く済んだ場合」でなければ、幅が幅として機能しない。
  */
 export function needForSickness(p: ParamSet, input: ScenarioInput, months: number): ScenarioNeed {
   const kogaku = kogakuBurden(p, input.annualIncome, months);
+  // 低端は1か月ぶん。多数回該当は4か月目からなので、1か月なら通常の上限がそのまま効く
+  const kogakuOneMonth = kogakuBurden(p, input.annualIncome, Math.min(1, months));
   const uncovered = v(p, "uncoveredMedicalMonthly") * months;
 
   // 収入の減少。会社員は傷病手当金が埋めるぶんを差し引く（国保には無い）
@@ -82,11 +90,11 @@ export function needForSickness(p: ParamSet, input: ScenarioInput, months: numbe
     `働けない期間を${months}か月として計算した`,
     `保険外の自己負担（差額ベッド・交通費など）を月${(v(p, "uncoveredMedicalMonthly") / 10000).toLocaleString()}万円と見込んだ（当社基準・公的出典なし）`,
     ...teate.assumptions,
-    "幅の下端は医療費の自己負担だけ、上端は保険外の負担と収入の減少まで見込んだもの",
+    "幅の下端は医療費の自己負担1か月ぶんだけ、上端は全期間ぶんに保険外の負担と収入の減少まで足したもの",
   ];
 
   return {
-    low: Math.round(kogaku.amount),
+    low: Math.round(kogakuOneMonth.amount),
     high: Math.round(kogaku.amount + uncovered + incomeLoss),
     assumptions,
     premises: [
@@ -101,7 +109,10 @@ export function needForSickness(p: ParamSet, input: ScenarioInput, months: numbe
       },
       ...kogaku.assumptions.map((note) => ({ note })),
       ...teate.assumptions.map((note) => ({ note })),
-      { note: "幅の下端は医療費の自己負担だけ、上端は保険外の負担と収入の減少まで見込んだものです。" },
+      {
+        label: "幅の下端は医療費1か月ぶん",
+        note: "いちばん軽く済んだ場合として、医療費の自己負担を1か月ぶんだけ見込んだ扱いです。上端は全期間ぶんに保険外の負担と収入の減少まで足しています。",
+      },
     ],
     sources: [kogaku.source, teate.source],
   };
