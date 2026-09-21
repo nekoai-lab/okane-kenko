@@ -35,11 +35,7 @@ import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
 import type { Estimation } from "../../src/wizard/types.js";
 import { normalize } from "../../src/wizard/normalize.js";
-import {
-  LIVING_LEVELS,
-  decodeLivingLevel,
-  withLivingLevel,
-} from "../../src/wizard/dial.js";
+import { LIVING_LEVELS, decodeLivingLevel, withLivingLevel } from "../../src/wizard/dial.js";
 import { decodeSelections } from "../../src/wizard/url.js";
 import s from "./page.module.css";
 
@@ -296,7 +292,6 @@ function CaseCard({
       */}
       <Step1 chips={chips} editHref={editHref} estimations={estimations} terms={terms} />
 
-
       {/* **数字の意味は verdict で入れ替わる。** 不足のときは「足りない額」だが、
           収入が支出を上回るときは「万一直後の当座資金（葬儀費＋生活費1〜2年分）」を出している
           （death.ts の sufficient 分岐）。同じ名前で呼ぶと、グラフと結論が矛盾して見える。 */}
@@ -485,7 +480,6 @@ function CaseCard({
             <span className={s.rowAmount}>{money(r.income.total)}</span>
           </div>
         </div>
-
       </details>
     </div>
   );
@@ -538,9 +532,10 @@ export default async function ResultPage({
    * 帯 × 率（子育て期の 0.70） × 目盛り。
    * 上端の無い区分（`35万円以上`）と「年収から推定」では幅を作らない ── 無い幅を発明しない。
    */
-  const band = complete.livingCost !== "estimate"
-    ? params.inputRanges.monthlyLivingBand[complete.livingCost]
-    : undefined;
+  const band =
+    complete.livingCost !== "estimate"
+      ? params.inputRanges.monthlyLivingBand[complete.livingCost]
+      : undefined;
   const livingBand =
     band?.high !== undefined
       ? {
@@ -581,7 +576,9 @@ export default async function ResultPage({
    */
   // 団信ありなら住宅ローンは死亡時に消える。家計台帳の「住宅ローン 0円」の行に使う
   const danshinCovered =
-    input.housing.type === "own" && (input.housing.loan ?? 0) > 0 && input.housing.danshin !== false;
+    input.housing.type === "own" &&
+    (input.housing.loan ?? 0) > 0 &&
+    input.housing.danshin !== false;
 
   const hh = householdSummary([
     {
@@ -821,7 +818,8 @@ export default async function ResultPage({
               survivorLabel: who === "本人" ? "遺されたご家族" : "あなた",
             }
           : null,
-      premiseSensitivity: dr.assumptions.length > 0 ? sensitivityFor(who === "本人" ? "self" : "spouse") : null,
+      premiseSensitivity:
+        dr.assumptions.length > 0 ? sensitivityFor(who === "本人" ? "self" : "spouse") : null,
       link: { href: "#death-detail", label: "詳しく →" },
     };
   };
@@ -1306,7 +1304,8 @@ export default async function ResultPage({
       <p className={s.sources}>
         出典：遺族年金は日本年金機構・厚生年金保険法（令和8年度の年金額は報道値ベースで確定前）、教育費は文部科学省
         子供の学習費調査、高額療養費・傷病手当金・雇用保険は各制度の一次情報（制度パラメータ版{" "}
-        {result.paramVersion} に出典URLと施行日を記録しています）。上の当社基準には公的出典がありません。
+        {result.paramVersion}{" "}
+        に出典URLと施行日を記録しています）。上の当社基準には公的出典がありません。
       </p>
 
       <div className={s.draftNote}>

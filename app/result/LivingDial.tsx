@@ -59,9 +59,7 @@ export function LivingDial({ current, hrefFor, absorbedNote }: LivingDialProps) 
         すぐ下の吸収の1行と矛盾して読める。
         **再計算は常に真、変わるかは世帯次第**を言い分ける語にする（2026-09-21）。
       */}
-      <p className={s.note}>
-        目盛りを動かすと、下の計算と判定はこの前提で計算し直されます。
-      </p>
+      <p className={s.note}>目盛りを動かすと、下の計算と判定はこの前提で計算し直されます。</p>
       {absorbedNote && <p className={s.absorbed}>{absorbedNote}</p>}
     </section>
   );

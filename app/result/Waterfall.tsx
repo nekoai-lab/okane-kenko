@@ -162,7 +162,10 @@ export function Waterfall({
               T-B でレンジが復活したら帯になる。いまは1点なので目盛りで描く。
             */}
             {result.low === result.high ? (
-              <span className={`${s.bar} ${s.barNeedTick}`} style={{ left: `${pct(result.low)}%` }} />
+              <span
+                className={`${s.bar} ${s.barNeedTick}`}
+                style={{ left: `${pct(result.low)}%` }}
+              />
             ) : (
               <span
                 className={`${s.bar} ${s.barNeed}`}

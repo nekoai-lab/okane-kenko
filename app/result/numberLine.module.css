@@ -179,11 +179,12 @@
   align-items: flex-start;
 }
 
+/* 通し番号であって必要額ではないので、橙を使わない（2026-09-21 の色監査） */
 .pointNum {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: var(--amber);
+  background: var(--ink);
   color: #fff;
   display: flex;
   align-items: center;

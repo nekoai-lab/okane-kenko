@@ -8,9 +8,6 @@
   --muted-2: #45514b;
   --sand: #f2efe8;
   --hairline: #cfc9bb;
-  --amber: #a6690f;
-  --amber-bg: #fbf3e4;
-  --amber-text: #8a5406;
 
   background: #fff;
   border: 1px solid #e4e0d6;
@@ -71,11 +68,16 @@
   line-height: 1.7;
 }
 
-/* **無反応と吸収を区別する。** 変わらないのには理由がある、と言う */
+/*
+  **無反応と吸収を区別する。** 変わらないのには理由がある、と言う。
+
+  橙で塗っていたが、この文が言っているのは「**必要額が動かない**」ことなので、
+  必要額の揺れを指す橙を当てると意味が逆になる（2026-09-21 の色監査）。
+*/
 .absorbed {
   font-size: 12.5px;
-  color: var(--amber-text);
-  background: var(--amber-bg);
+  color: var(--muted-2);
+  background: var(--sand);
   border-radius: 8px;
   padding: 10px 14px;
   margin: var(--space-3) 0 0;

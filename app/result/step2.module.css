@@ -16,7 +16,7 @@
   --dashed: #ddd8cc;
   --green: #2e6b52;
   --green-deep: #245640;
-  --amber: #a6690f;
+  /* 差し引きの「足りません」専用（符号色チャンネル。必要額のレンジとは別枠） */
   --amber-text: #8a5406;
   --red: #9c4633;
   --red-deep: #7e3526;
@@ -90,12 +90,16 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 色の意味（規約2） */
+/*
+  色の意味（規約2・2026-09-21 の色監査で1つに絞った）。
+
+  **橙は必要額のレンジ専用**にした。以前は生活費の幅も橙で出していたが、
+  台帳の生活費は必要額ではないので、橙が「必要額の揺れ」と「生活費の揺れ」の
+  2つを指していた。**幅であることは「約17.5〜21.0万円」という書き方が既に言っている**ので、
+  色まで使う必要がない。
+*/
 .income {
   color: var(--green-deep);
-}
-.range {
-  color: var(--amber-text);
 }
 .fixed {
   color: var(--ink);
@@ -305,16 +309,20 @@
   fill: #f7f5f0;
 }
 
+/*
+  大学の学費期間のブレース。**期間の目印であって必要額ではない**ので、
+  橙（必要額のレンジ専用）を使わない（2026-09-21 の色監査）。
+*/
 .brace {
   fill: none;
-  stroke: var(--amber);
+  stroke: var(--grey-border);
   stroke-width: 1.5;
 }
 
 .braceText {
   font-size: 10.5px;
   font-weight: 700;
-  fill: var(--amber-text);
+  fill: var(--muted-2);
 }
 
 /* ---------- 段差の説明 ---------- */

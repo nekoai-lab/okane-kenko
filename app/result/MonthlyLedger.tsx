@@ -20,9 +20,13 @@ export interface LedgerRow {
   value: string;
   /**
    * 金額の色。**色に意味を持たせる**（組版の規約2）：
-   * `income` ＝入ってくるお金（緑）／`range` ＝幅を持つ＝推定の揺れ（橙）／`fixed` ＝確定値（ink）
+   * `income` ＝入ってくるお金（緑）／`fixed` ＝それ以外（ink）。
+   *
+   * 幅を持つ行に橙を当てる `range` は、2026-09-21 の色監査で撤去した。
+   * **橙は必要額のレンジ専用**にしたため（台帳の生活費は必要額ではない）。
+   * 幅であることは「約17.5〜21.0万円」という書き方が既に言っている。
    */
-  tone?: "income" | "range" | "fixed";
+  tone?: "income" | "fixed";
 }
 
 export function MonthlyLedger({

@@ -29,7 +29,11 @@ const bare = (yenMonthly: number) => manDigits(yenMonthly);
 function netText(low: number, high: number): { prefix: string; amount: string; suffix: string } {
   const p = "毎月";
   if (low === high) {
-    return { prefix: p, amount: `約${manDigits(low)}万円`, suffix: low < 0 ? "足りません" : "残ります" };
+    return {
+      prefix: p,
+      amount: `約${manDigits(low)}万円`,
+      suffix: low < 0 ? "足りません" : "残ります",
+    };
   }
   if (low >= 0) {
     return { prefix: p, amount: `約${bare(low)}〜${bare(high)}万円`, suffix: "残ります" };
@@ -121,7 +125,11 @@ export function Step2({
 
   // **表示単位に丸めた月額**で組む（行の和＝計、になる）
   const incomeRows = [
-    { label: "遺族基礎年金＋子の加算", from: from.pension, m: toMonthlyDisplay(first.income.pensionBasic) },
+    {
+      label: "遺族基礎年金＋子の加算",
+      from: from.pension,
+      m: toMonthlyDisplay(first.income.pensionBasic),
+    },
     { label: "遺族厚生年金", from: from.kosei, m: toMonthlyDisplay(first.income.pensionKosei) },
     {
       /**
@@ -185,8 +193,6 @@ export function Step2({
         livingLowM === livingHighM
           ? `約${bare(livingLowM)}万円`
           : `約${bare(livingLowM)}〜${bare(livingHighM)}万円`,
-      // **橙＝幅を持つ＝推定の揺れ**（組版の規約2）。幅が無いなら確定値として ink
-      tone: (livingLowM === livingHighM ? "fixed" : "range") as "fixed" | "range",
     },
     ...otherRows.map((r) => ({
       label: r.label,
