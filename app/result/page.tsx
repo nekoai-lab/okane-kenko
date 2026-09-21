@@ -17,7 +17,7 @@ import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
 import { Hero } from "./Hero.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
-import { Cashflow } from "./Cashflow.js";
+import { Step2 } from "./Step2.js";
 import { CoverageCurve } from "./CoverageCurve.js";
 import { GapWaterfall } from "./GapWaterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
@@ -63,20 +63,29 @@ function money(yen: number): string {
   return formatMan(yen);
 }
 
-/* いちばん細い年の1行表示（TightestYear）は Cashflow に統合した（2026-08-31）。
-   同じことを2か所に書くと、片方だけ直したときに食い違う。 */
-
 function CaseCard({
   title,
   r,
   pj,
   coverage,
+  survivorLabel,
+  childCount,
+  danshinCovered,
+  koseiFrom,
+  workFrom,
 }: {
   title: string;
   r: DeathResult;
   pj: Projection;
   /** いまの死亡保障額。分からない（未入力）なら null */
   coverage: number | null;
+  /** 遺される側の呼び名（本人死亡なら「配偶者」、配偶者死亡なら「あなた」） */
+  survivorLabel: string;
+  /** 子の人数。家計台帳の「←どの回答から」に使う（`children` は React の予約名なので避ける） */
+  childCount: number;
+  danshinCovered: boolean;
+  koseiFrom: string | null;
+  workFrom: string | null;
 }) {
   const verdict = VERDICT[r.verdict] ?? VERDICT.sufficient;
   const expenseItems = [
@@ -161,9 +170,23 @@ function CaseCard({
         </div>
       )}
 
-      {/* 年次キャッシュフロー。**総額の引き算より先に「いつ苦しいか」に答える。**
-          projectDeath() は全年分を返しているのに、以前はここで1文しか出していなかった */}
-      <Cashflow caption={title} pj={pj} />
+      {/*
+        STEP2（照合表 #6a〜#6e）。**移植元は result.html の左カラム＋段差チャート。**
+        ここで旧 `Cashflow` の2図（1年ごとの収入と支出／万一のあとの残高）を撤去した。
+        見た目は違うが「いつ・いくら」という**同じ情報**を出しており、2つ残すと
+        どちらが正かを読み手に判断させることになる（CLAUDE.md「置換であって共存ではない」）。
+      */}
+      <Step2
+        danshinCovered={danshinCovered}
+        from={{
+          pension: childCount > 0 ? `「子${childCount}人」` : null,
+          kosei: koseiFrom,
+          work: workFrom,
+          housing: danshinCovered ? "「団信あり」" : null,
+        }}
+        pj={pj}
+        survivorLabel={survivorLabel}
+      />
 
       {/* 必要保障額の推移。点（今日いくら）ではなく線（いつまでいくら）で見せる */}
       <CoverageCurve coverage={coverage} points={coverageCurve(pj, r.income.assets)} />
@@ -310,6 +333,10 @@ export default async function ResultPage({
    * 過剰の閾値が `coverage > high * 1.5` と判定3値の不等号から外れている。
    * 判定と差額の出どころを揃えないと、見出しが自分の根拠と食い違う。
    */
+  // 団信ありなら住宅ローンは死亡時に消える。家計台帳の「住宅ローン 0円」の行に使う
+  const danshinCovered =
+    input.housing.type === "own" && (input.housing.loan ?? 0) > 0 && input.housing.danshin !== false;
+
   const hh = householdSummary([
     {
       coverage: input.coverageSelf,
@@ -837,10 +864,15 @@ export default async function ResultPage({
           実際に幅を必要としていたのは検査値パネル（4列）だけだった。 */}
       <div className={`${s.section} ${s.sectionMajor}`} id="death-detail">
         <CaseCard
+          childCount={input.children.length}
           coverage={input.coverageSelf}
+          danshinCovered={danshinCovered}
+          koseiFrom={input.self.employment === "employee" ? "「会社員」" : null}
           pj={selfProjection}
           r={result.self}
+          survivorLabel="配偶者"
           title="あなたが亡くなった場合"
+          workFrom={input.spouse && input.spouse.income > 0 ? "「配偶者の年収」" : null}
         />
         {/* 配偶者側は**要約1行＋開閉**にする。
             同じ長さのカードが2つ続くと、体感の長さが倍になって読まれなくなる。
@@ -864,10 +896,15 @@ export default async function ResultPage({
               </span>
             </summary>
             <CaseCard
+              childCount={input.children.length}
               coverage={input.coverageSpouse ?? null}
+              danshinCovered={danshinCovered}
+              koseiFrom={input.spouse?.employment === "employee" ? "「配偶者は会社員」" : null}
               pj={spouseProjection}
               r={result.spouse}
+              survivorLabel="あなた"
               title="配偶者が亡くなった場合"
+              workFrom={input.self.income > 0 ? "「あなたの年収」" : null}
             />
           </details>
         )}
