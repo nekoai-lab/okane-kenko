@@ -290,9 +290,15 @@ export function Step2({
         })}
       </ol>
 
-      {/* #6d ことばの説明。モックのタップ切替を、用語ごとの開閉に読み替えた */}
-      <div className={s.terms}>
-        <p className={s.termsHead}>ことばの説明 — 気になる用語を開いてください</p>
+      {/*
+        #6d ことばの説明。モックのタップ切替を、用語ごとの開閉に読み替えた。
+
+        **参照材なので、ひとまとまりで畳む**（2026-09-21・視覚の DoD (a)）。
+        用語ごとの `<details>` が縦に並ぶだけで、図も大きな数字も無い区間を作っていた。
+        露出は**件数を明示した1行**だけにして、中身（完全な記録）はそのまま残す。
+      */}
+      <details className={s.terms}>
+        <summary className={s.termsHead}>ことばの説明（{TERMS.length}語）と2028年改正の注記</summary>
         {TERMS.map((t) => (
           <details className={s.term} key={t.term}>
             <summary>{t.term}</summary>
@@ -309,7 +315,7 @@ export function Step2({
           ※{reform2028Reason}
           {REFORM_2028_NOT_APPLIED_TAIL}
         </p>
-      </div>
+      </details>
 
       <p className={s.bridge}>
         この「毎月の不足」と「大学の山」を、算定期間の全部で足し合わせたものが、次の STEP&nbsp;3

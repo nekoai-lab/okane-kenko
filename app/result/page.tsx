@@ -1205,10 +1205,15 @@ export default async function ResultPage({
         )}
       </div>
 
-      {/* 進路 what-if（子がいる世帯だけ） */}
+      {/*
+        進路 what-if（子がいる世帯だけ）。
+        **参照材なので畳む**（2026-09-21・視覚の DoD (a)）。件数を露出に出す。
+      */}
       {eduWhatIf.length > 0 && (
-        <div className={s.section}>
-          <h2 className={s.h2}>進路で教育費はこう変わる（お子さん合計）</h2>
+        <details className={s.section}>
+          <summary className={s.foldHead}>
+            進路で教育費はこう変わる（{eduWhatIf.length}通り・お子さん合計）
+          </summary>
           <div className={s.rows}>
             {eduWhatIf.map((w) => (
               <div className={s.row} key={w.label}>
@@ -1221,7 +1226,7 @@ export default async function ResultPage({
             ※ 進路が未定なら公立中心で計算しています。私立にするほど教育費が増え、その分
             必要な保障額も上がります。
           </p>
-        </div>
+        </details>
       )}
 
       {/* 平均の中立併記（社会的証明＝煽りにしない。平均は目標ではない） */}
@@ -1311,15 +1316,21 @@ export default async function ResultPage({
         2026-09-21、葬儀・予備費の「床として使う置き方」をここに昇格させた
         （時期の根拠がどの文書にも無いと全文確認で分かったため）。
       */}
-      <h3 className={s.h3}>当社基準（公的出典のない当社の見立て）</h3>
-      <ul className={s.list}>
-        {Object.entries(params.ownStandard).map(([key, e]) => (
-          <li key={key}>
-            {e.label ?? key}
-            {e.userAdjustable ? "（画面で動かせます）" : ""}
-          </li>
-        ))}
-      </ul>
+      {/* **参照材なので畳む**（視覚の DoD (a)）。在庫であることが要点なので件数を露出に出す */}
+      <details className={s.section}>
+        <summary className={s.foldHead}>
+          当社基準（公的出典のない当社の見立て・全
+          {Object.keys(params.ownStandard).length}件）
+        </summary>
+        <ul className={s.list}>
+          {Object.entries(params.ownStandard).map(([key, e]) => (
+            <li key={key}>
+              {e.label ?? key}
+              {e.userAdjustable ? "（画面で動かせます）" : ""}
+            </li>
+          ))}
+        </ul>
+      </details>
 
       <div className={s.draftNote}>
         次の一歩・選ぶ基準の文面は、保険業法の正式な弁護士レビュー（OI-01）後に確定します（現在はサンプル）。

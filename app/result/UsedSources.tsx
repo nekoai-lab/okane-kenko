@@ -32,33 +32,43 @@ export interface UsedSource {
 export function UsedSources({ items, note }: { items: UsedSource[]; note: string }) {
   return (
     <section className={s.wrap} aria-labelledby="sources-heading">
+      {/*
+        **見出しの約束を実態に合わせる**（2026-09-21）。
+        モックの「すべて結果に表示します」のまま折りたたむと、見出しが嘘になる。
+        畳んだ中が完全な記録であることは変わらないので、**約束の言い換えであって後退ではない**。
+        件数を出すのは開示の規約（数の無い「すべて見る」は隠蔽に近い）。
+      */}
       <h2 className={s.head} id="sources-heading">
-        使った前提と出典 — すべて結果に表示します
+        使った前提と出典 — 全{items.length}件をここに残しています
       </h2>
-      <ul className={s.chips}>
-        {items.map((x) => {
-          const body = (
-            <>
-              <span className={s.what}>{x.what}:</span>
-              <span className={s.label}>{x.label}</span>
-              {/* **未確認であることを黙らせない。** 確定値だと思われたまま持ち帰られるのを防ぐ */}
-              {!x.verified && <span className={s.unverified}>一次情報 未確認</span>}
-            </>
-          );
-          return (
-            <li className={s.chip} key={x.what}>
-              {x.url ? (
-                <a className={s.link} href={x.url} rel="noreferrer" target="_blank">
-                  {body}
-                </a>
-              ) : (
-                body
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <p className={s.note}>{note}</p>
+      {/* 参照材なので畳む（視覚の DoD (a)）。露出は件数を含む見出しだけ */}
+      <details className={s.fold}>
+        <summary className={s.summary}>出典を全{items.length}件見る</summary>
+        <ul className={s.chips}>
+          {items.map((x) => {
+            const body = (
+              <>
+                <span className={s.what}>{x.what}:</span>
+                <span className={s.label}>{x.label}</span>
+                {/* **未確認であることを黙らせない。** 確定値だと思われたまま持ち帰られるのを防ぐ */}
+                {!x.verified && <span className={s.unverified}>一次情報 未確認</span>}
+              </>
+            );
+            return (
+              <li className={s.chip} key={x.what}>
+                {x.url ? (
+                  <a className={s.link} href={x.url} rel="noreferrer" target="_blank">
+                    {body}
+                  </a>
+                ) : (
+                  body
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <p className={s.note}>{note}</p>
+      </details>
     </section>
   );
 }

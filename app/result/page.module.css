@@ -206,6 +206,21 @@
   background: var(--color-surface-subtle);
 }
 
+/*
+  参照材の折りたたみ見出し（進路 what-if・当社基準一覧）。
+  **露出は件数つきの1行だけ。** 開いた中が完全な記録であることは変えない（開示の規約）。
+*/
+.foldHead {
+  cursor: pointer;
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-std-m);
+  font-weight: var(--font-weight-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* 折りたたみの中の全文。露出部と同じ読み味にそろえる */
 .narrationFull {
   font-size: var(--font-size-std-m);

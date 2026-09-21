@@ -59,20 +59,40 @@ describe("UIラベル規約：品質の自己評価語を使わない", () => {
   it("**画面のラベルにも同じ語彙を使わない**（結果画面の見出し）", async () => {
     const src = await readFile(new URL("../../app/result/Narration.tsx", import.meta.url), "utf8");
     // JSX のテキストだけを見る（コメントには「やさしい説明」が経緯として残っている）
-    const rendered = src
-      .split("\n")
-      .filter((l) => !l.trimStart().startsWith("*") && !l.trimStart().startsWith("/*"))
-      .join("\n");
+    const rendered = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
     for (const w of SELF_PRAISE_WORDS) {
       expect(rendered).not.toContain(w);
     }
     expect(rendered).toContain("この結果のよみとき");
   });
 
-  it("**由来の開示を落とさない**（ことばは AI・数字はエンジン）", async () => {
+  /**
+   * **由来の開示は、文言が変わっても3つの事実が残っていること**を見る。
+   * 文そのものを丸ごと照合すると、整形の改行が入っただけで落ちる（実際に落ちた）。
+   * 空白を潰してから、落としてはいけない3点を確かめる。
+   */
+  it("**由来の開示を落とさない**（ことばは AI／数字はエンジン／AI は変えられない）", async () => {
     const src = await readFile(new URL("../../app/result/Narration.tsx", import.meta.url), "utf8");
-    expect(src).toContain("ことばは AI が書いています");
-    expect(src).toContain("数字と判定は計算エンジンのもので、AI は変えられません");
+    const flat = src.replace(/\s+/g, "");
+    expect(flat).toContain("ことばはAIが書いています");
+    expect(flat).toContain("数字と判定は計算エンジンのもの");
+    expect(flat).toContain("AIは変えられません");
+  });
+
+  /**
+   * **同じ事実を2回言わない**（2026-09-21 オーナー指摘）。
+   * 冒頭の分担文と末尾の※注が、700px の中で同旨を2回出していた。
+   * ※注は「実際に起きたこと」だけを書く役割なので、分担そのものを繰り返さない。
+   */
+  it("分担の説明は1か所だけ（※注に「AI が書いています」を繰り返さない）", async () => {
+    const src = await readFile(new URL("../../app/result/Narration.tsx", import.meta.url), "utf8");
+    // **コメントを確実に剥がす**（経緯の記録として、同じ文がコメントに何度も出てくる）
+    const jsx = src
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+      .replace(/\s+/g, "");
+    const n = jsx.split("AIが書いています").length - 1;
+    expect(n).toBe(1);
   });
 });
 
