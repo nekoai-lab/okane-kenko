@@ -195,6 +195,15 @@ export function loadParams(version = "2026-08", dir = DEFAULT_PARAMS_DIR): Param
   return parse(raw) as ParamSet;
 }
 
+/**
+ * `loadParams` と同じファイルの全文とリポジトリ上のパス。
+ * 制度監視が「適用できる差分」を作るためだけに使う（2026-09-22）。ここから書き戻す口は作らない。
+ */
+export function loadParamsText(version = "2026-08"): { file: string; text: string } {
+  const file = `params/${version}.yaml`;
+  return { file, text: readFileSync(join(DEFAULT_PARAMS_DIR, `${version}.yaml`), "utf-8") };
+}
+
 /** 便宜アクセサ：セクションをまたいで値だけ引く */
 export function v(p: ParamSet, key: string): number {
   for (const section of [p.public, p.ownStandard, p.toBeSourced]) {

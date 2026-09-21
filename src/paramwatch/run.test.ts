@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
-import { loadParams } from "../params/index.js";
+import { loadParams, loadParamsText } from "../params/index.js";
 import { runParamWatch } from "./run.js";
 import { loadWatchSources } from "./sources.js";
 import { createMemoryProposalStore } from "./store.memory.js";
@@ -53,6 +53,7 @@ async function run(html: string, fetchImpl = page(html)) {
     sources: S,
     cases: CASES,
     store,
+    paramsYaml: loadParamsText("2026-08"),
     now: () => NOW,
     fetchImpl,
   });
@@ -122,5 +123,51 @@ describe("runParamWatch", () => {
     const { result, store } = await run(SAME, boom);
     expect(result.proposed).toBe(0);
     expect((await store.listRunLog(10))[0].decision).toBe("failed");
+  });
+
+  /**
+   * **T-G：`public` の外（給付制限）も監視できる**（2026-09-22・キックオフ v2 の D1）。
+   * 文面は厚生労働省 Q&A の実ページどおり（数字が全角）。
+   */
+  it("給付制限のページから 2→1 か月の提案を作り、台帳と適用できる差分を載せる", async () => {
+    const tg = { version: ALL.version, watches: { kyufuSeigen: ALL.watches.kyufuSeigen } };
+    const body = `<p>（※）給付制限は、退職日が令和７年４月１日以降である場合は原則１か月、同年３月31日以前である場合は原則２か月です。</p>
+      <p>※ 給付制限は、退職日が令和７年４月１日以降である場合は原則１か月、同年３月31日以前である場合は原則２か月です。</p>`;
+    const store = createMemoryProposalStore();
+    const result = await runParamWatch({
+      params: P,
+      sources: tg,
+      cases: CASES,
+      store,
+      paramsYaml: loadParamsText("2026-08"),
+      now: () => NOW,
+      fetchImpl: page(body),
+    });
+
+    expect(result.proposed).toBe(1);
+    const [p] = await store.listProposals();
+    expect(p.changes).toEqual([
+      {
+        key: "kihonTeate.restrictionMonthsVoluntary",
+        label: "自己都合退職の給付制限（原則）",
+        current: 2,
+        proposed: 1,
+      },
+    ]);
+    // 台帳（何を疑うべきか）を読んだことが提案に残る
+    expect(p.ledger?.[0]).toContain("期限 2026-10-05");
+    expect(p.ledger?.[0]).toContain("改正予定あり");
+    // 差分は値の1行だけを変える
+    expect(p.yamlPatch).toContain("-  restrictionMonthsVoluntary: 2");
+    expect(p.yamlPatch).toContain("+  restrictionMonthsVoluntary: 1");
+    expect(p.yamlPatch?.split("\n").filter((l) => /^[-+][^-+]/.test(l))).toHaveLength(2);
+    expect(p.actionLog.map((a) => a.step)).toEqual([
+      "fetch",
+      "detect_instructions",
+      "extract",
+      "read_params",
+      "assess_impact",
+      "build_yaml_patch",
+    ]);
   });
 });

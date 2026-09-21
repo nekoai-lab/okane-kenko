@@ -14,7 +14,8 @@ const BASE = IZOKU.targets[0]; // izokuKisoBase
 
 describe("extractOne：決定的な抽出", () => {
   it("見出し語の近くにある金額を取り出す", () => {
-    const page = "遺族基礎年金の年金額（令和8年4月分から） 昭和31年4月2日以後生まれの方 831,700円 ＋ 子の加算額";
+    const page =
+      "遺族基礎年金の年金額（令和8年4月分から） 昭和31年4月2日以後生まれの方 831,700円 ＋ 子の加算額";
     const r = extractOne(page, BASE);
     expect(r).toMatchObject({ ok: true, key: "izokuKisoBase", value: 831700 });
   });
@@ -32,8 +33,27 @@ describe("extractOne：決定的な抽出", () => {
   });
 
   it("同じ金額が何度出てきても、それは曖昧ではない", () => {
-    const page = "昭和31年4月2日以後生まれの方 831,700円。再掲：昭和31年4月2日以後生まれの方 831,700円。";
+    const page =
+      "昭和31年4月2日以後生まれの方 831,700円。再掲：昭和31年4月2日以後生まれの方 831,700円。";
     expect(extractOne(page, BASE)).toMatchObject({ ok: true, value: 831700 });
+  });
+
+  it("全角の数字も読む（厚労省の Q&A は「原則１か月」と全角で書く）", () => {
+    const target = {
+      key: "k",
+      label: "給付制限",
+      pattern: "原則([0-9０-９]+)か月",
+      min: 1,
+      max: 3,
+    };
+    expect(extractOne("給付制限は原則１か月です。", target)).toMatchObject({ ok: true, value: 1 });
+    expect(
+      extractOne("月額は１２３，４５６円", {
+        ...target,
+        pattern: "月額は([0-9０-９，,]+)円",
+        max: 999999,
+      }),
+    ).toMatchObject({ ok: true, value: 123456 });
   });
 
   it("想定の幅を外れたら止まる（桁の取り違えを通さない）", () => {

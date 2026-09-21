@@ -7,9 +7,10 @@
 import type { DiagnoseInput } from "../calc/index.js";
 import { diagnose } from "../calc/index.js";
 import type { ParamSet } from "../params/index.js";
+import { resolveTarget, setAt } from "./paths.js";
 
 export interface ParamChange {
-  /** `params/*.yaml` の public セクションのキー */
+  /** `watch-sources.yaml` の key（ドット無し＝public のキー／ドット区切り＝params 上の位置） */
   key: string;
   label: string;
   current: number;
@@ -50,9 +51,10 @@ export interface WatchCase {
 export function applyChanges(p: ParamSet, changes: ParamChange[]): ParamSet {
   const next = structuredClone(p);
   for (const c of changes) {
-    const entry = next.public[c.key];
-    if (entry === undefined) throw new Error(`監視対象が params に無い: ${c.key}`);
-    entry.value = c.proposed;
+    // `public` の外（制度式パラメータ）も同じ口で書く（2026-09-22・T-G）
+    const target = resolveTarget(next, c.key);
+    if (target === undefined) throw new Error(`監視対象が params に無い: ${c.key}`);
+    setAt(next, target.path, c.proposed);
   }
   return next;
 }

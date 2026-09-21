@@ -6,7 +6,7 @@
  */
 import { NextResponse } from "next/server";
 import { GOLDEN } from "../../../../src/__tests__/households.js";
-import { loadParams } from "../../../../src/params/index.js";
+import { loadParams, loadParamsText } from "../../../../src/params/index.js";
 import { runParamWatch } from "../../../../src/paramwatch/run.js";
 import { loadWatchSources } from "../../../../src/paramwatch/sources.js";
 import { createFirestoreProposalStore } from "../../../../src/paramwatch/store.firestore.js";
@@ -27,6 +27,7 @@ export async function POST(req: Request): Promise<Response> {
       // 影響を測る世帯は、算定の正本と同じ10世帯を使う（別の corpus を作らない）
       cases: GOLDEN.map((g) => ({ id: g.id, label: g.label, input: g.input })),
       store: createFirestoreProposalStore(),
+      paramsYaml: loadParamsText(),
       now: () => new Date(),
     });
     return NextResponse.json(result);

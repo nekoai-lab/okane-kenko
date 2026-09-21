@@ -8,8 +8,10 @@ import type { ParamSet } from "../params/index.js";
 import { detectInstructions, extractAll } from "./extract.js";
 import { fetchSource } from "./fetch.js";
 import { assessImpact, type ParamChange, type WatchCase } from "./judge.js";
+import { describeLedger, resolveTarget } from "./paths.js";
 import type { ActionLogEntry, ProposalStore } from "./store.js";
 import type { WatchSources } from "./sources.js";
+import { buildYamlPatch } from "./yamlPatch.js";
 
 export interface RunParamWatchResult {
   checked: number;
@@ -23,6 +25,11 @@ export interface RunParamWatchDeps {
   sources: WatchSources;
   cases: WatchCase[];
   store: ProposalStore;
+  /**
+   * `params` の元になった YAML の全文とリポジトリ上のパス。**提案に載せる差分を作るためだけに使う**。
+   * ここから params を書き換える経路は無い（差分は文字列として承認キューに積まれるだけ）
+   */
+  paramsYaml: { file: string; text: string };
   now: () => Date;
   fetchImpl?: typeof fetch;
 }
@@ -105,20 +112,47 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
         continue;
       }
 
+      // **何を疑うべきかは params の台帳が知っている。** 新しい判断ルールは足さず、読んで記録する
+      const resolved = await step(
+        "read_params",
+        `対象 ${watch.targets.length} 件の現行値と台帳（sources）`,
+        () =>
+          watch.targets.map((t) => ({
+            key: t.key,
+            label: t.label,
+            target: resolveTarget(params, t.key),
+          })),
+        (rs) =>
+          rs
+            .map((r) =>
+              r.target
+                ? `${r.key}=${r.target.current}（${describeLedger(r.target.ledger, now())}）`
+                : `${r.key}: params に無い`,
+            )
+            .join(" / "),
+      );
+      const ledger = resolved.map((r) =>
+        r.target
+          ? `${r.label}：${describeLedger(r.target.ledger, now())}`
+          : `${r.label}：params に無い`,
+      );
+
       const changes: ParamChange[] = [];
+      const edits: Array<{ path: string[]; value: number }> = [];
       const matchedTexts: string[] = [];
       for (const r of extracted) {
         if (!r.ok) continue;
-        const entry = params.public[r.key];
-        if (entry === undefined) continue;
+        const target = resolved.find((x) => x.key === r.key)?.target;
+        if (target === undefined) continue;
         matchedTexts.push(r.matchedText);
-        if (entry.value !== r.value) {
+        if (target.current !== r.value) {
           changes.push({
             key: r.key,
-            label: entry.label ?? r.key,
-            current: entry.value,
+            label: target.label ?? resolved.find((x) => x.key === r.key)?.label ?? r.key,
+            current: target.current,
             proposed: r.value,
           });
+          edits.push({ path: target.path, value: r.value });
         }
       }
 
@@ -158,6 +192,14 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
        * 「静かにする」は通知の強さの話なので、重要度（`impact.changedCount`）として
        * 提案に載せ、画面と通知の側で使う。
        */
+      const yamlPatch = await step(
+        "build_yaml_patch",
+        `${deps.paramsYaml.file} の ${edits.length} か所（値の文字だけを置き換える）`,
+        () => buildYamlPatch(deps.paramsYaml.file, deps.paramsYaml.text, edits),
+        (patch) =>
+          `unified diff ${patch.split("\n").length - 1} 行（承認しても当たらない。当てるのは人）`,
+      );
+
       await store.createProposal({
         watchKey,
         label: watch.label,
@@ -168,6 +210,8 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
         injectionSuspected: injection,
         impact,
         actionLog: log,
+        ledger,
+        yamlPatch,
         createdAt: started.toISOString(),
       });
       await store.appendRunLog({

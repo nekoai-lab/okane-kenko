@@ -105,6 +105,27 @@ export default async function ProposalsPage() {
               </p>
             ) : null}
 
+            {/* 2026-09-22 追加。それ以前の提案には無いので、あるときだけ出す */}
+            {p.ledger && p.ledger.length > 0 ? (
+              <>
+                <h3 className={s.h3}>台帳（params の sources に書いてあること）</h3>
+                <ul className={s.list}>
+                  {p.ledger.map((l) => (
+                    <li key={l}>{l}</li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            {p.yamlPatch ? (
+              <details className={s.log}>
+                <summary>
+                  適用する差分（承認しても当たりません。当てるのは人のコミットです）
+                </summary>
+                <pre className={s.patch}>{p.yamlPatch}</pre>
+              </details>
+            ) : null}
+
             <details className={s.log}>
               <summary>行動ログ（{p.actionLog.length} 件）</summary>
               <ol className={s.list}>
