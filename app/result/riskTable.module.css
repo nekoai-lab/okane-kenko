@@ -437,3 +437,10 @@
 .premisesMore[open] .moreOpen {
   display: inline;
 }
+
+/* 帯や感度文が無いカード（statutory 3行）では、上の区切り線は何も区切っていない */
+.premisesMore:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}

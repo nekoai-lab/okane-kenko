@@ -38,7 +38,7 @@ export interface PremiseDisclosureProps {
    * 折りたたみの中身。**完全な記録として全項目を置く**（露出した就労前提も含める）。
    * 件数は `assumptions[]` の実数をそのまま出す。
    */
-  items: { label: string; note: string }[];
+  items: { label?: string; note: string }[];
 }
 
 export function PremiseDisclosure({ weight, sensitivity, items }: PremiseDisclosureProps) {
@@ -71,8 +71,9 @@ export function PremiseDisclosure({ weight, sensitivity, items }: PremiseDisclos
           </summary>
           <ul className={s.premisesList}>
             {items.map((a) => (
-              <li key={a.label}>
-                <b className={s.premisesLabel}>{a.label}</b>
+              <li key={a.note}>
+                {/* 判定を左右する項目にだけ見出し語が付く。無い項目は本文だけで並べる */}
+                {a.label && <b className={s.premisesLabel}>{a.label}</b>}
                 {a.note}
               </li>
             ))}

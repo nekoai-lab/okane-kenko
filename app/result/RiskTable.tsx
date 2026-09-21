@@ -67,7 +67,7 @@ export interface RiskRow {
    * **畳まない。** 必要額が1点に潰れる世帯では、前提が外れたときの動きが幅から読めないので、
    * ここが唯一の手がかりになる。折りたたむと開示にならない。
    */
-  assumptions: { label: string; note: string }[];
+  assumptions: { label?: string; note: string }[];
   /** 前提の重み（帯）。初期表示に出す2つのうちの1つ */
   premiseWeight: PremiseWeight | null;
   /** 前提が外れたときの判定遷移（T-E）。初期表示に出す2つのうちの1つ */

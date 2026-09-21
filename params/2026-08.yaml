@@ -116,6 +116,22 @@ kogaku:
   multipleOccurrenceFromMonth: 4 # 何か月目から減額上限に切り替わるか
   multipleOccurrenceSource: 協会けんぽ「高額療養費」多数回該当
   multipleOccurrenceVerified: false
+  # ---- 制度式パラメータ表（2026-09-21 新設）：値・一次情報URL・施行日・verified ----
+  # source の文字列だけでは「いつの制度か」「どこで確かめられるか」が分からない。
+  sources:
+    brackets:
+      label: 厚生労働省「高額療養費制度」自己負担限度額
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryouhoken/juuyou/kougakuiryou/index.html
+      effectiveFrom: "2026-08-01"
+      verified: false
+    multipleOccurrence:
+      label: 全国健康保険協会「高額療養費」多数回該当
+      url: https://www.kyoukaikenpo.or.jp/g3/cat320/sb3030/r07/
+      effectiveFrom: "2015-01-01"
+      verified: false
+      pendingChange: >-
+        5値は従来区分（ア〜オ）の値。2026-08-01 の第1段階改定でア〜エの多数回該当が
+        変わっているかは未確認。区分オは現行テーブルに存在せず到達しない。
   # v1 対象外（安全側の簡略化）：世帯合算・21,000円ルール・月をまたぐ入院の按分。
   # いずれも自己負担を下げる方向に効くので、入れないほうが必要額は多めに出る。
 
@@ -126,6 +142,17 @@ shobyoTeate:
   maxMonths: 18 # 通算1年6か月
   source: 健康保険法第99条／協会けんぽ「傷病手当金」
   verified: false
+  sources:
+    rate:
+      label: 全国健康保険協会「傷病手当金」支給額（標準報酬日額の3分の2）
+      url: https://www.kyoukaikenpo.or.jp/g3/cat310/sb3040/r150/
+      effectiveFrom: "2016-04-01"
+      verified: false
+    maxMonths:
+      label: 全国健康保険協会「傷病手当金」支給期間（通算1年6か月）
+      url: https://www.kyoukaikenpo.or.jp/g3/cat310/sb3040/r150/
+      effectiveFrom: "2022-01-01"
+      verified: false
 
 # ============ 雇用保険 基本手当（雇用保険法） ============
 kihonTeate:
@@ -153,9 +180,32 @@ kihonTeate:
       days: 90
   # 自己都合の給付制限。この間は基本手当が出ないので、生活費を貯蓄で受けることになる。
   # 会社都合（特定受給資格者）には給付制限が無い。**未指定なら両方を幅の両端として使う。**
+  # ⚠️ **2025-04-01 施行の改正を反映していない。** 下の sources.restrictionMonthsVoluntary を見ること。
   restrictionMonthsVoluntary: 2
   source: 雇用保険法／厚生労働省「基本手当の所定給付日数」
   verified: false
+  sources:
+    daysGeneral:
+      label: 厚生労働省「基本手当の所定給付日数」一般の受給資格者
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufu/pdf/pamphlet01.pdf
+      effectiveFrom: "2017-04-01"
+      verified: false
+    dailyCapByAge:
+      label: 厚生労働省「雇用保険の基本手当日額の変更」年齢階層別上限額
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufu/index.html
+      effectiveFrom: "2025-08-01"
+      verified: false
+    restrictionMonthsVoluntary:
+      label: 厚生労働省「Q＆A〜労働者の皆様へ（基本手当、再就職手当）〜」給付制限期間
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000139508.html
+      # いま入っている 2 が施行されていた期間の開始日（改正前の値）
+      effectiveFrom: "2020-10-01"
+      verified: true
+      pendingChange: >-
+        2025-04-01 施行の改正で、正当な理由のない自己都合退職の給付制限は
+        原則2か月 → 原則1か月に短縮された（2026-09-21 に一次情報で確認）。
+        5年以内に2回以上の自己都合離職は3か月、重責解雇も3か月で据え置き。
+        **いまの値 2 は改正前のもの。** 期待値が動くため、更新は T-G として別建てにする。
 
 # ============ 当社基準（公的出典が存在しない） ============
 # ADR-014：結果画面で「当社基準」と明示し、本人が動かせるようにする

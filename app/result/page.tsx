@@ -626,8 +626,9 @@ export default async function ResultPage({
         : null,
       // 所見は2文以内。金額は figures と数直線が持つ（視覚の DoD (b)）
       note: `${lead}${tail}`,
-      // 開示6点は死亡の算定の前提なので、貯蓄軸の行には出さない
-      assumptions: [],
+      // 完全な記録として全項目を折りたたみに出す（判定を左右する項目には見出し語が付いている）
+      assumptions: sim.premises,
+      // 帯と感度文は死亡カード専用。ここは受け皿が貯蓄で、動かす前提が1本に決まらない
       premiseWeight: null,
       premiseSensitivity: null,
       // ラボは未実装。**押せないことを黙らせない**

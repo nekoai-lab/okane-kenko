@@ -18,12 +18,27 @@ import type { Employment } from "./types.js";
 /** 1か月を30日として日額に割る（健康保険の標準報酬が月額のため） */
 const DAYS_PER_MONTH = 30;
 
+/**
+ * 前提の1項目。**見出し語は拾い読みのため**（CLAUDE.md「開示の見せ方」）。
+ * 判定を左右するものにだけ付け、残りは本文だけで並べる。
+ */
+export interface ScenarioPremise {
+  label?: string;
+  note: string;
+}
+
 export interface ScenarioNeed {
   /** 必要額のレンジ（円） */
   low: number;
   high: number;
   /** 何をどう見込んだか。画面にそのまま出す */
   assumptions: string[];
+  /**
+   * 折りたたみに出す完全な記録（見出し語つき）。
+   * **判定を左右する3点には見出し語を付ける**
+   * ── 保険外10万円／雇用保険の加入年数の推定／再就職までの期間。
+   */
+  premises: ScenarioPremise[];
   /** 出典（機関名＋制度名） */
   sources: string[];
 }
@@ -74,6 +89,20 @@ export function needForSickness(p: ParamSet, input: ScenarioInput, months: numbe
     low: Math.round(kogaku.amount),
     high: Math.round(kogaku.amount + uncovered + incomeLoss),
     assumptions,
+    premises: [
+      {
+        // **上端の4割前後をこの1項目が作る。** 公的出典が無いので、必ず見出し語を付けて前に出す
+        label: "保険外の自己負担は月10万円",
+        note: `差額ベッド・交通費などを月${(v(p, "uncoveredMedicalMonthly") / 10000).toLocaleString()}万円と置いた扱いです（当社基準・公的出典なし）。実際が少なければ必要額は減ります。`,
+      },
+      {
+        label: `働けない期間は${months}か月`,
+        note: "これより長引けば、必要額はこの試算より増えます。",
+      },
+      ...kogaku.assumptions.map((note) => ({ note })),
+      ...teate.assumptions.map((note) => ({ note })),
+      { note: "幅の下端は医療費の自己負担だけ、上端は保険外の負担と収入の減少まで見込んだものです。" },
+    ],
     sources: [kogaku.source, teate.source],
   };
 }
@@ -110,6 +139,22 @@ export function needForUnemployment(p: ParamSet, input: ScenarioInput): Scenario
       `所定給付日数${teate.days}日（約${Math.round(benefitMonths)}か月）を受け取る前提`,
       `幅の下端は会社都合（給付制限なし）、上端は自己都合（給付制限${restriction}か月は無収入）を想定した`,
       "再就職までの期間は給付日数と同じと置いた（それより長引く場合は足りない）",
+    ],
+    premises: [
+      {
+        // **設問に無い値を年齢から推定している。** 給付日数がこれで決まるので前に出す
+        label: `雇用保険の加入年数は${input.insuredYears}年と推定`,
+        note: "設問に無いため、22歳就業開始として年齢から置いた扱いです。実際が短ければ給付日数が減り、必要額は増えます。",
+      },
+      {
+        label: `再就職までは${Math.round(benefitMonths)}か月`,
+        note: `所定給付日数${teate.days}日と同じ期間で再就職する扱いです。長引けば、その分だけ必要額は増えます。`,
+      },
+      {
+        label: `給付制限は${restriction}か月`,
+        note: "幅の下端は会社都合（給付制限なし）、上端は自己都合を想定した扱いです。",
+      },
+      ...teate.assumptions.map((note) => ({ note })),
     ],
     sources: [teate.source],
   };

@@ -13,6 +13,7 @@
  *   診断表の未診断行と精度ラベルがこれを直接消費する（仕様 §5.3）
  */
 import type { ParamSet } from "../params/index.js";
+import type { ScenarioPremise } from "./scenarios.js";
 import { type DiagnoseInput, diagnose } from "./index.js";
 import { type ProjectionRow, projectDeath } from "./projection.js";
 import { needForSickness, needForUnemployment, type ScenarioInput } from "./scenarios.js";
@@ -66,6 +67,8 @@ export interface SimulateResult {
   events: { year: number; elapsed: number; events: string[] }[] | null;
   /** 簡約・推定をすべてここに集める。`social.ts` の assumptions[] がそのまま流れ込む */
   assumptions: string[];
+  /** 折りたたみに出す完全な記録（見出し語つき）。死亡は `death.assumptions` を使うので空 */
+  premises: ScenarioPremise[];
   /** `status === "not_supported"` のときだけ入る */
   notSupported: NotSupported | null;
   /** 出典（機関名＋制度名）。画面の出典チップ */
@@ -102,6 +105,7 @@ function notSupported(scenario: "disability"): SimulateResult {
     yearly: null,
     events: null,
     assumptions: [],
+    premises: [],
     notSupported: { reason: "not_implemented", detail: NOT_IMPLEMENTED[scenario] },
     sources: [],
     verdict: null,
@@ -156,6 +160,8 @@ function statutory(
     yearly: null,
     events: null,
     assumptions,
+    // 折りたたみに出す完全な記録（見出し語つき）。**判定を左右する項目には見出し語がある**
+    premises: need.premises,
     notSupported: null,
     sources: need.sources,
     verdict: verdictBySavings(savings.low, savings.high, need.low, need.high),
@@ -224,6 +230,8 @@ export function simulate(p: ParamSet, input: SimulateInput, scenario: Scenario):
       .map((r) => ({ year: r.year, elapsed: r.elapsed, events: r.events })),
     // 既存エンジンが記録した推定を、そのまま前提として引き継ぐ
     assumptions: d.self.assumptions.map((a) => a.note),
+    // 死亡は `death.self.assumptions`（label つき）を画面が直接使うので、ここは空でよい
+    premises: [],
     notSupported: null,
     sources: [`制度パラメータ版 ${d.paramVersion}`],
     // 死亡は「保険の過不足」で見る

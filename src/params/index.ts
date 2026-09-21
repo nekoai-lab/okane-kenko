@@ -19,6 +19,29 @@ export interface ParamEntry {
   userAdjustable?: boolean;
 }
 
+/**
+ * 制度式パラメータの出どころ（statutory 3行・2026-09-21 新設）
+ *
+ * **`source` の文字列だけでは、いつの制度かも、どこで確かめられるかも分からない。**
+ * 値と同じ場所に**一次情報のURLと施行日**を置く（`params/*.yaml` の `verified` 機構を流用）。
+ *
+ * `effectiveFrom` は**その値が施行された日**であって、パラメータ版の有効期間ではない。
+ * 2026-09-21、`restrictionMonthsVoluntary: 2` が 2025-04-01 施行の改正を反映しないまま
+ * 残っていたのを、施行日の欄が無かったせいで見落としていた。
+ */
+export interface StatutorySource {
+  /** 機関名＋制度名 */
+  label: string;
+  /** 一次情報のURL。**二次情報を書かない** */
+  url: string;
+  /** その値が施行された日（YYYY-MM-DD） */
+  effectiveFrom: string;
+  /** 一次情報に当たって確認したか。false のまま本番に出さない */
+  verified: boolean;
+  /** 改正が判明しているが未反映のとき、何がどう変わるかを書く */
+  pendingChange?: string;
+}
+
 export interface KogakuBracket {
   name: string;
   minIncome: number;
@@ -91,6 +114,7 @@ export interface ParamSet {
     multipleOccurrenceFromMonth: number;
     multipleOccurrenceSource: string;
     multipleOccurrenceVerified: boolean;
+    sources: Record<string, StatutorySource>;
   };
   /** 健康保険 傷病手当金 */
   shobyoTeate: {
@@ -99,6 +123,7 @@ export interface ParamSet {
     maxMonths: number;
     source: string;
     verified: boolean;
+    sources: Record<string, StatutorySource>;
   };
   /** 雇用保険 基本手当 */
   kihonTeate: {
@@ -109,6 +134,7 @@ export interface ParamSet {
     restrictionMonthsVoluntary: number;
     source: string;
     verified: boolean;
+    sources: Record<string, StatutorySource>;
   };
   ownStandard: Record<string, ParamEntry>;
   toBeSourced: Record<string, ParamEntry>;
