@@ -12,7 +12,7 @@ import type { Projection } from "../../src/calc/projection.js";
 import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstYear } from "../../src/time/jstYear.js";
-import { simulateAll } from "../../src/calc/simulate.js";
+import { simulate, simulateAll } from "../../src/calc/simulate.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
 import { Hero } from "./Hero.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
@@ -430,7 +430,9 @@ export default async function ResultPage({
    * 軸が違うのでここには混ぜない（世帯の結論は下の死亡詳細セクションに出る）。
    * **所見の文言はモック `docs/design-mock/check.html` が正で、金額だけ実計算値に差し替える。**
    */
-  const sims = simulateAll(params, { answers: input, asOf: new Date() });
+  // **同じ日付で回す。** 感度文と診断表で asOf がずれると、年齢が1歳違う結果を並べてしまう
+  const asOfDate = new Date();
+  const sims = simulateAll(params, { answers: input, asOf: asOfDate });
   const bySc = Object.fromEntries(sims.map((x) => [x.scenario, x]));
   const TONE = { reducible: "ok", uncertain: "check", shortage: "short" } as const;
   const DEATH_LABEL = {
@@ -445,6 +447,49 @@ export default async function ResultPage({
     shortage: "備え不足の可能性",
     pending: "判定できません",
   } as const;
+
+  /**
+   * 感度文（仕様 §5.3 T-E）。**判定を支えている前提が外れたら何が起きるかを1文で出す。**
+   *
+   * 死亡の判定はこの1項目で反転しうる（遺族の就労収入を0にすると `ample` → `shortage`）。
+   * 重みを帯で見せるだけでは「外れたらどうなるか」が分からないので、反実仮想を1本回して
+   * **判定の遷移と金額をエンジンから取る**。
+   *
+   * **金額も判定ラベルもここで作らない。** `simulate` を同じ params・同じ asOf で
+   * 収入だけ 0 にして呼び直し、返ってきた値を文に差し込む（ハードコード禁止）。
+   */
+  const sensitivityFor = (who: "self" | "spouse"): { text: string } | null => {
+    // 遺されるのは相手のほう。本人が亡くなるケースでは配偶者が遺族になる
+    const survivor = who === "self" ? input.spouse : input.self;
+    if (!survivor || survivor.income <= 0) return null;
+
+    const answers =
+      who === "self"
+        ? { ...input, spouse: { ...input.spouse!, income: 0 } }
+        : { ...input, self: { ...input.self, income: 0 } };
+    const alt = simulate(params, { answers, asOf: asOfDate }, "death").death;
+    if (!alt) return null;
+
+    const base = who === "self" ? result.self : result.spouse;
+    const altCase = who === "self" ? alt.self : alt.spouse;
+    const cov = who === "self" ? input.coverageSelf : input.coverageSpouse;
+    if (!base || !altCase) return null;
+
+    const from = verdict3(cov, base.range.low, base.range.high);
+    const to = verdict3(cov, altCase.range.low, altCase.range.high);
+    const needFrom = formatRange(base.range.low, base.range.high);
+    const needTo = formatRange(altCase.range.low, altCase.range.high);
+
+    // **変わらないときは「変わらない」と書く。** 沈黙で誤解させない
+    if (from === to) {
+      return {
+        text: `遺されたご家族の就労収入がゼロになっても、判定は「${DEATH_LABEL[from]}」のままです（必要額は${needFrom}から${needTo}になります）。`,
+      };
+    }
+    return {
+      text: `遺されたご家族の就労収入がゼロになると、判定は「${DEATH_LABEL[from]}」から「${DEATH_LABEL[to]}」に変わり、必要額は${needFrom}から${needTo}になります。`,
+    };
+  };
 
   /** 死亡の1行を作る。本人と配偶者で同じ形にする */
   const deathRow = (
@@ -516,6 +561,7 @@ export default async function ResultPage({
               onPremiseText: `約${money(dr.income.survivorWork)}`,
             }
           : null,
+      premiseSensitivity: dr.assumptions.length > 0 ? sensitivityFor(who === "本人" ? "self" : "spouse") : null,
       link: { href: "#death-detail", label: "詳しく →" },
     };
   };
@@ -565,6 +611,7 @@ export default async function ResultPage({
       // 開示6点は死亡の算定の前提なので、貯蓄軸の行には出さない
       assumptions: [],
       premiseWeight: null,
+      premiseSensitivity: null,
       // ラボは未実装。**押せないことを黙らせない**
       link: { pending: "もしもラボで見る（準備中）" },
     };
@@ -600,6 +647,7 @@ export default async function ResultPage({
       note: bySc.disability.notSupported?.detail ?? "",
       assumptions: [],
       premiseWeight: null,
+      premiseSensitivity: null,
       link: { pending: "もしもラボで見る（準備中）" },
     },
     savingsRow(
