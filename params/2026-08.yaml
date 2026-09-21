@@ -354,7 +354,6 @@ ownStandard:
     userAdjustable: false
   # **レンジの幅も当社基準**（2026-09-22 在庫漏れの是正）。
   # 従来 `death.ts` に直書きされており、在庫一覧に出ていなかった。値は据え置き。
-  # 入力の不確かさから幅を作る形（T-H＋T-B 束）に置き換わるまでの暫定の幅。
   shortageRangeLowFactor:
     value: 0.8
     unit: ratio

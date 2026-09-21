@@ -11,8 +11,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-/** コメントに現れたら一時状態を書いている疑いが強い語 */
-const STATE_WORDS = ["温存", "⚠️", "TODO", "保留", "暫定", "未反映", "反映していない"];
+/**
+ * コメントに現れたら一時状態を書いている疑いが強い語。
+ * **記号（⚠️）は検出語にしない。** ⚠️ は「恒久的だが重要な注意」の印としても正当に使われるので、
+ * 記号で引っかけると恒久的な説明が書けなくなる（2026-09-22 オーナー裁定）。
+ */
+const STATE_WORDS = ["温存", "保留", "暫定", "プレースホルダ", "TODO", "未反映", "反映していない"];
 
 function stateComments(file: string): string[] {
   return readFileSync(join(process.cwd(), file), "utf-8")
