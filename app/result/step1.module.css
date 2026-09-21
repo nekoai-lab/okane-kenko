@@ -3,19 +3,8 @@
   1280px は チップ列＋右に推定ボックスの2カラム。390px では縦に積む。
 */
 .wrap {
-  --ink: #1e2a26;
-  --muted: #5c6660;
-  --muted-2: #45514b;
-  --sand: #f2efe8;
-  --hairline: #d8d2c4;
-  --amber-bg: #fbf3e4;
-  --amber-line: #e8d5ac;
-  --amber-text: #7a4a05;
-  --amber-body: #6b5a38;
-  --green: #2e6b52;
-  --font-display: "Shippori Mincho", serif;
 
-  color: var(--ink);
+  color: var(--mk-ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -32,7 +21,7 @@
   width: 30px;
   height: 30px;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--mk-ink);
   color: #f7f5f0;
   display: flex;
   align-items: center;
@@ -43,7 +32,7 @@
 }
 
 .title {
-  font-family: var(--font-display);
+  font-family: var(--mk-font-display);
   font-size: 19px;
   font-weight: 700;
   margin: 2px 0 0;
@@ -51,7 +40,7 @@
 
 .sub {
   font-size: 12.5px;
-  color: var(--muted);
+  color: var(--mk-muted);
   line-height: 1.7;
   margin: 4px 0 0;
 }
@@ -67,7 +56,7 @@
 .groupHead {
   font-size: 12px;
   font-weight: 700;
-  color: var(--muted-2);
+  color: var(--mk-muted-2);
   margin: 0;
 }
 
@@ -93,7 +82,7 @@
   align-items: baseline;
   gap: 5px;
   background: #fff;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--mk-chip-border);
   border-radius: 999px;
   padding: 5px 11px;
   line-height: 1.5;
@@ -120,7 +109,7 @@
 /* 推定0件のときの1行。良い知らせなので緑の系統で、ただし控えめに */
 .noEstimate {
   font-size: 12px;
-  color: var(--green);
+  color: var(--mk-green);
   line-height: 1.7;
   margin: 0;
 }
@@ -134,13 +123,13 @@
   flex-direction: column;
   gap: 3px;
   font-size: 11.5px;
-  color: var(--muted);
+  color: var(--mk-muted);
   line-height: 1.7;
 }
 
 .estimates {
-  background: var(--amber-bg);
-  border: 1px solid var(--amber-line);
+  background: var(--mk-amber-bg);
+  border: 1px solid var(--mk-amber-border);
   border-radius: 12px;
   padding: var(--space-4);
   display: flex;
@@ -151,7 +140,7 @@
 .estimatesHead {
   font-size: 13px;
   font-weight: 700;
-  color: var(--amber-text);
+  color: var(--mk-amber-deep);
   margin: 0;
 }
 
@@ -169,29 +158,29 @@
 
 .estimateNote {
   font-size: 12px;
-  color: var(--amber-body);
+  color: var(--mk-amber-body);
   line-height: 1.6;
   margin: 0;
 }
 
 .estimatesFoot {
   font-size: 11.5px;
-  color: var(--amber-body);
+  color: var(--mk-amber-body);
   line-height: 1.7;
-  border-top: 1px solid var(--amber-line);
+  border-top: 1px solid var(--mk-amber-border);
   padding-top: var(--space-3);
   margin: 0;
 }
 
 .edit {
   font-size: 12.5px;
-  color: var(--muted-2);
+  color: var(--mk-muted-2);
   line-height: 1.7;
   margin: 0;
 }
 
 .link {
-  color: var(--green);
+  color: var(--mk-green);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

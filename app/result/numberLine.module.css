@@ -5,26 +5,8 @@
   **目盛りの刻みをデータに合わせて選び直す**（構成要素は変えない）。
 */
 .wrap {
-  --ink: #1e2a26;
-  --muted: #5c6660;
-  --muted-2: #45514b;
-  --sand: #f2efe8;
-  --hairline: #cfc9bb;
-  --green: #2e6b52;
-  --green-deep: #245640;
-  --green-bg: #eaf3ed;
-  --amber: #a6690f;
-  --amber-deep: #7a4a05;
-  --amber-bg: #fbf3e4;
-  --amber-text: #8a5406;
-  --red: #9c4633;
-  --red-deep: #7e3526;
-  --red-bg: #f9ece8;
-  --grey-border: #b9b2a2;
-  --grey-bg: #ede9df;
-  --font-display: "Shippori Mincho", serif;
 
-  color: var(--ink);
+  color: var(--mk-ink);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -32,13 +14,13 @@
 
 .lead {
   font-size: 13px;
-  color: var(--muted-2);
+  color: var(--mk-muted-2);
   line-height: 1.7;
   margin: 0;
 }
 
 .lineBox {
-  background: var(--sand);
+  background: var(--mk-surface-alt);
   border-radius: 12px;
   padding: var(--space-4) var(--space-3);
 }
@@ -50,36 +32,36 @@
 }
 
 .axis {
-  stroke: var(--hairline);
+  stroke: var(--mk-border-btn);
   stroke-width: 2;
 }
 
 .tick {
-  stroke: var(--grey-border);
+  stroke: var(--mk-grey-border);
 }
 
 .tickText {
   font-size: 10px;
-  fill: var(--muted);
+  fill: var(--mk-muted);
 }
 
 /* 必要額の幅。滝・診断表と同じ橙 */
 .band {
   fill: rgb(166 105 15 / 26%);
-  stroke: var(--amber);
+  stroke: var(--mk-amber);
   stroke-width: 1.5;
 }
 
 /* 幅が無いときの描画。帯と混同しないよう線で出す */
 .needTick {
-  stroke: var(--amber);
+  stroke: var(--mk-amber);
   stroke-width: 3;
   stroke-linecap: round;
 }
 
 /* いまの保障。診断表のミニ数直線と同じ黒の縦線 */
 .cov {
-  stroke: var(--ink);
+  stroke: var(--mk-ink);
   stroke-width: 3;
   stroke-linecap: round;
 }
@@ -94,32 +76,32 @@
 }
 
 .markNeed {
-  color: var(--amber-text);
+  color: var(--mk-amber-text);
 }
 
 .markCov {
-  color: var(--ink);
+  color: var(--mk-ink);
 }
 
 /* 判定カード。色だけで意味を伝えないので、必ずラベル文字が入る */
 .verdict {
   border-radius: 14px;
   padding: var(--space-4);
-  border: 1.5px solid var(--grey-border);
-  background: var(--grey-bg);
+  border: 1.5px solid var(--mk-grey-border);
+  background: var(--mk-grey-bg);
 }
 
 .ok {
-  border-color: var(--green);
-  background: var(--green-bg);
+  border-color: var(--mk-green);
+  background: var(--mk-green-bg);
 }
 .check {
-  border-color: var(--amber);
-  background: var(--amber-bg);
+  border-color: var(--mk-amber);
+  background: var(--mk-amber-bg);
 }
 .short {
-  border-color: var(--red);
-  background: var(--red-bg);
+  border-color: var(--mk-red);
+  background: var(--mk-red-bg);
 }
 
 .verdictTitle {
@@ -129,13 +111,13 @@
 }
 
 .ok .verdictTitle {
-  color: var(--green-deep);
+  color: var(--mk-green-deep);
 }
 .check .verdictTitle {
-  color: var(--amber-deep);
+  color: var(--mk-amber-deep);
 }
 .short .verdictTitle {
-  color: var(--red-deep);
+  color: var(--mk-red-deep);
 }
 
 .verdictBody {
@@ -147,14 +129,14 @@
 
 .rule {
   font-size: 11.5px;
-  color: var(--muted);
+  color: var(--mk-muted);
   line-height: 1.7;
   margin: 0;
 }
 
 /* ---------- 判断ポイント ---------- */
 .points {
-  background: var(--sand);
+  background: var(--mk-surface-alt);
   border-radius: 12px;
   padding: var(--space-4);
 }
@@ -184,7 +166,7 @@
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--mk-ink);
   color: #fff;
   display: flex;
   align-items: center;
@@ -202,21 +184,21 @@
 
 .pointBody {
   font-size: 12.5px;
-  color: var(--muted-2);
+  color: var(--mk-muted-2);
   line-height: 1.7;
   margin: 2px 0 0;
 }
 
 .pending {
   font-size: 12.5px;
-  color: var(--muted);
+  color: var(--mk-muted);
   margin: var(--space-3) 0 0;
 }
 
 /* 閉じ文。#4 のトグルとセットで真になる文 */
 .closing {
   font-size: 12.5px;
-  color: var(--muted-2);
+  color: var(--mk-muted-2);
   line-height: 1.75;
   margin: var(--space-3) 0 0;
 }

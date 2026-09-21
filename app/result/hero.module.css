@@ -6,31 +6,11 @@
   グローバルに上書きすると既存の画面が崩れる（riskTable.module.css と同じ理由）。
 */
 .hero {
-  --surface: #fff;
-  --ink: #1e2a26;
-  --ink-2: #2c3833;
-  --muted: #5c6660;
-  --muted-2: #45514b;
-  --hairline: #e4e0d6;
-  --sand: #f2efe8;
-  --green: #2e6b52;
-  --green-deep: #245640;
-  --green-bg: #eaf3ed;
-  --amber: #a6690f;
-  --amber-deep: #7a4a05;
-  --amber-bg: #fbf3e4;
-  --amber-text: #8a5406;
-  --red: #9c4633;
-  --red-deep: #7e3526;
-  --red-bg: #f9ece8;
-  --grey-border: #b9b2a2;
-  --grey-bg: #ede9df;
-  --font-display: "Shippori Mincho", serif;
 
-  background: var(--surface);
-  border: 1px solid var(--hairline);
+  background: var(--mk-surface);
+  border: 1px solid var(--mk-hairline);
   border-radius: 16px;
-  color: var(--ink);
+  color: var(--mk-ink);
   padding: var(--space-5) var(--space-4);
   margin: 0 0 var(--space-5);
   display: flex;
@@ -48,14 +28,14 @@
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: var(--muted);
+  color: var(--mk-muted);
 }
 
 .sample {
   align-self: flex-start;
   font-size: 12px;
-  color: var(--muted-2);
-  background: var(--sand);
+  color: var(--mk-muted-2);
+  background: var(--mk-surface-alt);
   border-radius: 999px;
   padding: 4px 12px;
   line-height: 1.6;
@@ -71,30 +51,30 @@
 }
 
 .reducible {
-  background: var(--green-bg);
-  border: 1.5px solid var(--green);
-  color: var(--green-deep);
+  background: var(--mk-green-bg);
+  border: 1.5px solid var(--mk-green);
+  color: var(--mk-green-deep);
 }
 .uncertain,
 .rebalanceable {
-  background: var(--amber-bg);
-  border: 1.5px solid var(--amber);
-  color: var(--amber-deep);
+  background: var(--mk-amber-bg);
+  border: 1.5px solid var(--mk-amber);
+  color: var(--mk-amber-deep);
 }
 .shortage {
-  background: var(--red-bg);
-  border: 1.5px solid var(--red);
-  color: var(--red-deep);
+  background: var(--mk-red-bg);
+  border: 1.5px solid var(--mk-red);
+  color: var(--mk-red-deep);
 }
 .pending {
-  background: var(--grey-bg);
-  border: 1.5px solid var(--grey-border);
-  color: var(--muted);
+  background: var(--mk-grey-bg);
+  border: 1.5px solid var(--mk-grey-border);
+  color: var(--mk-muted);
 }
 
 /* モックは 33px（1280px幅）。390px では 26px に落とすが、書体と太さは変えない */
 .head {
-  font-family: var(--font-display);
+  font-family: var(--mk-font-display);
   font-size: 26px;
   line-height: 1.5;
   font-weight: 700;
@@ -104,8 +84,8 @@
 .funeral {
   font-size: 13px;
   line-height: 1.8;
-  color: var(--ink-2);
-  background: var(--sand);
+  color: var(--mk-ink-2);
+  background: var(--mk-surface-alt);
   border-radius: 10px;
   padding: 12px 16px;
   margin: 0;
@@ -128,12 +108,12 @@
 
 .statLabel {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--mk-muted);
   margin: 0;
 }
 
 .statValue {
-  font-family: var(--font-display);
+  font-family: var(--mk-font-display);
   font-size: 20px;
   font-weight: 700;
   line-height: 1.35;
@@ -142,12 +122,12 @@
 }
 
 .need {
-  color: var(--amber-text);
+  color: var(--mk-amber-text);
 }
 
 .lead {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--mk-muted);
   margin: 0;
   line-height: 1.7;
 }
