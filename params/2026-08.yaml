@@ -159,15 +159,18 @@ kihonTeate:
   # 基本手当日額 ＝ 賃金日額 × 給付率。給付率は賃金日額に応じて 45〜80%。
   # **v1 は中位の 0.6 で概算**し、年齢別の日額上限で頭打ちにする。
   benefitRate: 0.6
-  dailyCapByAge: # 年齢階層別の基本手当日額の上限
-    - fromAge: 60
-      cap: 7294
-    - fromAge: 45
-      cap: 8490
-    - fromAge: 30
-      cap: 7715
-    - fromAge: 0
-      cap: 6945
+  # 年齢階層別の基本手当日額の上限。**毎年8月1日に改定される**ので、版を上げるたびに確認する。
+  # 2026-09-21：令和5年度の値（6,945 / 7,715 / 8,490 / 7,294）が残っており、
+  # 令和6・7・8年度の**3改定ぶん遅れていた**。官報準拠の令和8年8月1日値に更新した。
+  dailyCapByAge:
+    - fromAge: 60 # 60歳以上65歳未満
+      cap: 7830
+    - fromAge: 45 # 45歳以上60歳未満
+      cap: 9110
+    - fromAge: 30 # 30歳以上45歳未満
+      cap: 8270
+    - fromAge: 0 # 30歳未満
+      cap: 7450
   # 所定給付日数。v1 は**自己都合など一般の受給資格者**の表を使う（年齢に依らない）。
   # 会社都合（特定受給資格者）は年齢×加入期間で最大330日まで伸びるが、
   # 短いほうを使うと公的な支えを少なめに見積もることになり、必要額は安全側（多め）に出る。
@@ -191,10 +194,17 @@ kihonTeate:
       effectiveFrom: "2017-04-01"
       verified: false
     dailyCapByAge:
-      label: 厚生労働省「雇用保険の基本手当日額の変更」年齢階層別上限額
-      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufu/index.html
-      effectiveFrom: "2025-08-01"
-      verified: false
+      label: 厚生労働省「令和８年８月１日からの基本手当日額等の適用について」参考１
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000160564_00050.html
+      effectiveFrom: "2026-08-01"
+      verified: true
+      # **毎年8月1日に改定される。** 改定サイクルを書いておかないと「一度入れた値」で止まる
+      revisionCycle: 毎年8月1日
+      expires: "2027-08-01"
+      note: >-
+        令和8年8月1日値（30歳未満 7,450／30〜44歳 8,270／45〜59歳 9,110／60〜64歳 7,830）。
+        2026-09-21 に官報準拠の厚労省資料（https://www.mhlw.go.jp/content/001726936.pdf ）で確認。
+        次の改定は2027年8月1日。
     restrictionMonthsVoluntary:
       label: 厚生労働省「Q＆A〜労働者の皆様へ（基本手当、再就職手当）〜」給付制限期間
       url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000139508.html
