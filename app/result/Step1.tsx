@@ -102,8 +102,17 @@ export function Step1({ chips, estimations, terms, editHref }: Step1Props) {
               <p className={s.estimateNote}>{e.note}</p>
             </div>
           ))}
+          {/*
+            **締め文は実態に合わせる**（2026-09-21 オーナー指摘）。
+            モックは「幅で計算して結果にも幅として残します」だが、`normalize()` は
+            未回答を**1点で仮置き**している（`lookup()` は数値を1つ返す口しか持たない。
+            `assets.unknown: 300万` / 生活費は手取り×0.75 / 進路未定は公立中心に固定）。
+            幅を持つのは回答帯（`monthlyLivingBand`・D-01）だけで、あれは**答えた区分**の幅。
+            できていないことを約束する文を出すと、開示のつもりが不正確になる。
+            幅仮置き（D-01 の完全実装）は `docs/TICKETS.md` の T-H に起票した。
+          */}
           <p className={s.estimatesFoot}>
-            未回答は1つの数字で決めつけず、幅で計算して結果にも幅として残します。
+            未回答は当社基準の仮置き額で計算し、仮置きであることをここに残します。
           </p>
         </div>
       )}

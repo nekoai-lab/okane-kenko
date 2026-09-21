@@ -57,3 +57,33 @@ describe("未確認パラメータの判定", () => {
     ).toThrow();
   });
 });
+
+/**
+ * **当社基準の在庫が、実際に使われている値とずれないこと**（2026-09-21）
+ *
+ * `fallbackFinancialAssets` と `livingCostEstimateRatio` は
+ * 「公的出典のない当社基準」の一覧に載せるために置いた行で、
+ * **値そのものは別の場所（`inputRanges` / 算定側）が持っている**。
+ *
+ * 在庫と正本を2か所に書いた瞬間、片方だけ直して**一覧のほうが静かに古くなる**。
+ * それは「当社基準を全部並べて見せる」という約束を、エラーを出さずに破る壊れ方なので、
+ * ここで等式を固定する（`funeralFloorRule` が額を `toBeSourced` に残しているのと同じ理由）。
+ */
+describe("当社基準の在庫と、実際に使う値が一致する", () => {
+  it("fallbackFinancialAssets ＝ inputRanges.assets.unknown", () => {
+    const p = loadParams();
+    expect(p.ownStandard.fallbackFinancialAssets.value).toBe(p.inputRanges.assets.unknown);
+  });
+
+  it("livingCostEstimateRatio ＝ 旧キー livingCostFromIncome（別名は同じ値を指す）", () => {
+    const p = loadParams();
+    expect(p.ownStandard.livingCostEstimateRatio.value).toBe(
+      p.ownStandard.livingCostFromIncome.value,
+    );
+  });
+
+  it("**掛ける相手は手取り**であることがラベルに書いてある（年収と読めるラベルにしない）", () => {
+    const p = loadParams();
+    expect(p.ownStandard.livingCostEstimateRatio.label).toContain("手取り");
+  });
+});

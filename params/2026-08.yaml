@@ -254,11 +254,21 @@ ownStandard:
     label: 末子独立後の最低就労推定（パート相当）
     note: ADR-008で新設。公的出典なし
     userAdjustable: true
-  livingCostFromIncome:
+  # **掛ける相手は手取り**（年収ではない）。`normalize.ts` は
+  # `年収 × netIncomeRatio(0.80) → 手取り` にしてからこの係数を掛けている。
+  # ラベルが「年収から」だったので、在庫一覧だけ見ると 年収×0.75 に読めた（2026-09-21 訂正）。
+  livingCostEstimateRatio: &livingCostEstimateRatio
     value: 0.75
-    label: 年収から生活費を推定する場合の係数
-    note: 公的出典なし
+    unit: ratio
+    label: 生活費を推定するときの係数（**手取り**の75%）
+    source: 当社基準（公的出典なし）
+    note: >-
+      生活費「年収から推定」を選んだ未回答者に当てる仮置き。1点で置いており幅を持たない（T-H）。
+      0.70（遺族生活費率）・葬儀費の床・保険外10万円と同列の当社基準
+    verified: false
     userAdjustable: false
+  # 旧キー。参照箇所を一度に付け替えないための別名（値は上と同一）
+  livingCostFromIncome: *livingCostEstimateRatio
   selfInsureMultiple:
     value: 3
     label: 自己保険と判定する資産倍率
@@ -289,6 +299,18 @@ ownStandard:
     unit: flag
     label: 余剰があっても葬儀・予備費を必要額の床として残す
     source: 当社基準（公的出典なし）。額は toBeSourced.funeralReserve
+    verified: false
+    userAdjustable: false
+  # **値は inputRanges.assets.unknown に残し、ここからは置き方を参照する**
+  # （funeralFloorRule と同じ扱い。inputRanges は expiry/verified ゲートの対象外なので、
+  #  当社基準の在庫としてはこちらに列挙しないと一覧から漏れる）。
+  fallbackFinancialAssets:
+    value: 3000000
+    unit: JPY
+    label: 金融資産「分からない」のときの仮置き額（300万円）
+    source: 当社基準（公的出典なし）。値の正本は inputRanges.assets.unknown
+    note: >-
+      1点で置いており幅を持たない（T-H）。0.70（遺族生活費率）・葬儀費の床・保険外10万円と同列
     verified: false
     userAdjustable: false
   amplemarginRatio:
