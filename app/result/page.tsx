@@ -160,7 +160,7 @@ function CaseCard({
   coverage: number | null;
   /** 遺される側の呼び名（本人死亡なら「配偶者」、配偶者死亡なら「あなた」） */
   survivorLabel: string;
-  /** 子の人数。家計台帳の「←どの回答から」に使う（`children` は React の予約名なので避ける） */
+  /** 子の人数。家計台帳の出どころキャプションに使う（`children` は React の予約名なので避ける） */
   childCount: number;
   danshinCovered: boolean;
   koseiFrom: string | null;
@@ -268,12 +268,12 @@ function CaseCard({
       <Step2
         danshinCovered={danshinCovered}
         from={{
-          pension: childCount > 0 ? `「子${childCount}人」` : null,
+          pension: childCount > 0 ? `子${childCount}人` : null,
           kosei: koseiFrom,
           work: workFrom,
-          housing: danshinCovered ? "「団信あり」" : null,
-          living: "「毎月の生活費」",
-          education: "「お子さんの進路」",
+          housing: danshinCovered ? "団信あり" : null,
+          living: "毎月の生活費",
+          education: "お子さんの進路",
         }}
         livingBand={livingBand}
         pj={pj}
@@ -295,19 +295,20 @@ function CaseCard({
         deductions={[
           {
             label: "遺族年金でカバー",
-            from: `←「${r.income.pensionKosei > 0 ? "会社員（厚生年金）" : "自営・フリーランス"}」${childCount > 0 ? `・「子${childCount}人」` : ""}の回答から`,
+            from: `${r.income.pensionKosei > 0 ? "会社員（厚生年金）" : "自営・フリーランス"}${childCount > 0 ? `・子${childCount}人` : ""}`,
             source: "日本年金機構",
             amount: r.income.pensionBasic + r.income.pensionKosei + r.income.chukoreiKafu,
           },
           {
             label: `${survivorLabel}の就労収入`,
-            from: "←「配偶者の年収」の回答から（手取りに換算し、算定期間ぶん積んだもの）",
+            from: "配偶者の年収",
+            note: "手取りに換算し、算定期間ぶん積んだもの",
             source: null,
             amount: r.income.survivorWork,
           },
           {
             label: "貯蓄・資産",
-            from: "←「世帯の金融資産」の回答から",
+            from: "世帯の金融資産",
             source: null,
             amount: r.income.assets,
           },
@@ -327,7 +328,7 @@ function CaseCard({
         }}
         surplusNote={`この余りは、${survivorLabel}の就労収入（約${money(r.income.survivorWork)}）の前提の上にあります。`}
         total={r.expense.total}
-        totalFrom="←STEP 2 の毎月の収支を通算し、大学の山と一度きりの支出まで足したもの"
+        totalFrom="STEP 2 の毎月の収支を通算し、大学の山と一度きりの支出まで足したもの"
         totalLabel="遺されたご家族に必要な総額"
       />
 
@@ -1046,7 +1047,7 @@ export default async function ResultPage({
           childCount={input.children.length}
           coverage={input.coverageSelf}
           danshinCovered={danshinCovered}
-          koseiFrom={input.self.employment === "employee" ? "「会社員」" : null}
+          koseiFrom={input.self.employment === "employee" ? "会社員" : null}
           pj={selfProjection}
           r={result.self}
           livingBand={livingBand}
@@ -1054,7 +1055,7 @@ export default async function ResultPage({
           reform2028Reason={result.reform2028.reason}
           survivorLabel="配偶者"
           title="あなたが亡くなった場合"
-          workFrom={input.spouse && input.spouse.income > 0 ? "「配偶者の年収」" : null}
+          workFrom={input.spouse && input.spouse.income > 0 ? "配偶者の年収" : null}
         />
         {/* 配偶者側は**要約1行＋開閉**にする。
             同じ長さのカードが2つ続くと、体感の長さが倍になって読まれなくなる。
@@ -1081,7 +1082,7 @@ export default async function ResultPage({
               childCount={input.children.length}
               coverage={input.coverageSpouse ?? null}
               danshinCovered={danshinCovered}
-              koseiFrom={input.spouse?.employment === "employee" ? "「配偶者は会社員」" : null}
+              koseiFrom={input.spouse?.employment === "employee" ? "配偶者は会社員" : null}
               pj={spouseProjection}
               r={result.spouse}
               /* **配偶者が亡くなるケースでは遺族は本人。** `result.reform2028` は
@@ -1098,7 +1099,7 @@ export default async function ResultPage({
               loan={input.housing.loan ?? null}
               survivorLabel="あなた"
               title="配偶者が亡くなった場合"
-              workFrom={input.self.income > 0 ? "「あなたの年収」" : null}
+              workFrom={input.self.income > 0 ? "あなたの年収" : null}
             />
           </details>
         )}

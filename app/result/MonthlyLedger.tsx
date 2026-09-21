@@ -4,16 +4,17 @@
  * **移植元は `docs/design-mock/result.html` の左カラム（`.ledger-row`）。**
  * 「金額の前に、起きることから」の担当で、**万一の翌月から何がいくら入って、いくら出るか**を出す。
  *
- * 各行に**「←どの回答から」**を付けるのがこのブロックの要点。
+ * 各行に**どの回答から来たか**を付けるのがこのブロックの要点。
  * 金額が回答のどれに紐づいているかが見えないと、読み手は数字を検算できない。
  *
  * **金額はここで作らない。** `projectDeath` の初年度の行を月額に直したものを受け取るだけ。
  */
+import { KeyCaption } from "./KeyCaption.js";
 import s from "./step2.module.css";
 
 export interface LedgerRow {
   label: string;
-  /** 「←『子2人』から」のような、どの回答から来たかの1行 */
+  /** どの回答から来たか（`子2人` のような**値だけ**）。`回答:` はキャプション側が付ける */
   from: string | null;
   /** 表示用の金額文字列（円は呼び出し側で整形済み） */
   value: string;
@@ -57,9 +58,9 @@ export function MonthlyLedger({
         <div className={s.ledgerRow} key={r.label}>
           <span className={s.ledgerLabel}>
             {r.label}
-            {/* 「←どの回答から」は**ラベルの下の行**に落とす。
+            {/* 出どころは**ラベルの下の行**に落とす。
                 同じ行に入れると金額に食い込んで折り返し、どちらも読めなくなる */}
-            {r.from && <span className={s.ledgerFrom}>←{r.from}から</span>}
+            {r.from && <KeyCaption label="回答" value={r.from} />}
           </span>
           <span className={`${s.ledgerValue} ${s[r.tone ?? "income"]}`}>{r.value}</span>
         </div>
@@ -76,7 +77,7 @@ export function MonthlyLedger({
           <div className={s.ledgerRow} key={r.label}>
             <span className={s.ledgerLabel}>
               {r.label}
-              {r.from && <span className={s.ledgerFrom}>←{r.from}から</span>}
+              {r.from && <KeyCaption label="回答" value={r.from} />}
             </span>
             <span className={`${s.ledgerValue} ${s[r.tone ?? "fixed"]}`}>{r.value}</span>
           </div>

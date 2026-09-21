@@ -14,12 +14,15 @@
  *
  * **金額はここで作らない。** 受け取った額を描くだけ。
  */
+import { KeyCaption } from "./KeyCaption.js";
 import s from "./waterfall.module.css";
 
 export interface WaterfallDeduction {
   label: string;
-  /** 「←どの回答から」 */
+  /** どの回答から来たか（値だけ）。`回答:` はキャプション側が付ける */
   from: string | null;
+  /** 回答ではない導出の説明（「手取りに換算し…」など）。キャプションにしない */
+  note?: string;
   /** 出典（機関名）。無ければ null */
   source: string | null;
   /** 控除額（円） */
@@ -89,7 +92,10 @@ export function Waterfall({
             <p className={s.label}>{totalLabel}</p>
             <p className={s.amount}>{fmt(total)}</p>
           </div>
-          <p className={s.from}>{totalFrom}</p>
+          <p className={s.from}>
+            {/* 回答でも出典でもない導出の説明。キャプションと同じ薄さにそろえる */}
+            <span className={s.note}>{totalFrom}</span>
+          </p>
           <div className={s.track}>
             <span className={`${s.bar} ${s.barTotal}`} style={{ left: "0%", width: "100%" }} />
           </div>
@@ -102,8 +108,9 @@ export function Waterfall({
               <p className={`${s.amount} ${s.amountCover}`}>▲{fmt(d.amount)}</p>
             </div>
             <p className={s.from}>
-              {d.from}
-              {d.source && <span className={s.ref}>出典: {d.source}</span>}
+              {d.from && <KeyCaption label="回答" value={d.from} />}
+              {d.source && <KeyCaption label="出典" value={d.source} />}
+              {d.note && <span className={s.note}>{d.note}</span>}
             </p>
             <div className={s.track}>
               <span
