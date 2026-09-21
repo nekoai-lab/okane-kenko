@@ -5,6 +5,7 @@
  * 承認は「人間が確認した」という記録で、YAML の更新は人間が PR で行う。
  * そのことを画面にも書く（裏で適用されていると誤解されたら、この設計の意味が消える）。
  */
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, checkToken } from "../../../src/paramwatch/auth.js";
@@ -148,6 +149,7 @@ export default async function ProposalsPage() {
                 {p.actionLog.map((a) => (
                   <li key={`${a.at}-${a.step}`}>
                     <code>{a.step}</code>（{a.ms}ms）：{a.input} → {a.output}
+                    {a.reason ? <div>判断理由：{a.reason}</div> : null}
                   </li>
                 ))}
               </ol>
@@ -164,7 +166,11 @@ export default async function ProposalsPage() {
               </form>
             ) : (
               <p className={s.blocked}>
-                <strong>検算に落ちているため、承認ボタンは出しません。</strong>
+                <strong>
+                  {p.impact.injectionBlocked
+                    ? "取得した本文に指示らしき文字列があったため、承認ボタンは出しません。"
+                    : "検算に落ちているため、承認ボタンは出しません。"}
+                </strong>
                 {[
                   ...p.impact.invariantFailures.map((f) => `不変条件 ${f.id}: ${f.what}`),
                   ...(p.impact.baselineFailures ?? []).map(
@@ -178,6 +184,11 @@ export default async function ProposalsPage() {
       )}
 
       <h2 className={s.h2}>実行ログ（沈黙も残す）</h2>
+      <p>
+        <Link className={s.link} href="/admin/runs">
+          全ツール呼び出しを時系列で見る（監査ログ）
+        </Link>
+      </p>
       <ul className={s.list}>
         {runLog.map((r) => (
           <li key={`${r.runAt}-${r.watchKey}`}>

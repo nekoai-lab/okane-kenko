@@ -24,6 +24,11 @@ export interface WatchTarget {
 
 export interface Watch {
   label: string;
+  /**
+   * **デモ専用の watch**（罠ページなど・2026-09-22）。既定の読み込みでは除外する。
+   * 本番の巡回（Scheduler）の許可リストに、デモ用のドメインを入れないため
+   */
+  demo?: boolean;
   sources: string[];
   targets: WatchTarget[];
 }
@@ -37,9 +42,21 @@ export interface WatchSources {
 
 const DEFAULT_PARAMS_DIR = join(process.cwd(), "params");
 
-export function loadWatchSources(dir = DEFAULT_PARAMS_DIR): WatchSources {
+/**
+ * 監視の台帳を読む。**デモ用の watch は `includeDemo` を明示したときだけ入れる**（2026-09-22・D3）。
+ * 既定で入れると、罠ページのドメインが本番の許可リストに乗る。
+ */
+export function loadWatchSources(
+  opts: { includeDemo?: boolean } = {},
+  dir = DEFAULT_PARAMS_DIR,
+): WatchSources {
   const raw = readFileSync(join(dir, "watch-sources.yaml"), "utf-8");
-  return parse(raw) as WatchSources;
+  const all = parse(raw) as WatchSources;
+  if (opts.includeDemo) return all;
+  return {
+    ...all,
+    watches: Object.fromEntries(Object.entries(all.watches).filter(([, w]) => !w.demo)),
+  };
 }
 
 /**

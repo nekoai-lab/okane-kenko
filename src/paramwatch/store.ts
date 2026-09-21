@@ -18,6 +18,11 @@ export interface ActionLogEntry {
   input: string;
   /** 出力の要約 */
   output: string;
+  /**
+   * 判断理由：なぜこの手を打ったか／結果から次に何をするか（2026-09-22・D3）。
+   * 決まった文か台帳・抽出結果から組み立てた文だけ（AI の作文ではない）。それ以前の記録には無い
+   */
+  reason?: string;
   ms: number;
 }
 
@@ -59,6 +64,8 @@ export interface WatchRunLogEntry {
   watchKey: string;
   decision: RunDecision;
   detail: string;
+  /** その回の全ツール呼び出し（2026-09-22・D3）。**提案を作らなかった回も残す**。それ以前の記録には無い */
+  actionLog?: ActionLogEntry[];
 }
 
 export interface CreateProposalInput {

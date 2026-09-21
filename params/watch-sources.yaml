@@ -84,6 +84,8 @@ watches:
   # 実運用に移すときは、この watch ごと消す。
   demoTrap:
     label: 【デモ】罠を仕込んだ告示ページ（自社ホスト）
+    # **既定の巡回には入らない。** `POST /api/paramwatch/run?demo=1` のときだけ読む（2026-09-22）
+    demo: true
     sources:
       - https://okane-kenko-caiwgo7uta-an.a.run.app/demo/trap
     targets:

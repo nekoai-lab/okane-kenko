@@ -23,7 +23,8 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const result = await runParamWatch({
       params: loadParams(),
-      sources: loadWatchSources(),
+      // デモ用の watch（罠ページ）は ?demo=1 を明示したときだけ。定期実行には入れない
+      sources: loadWatchSources({ includeDemo: new URL(req.url).searchParams.get("demo") === "1" }),
       // 影響を測る世帯は、算定の正本と同じ10世帯を使う（別の corpus を作らない）
       // 期待値は「現行 params で green か」を確かめるためだけに渡す（候補値とは比べない）
       cases: GOLDEN.map((g) => ({ id: g.id, label: g.label, input: g.input, expect: g.expect })),

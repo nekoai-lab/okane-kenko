@@ -70,6 +70,11 @@ export interface Impact {
    */
   baselineFailures?: InvariantFailure[];
   /**
+   * 本文に指示らしき文字列があったため承認できない（2026-09-22・D3）。
+   * 検算とは別の理由で `safe` を false に落としたことを、画面が言い分けるために持つ
+   */
+  injectionBlocked?: boolean;
+  /**
    * 不合格の条件は2つだけ：不変条件の違反と、現行 params で green でないこと。
    * **結論が変わることは不合格ではない**（それは承認者への影響レポートの中身）。
    * **false なら承認ボタンを出さない。**
