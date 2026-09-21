@@ -14,12 +14,14 @@ import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstYear } from "../../src/time/jstYear.js";
 import { simulateAll } from "../../src/calc/simulate.js";
 import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
+import { decisionPoints } from "../../src/calc/decisionPoints.js";
 import { reform2028 } from "../../src/calc/reform2028.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
 import { Hero } from "./Hero.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
 import { Step2 } from "./Step2.js";
 import { CoverageCurve } from "./CoverageCurve.js";
+import { NumberLine } from "./NumberLine.js";
 import { Waterfall } from "./Waterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
@@ -80,6 +82,34 @@ const AMOUNT_NOTE: Record<string, string> = {
   not_needed: "※ 扶養するご家族がいないため、大きな死亡保障は要りません。",
 };
 
+/**
+ * **過不足軸**（`Verdict3`）のラベルと文。診断表のバッジと同じ enum をバインドする。
+ * ニーズ軸（`ample` 等）とは別物なので、名前に軸を入れて取り違えを防ぐ。
+ */
+const DEATH_VERDICT_LABEL: Record<string, string> = {
+  reducible: "減らせる可能性",
+  uncertain: "圏内・要精査",
+  shortage: "不足の可能性",
+  pending: "判定は保留",
+};
+
+const SHORTFALL_TONE: Record<string, "ok" | "check" | "short" | "none"> = {
+  reducible: "ok",
+  uncertain: "check",
+  shortage: "short",
+  pending: "none",
+};
+
+const SHORTFALL_BODY: Record<string, string> = {
+  reducible:
+    "厳しめの前提（幅の右端）で計算しても、いまの保障が上回っています。減らせる可能性があります。ただし概算です。減額の手続きの前に、推定で補った項目を実際の値で答え直してください。",
+  uncertain:
+    "必要額の幅が、いまの保障を跨いでいます。この位置関係のとき、診断は「減らせる」とも「足りない」とも言い切りません。推定で補った項目を実際の値で答えると幅が狭まり、判定が確定に近づきます。",
+  shortage:
+    "緩めに見た幅の左端にも、いまの保障が届いていません。前提を見直すか、不足分の備え方を検討する段階です。",
+  pending: "いまの保障が分からないため、過不足は出していません。証券が見つかったら再診断できます。",
+};
+
 const VERDICT: Record<string, { label: string; tone: "good" | "warn" | "muted" }> = {
   shortage: { label: "いまの前提では、備えが足りない可能性があります", tone: "warn" },
   sufficient: { label: "いまの前提では、おおむね足りています", tone: "good" },
@@ -102,6 +132,7 @@ function CaseCard({
   koseiFrom,
   workFrom,
   reform2028Reason,
+  loan,
 }: {
   title: string;
   r: DeathResult;
@@ -116,8 +147,19 @@ function CaseCard({
   koseiFrom: string | null;
   workFrom: string | null;
   reform2028Reason: string;
+  /** 住宅ローン残高（判断ポイントの文面に使う） */
+  loan: number | null;
 }) {
-  const verdict = VERDICT[r.verdict] ?? VERDICT.sufficient;
+  /**
+   * STEP4 の判定カード。**過不足軸**（`Verdict3`）を使う ── バッジと同じ軸。
+   * ニーズ軸（`r.verdict`）は滝の最終行のラベルが使っており、別物（CLAUDE.md「判定には軸名を添える」）。
+   */
+  const v3 = verdict3(coverage, r.range.low, r.range.high);
+  const shortfallVerdict = {
+    label: DEATH_VERDICT_LABEL[v3],
+    tone: SHORTFALL_TONE[v3],
+    body: SHORTFALL_BODY[v3],
+  };
   const expenseItems = [
     { label: "ご家族の生活費（子育て期）", amount: r.expense.livingChild, basis: "当社基準" },
     { label: "ご家族の生活費（末子独立後）", amount: r.expense.livingAlone, basis: "当社基準" },
@@ -144,11 +186,7 @@ function CaseCard({
   return (
     <div className={s.caseCard}>
       <h2 className={s.h2}>{title}</h2>
-      <div
-        className={`${s.verdictLine} ${verdict.tone === "good" ? s.good : verdict.tone === "warn" ? s.warn : ""}`}
-      >
-        {verdict.label}
-      </div>
+
 
       {/* **数字の意味は verdict で入れ替わる。** 不足のときは「足りない額」だが、
           収入が支出を上回るときは「万一直後の当座資金（葬儀費＋生活費1〜2年分）」を出している
@@ -269,6 +307,19 @@ function CaseCard({
         total={r.expense.total}
         totalFrom="←STEP 2 の毎月の収支を通算し、大学の山と一度きりの支出まで足したもの"
         totalLabel="遺されたご家族に必要な総額"
+      />
+
+      {/*
+        STEP4（照合表 #8a〜#8c）。数直線＋判定カード＋判断ポイント。
+        旧 `verdictLine`（1行の判定）を撤去し、**位置関係で判定を示す形**に置換した。
+        判断ポイントは `decisionPoints`（src/calc）が世帯ごとに導出する ── 手書きの固定文ではない。
+      */}
+      <NumberLine
+        coverage={coverage}
+        fmt={(yen) => `約${money(yen)}`}
+        need={{ low: r.range.low, high: r.range.high }}
+        points={decisionPoints(r, pj, { loan, danshinCovered })}
+        verdict={shortfallVerdict}
       />
 
       {/* 因数分解の2表は**畳む**（第3層）。結論と根拠の図までで足りる人が大半で、
@@ -940,6 +991,7 @@ export default async function ResultPage({
           koseiFrom={input.self.employment === "employee" ? "「会社員」" : null}
           pj={selfProjection}
           r={result.self}
+          loan={input.housing.loan ?? null}
           reform2028Reason={result.reform2028.reason}
           survivorLabel="配偶者"
           title="あなたが亡くなった場合"
@@ -983,6 +1035,7 @@ export default async function ResultPage({
                   hasChildren: input.children.length > 0,
                 }).reason
               }
+              loan={input.housing.loan ?? null}
               survivorLabel="あなた"
               title="配偶者が亡くなった場合"
               workFrom={input.self.income > 0 ? "「あなたの年収」" : null}
