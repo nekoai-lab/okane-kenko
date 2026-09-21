@@ -130,7 +130,9 @@ kogaku:
       verified: false
     multipleOccurrence:
       label: 全国健康保険協会「高額療養費」多数回該当
-      url: https://www.kyoukaikenpo.or.jp/g3/cat320/sb3030/r07/
+      # 2026-09-22：旧URL（/g3/cat320/sb3030/r07/）が 404。サイト構成替えによる移転先に更新し、
+      # 移転先に多数回該当の表が載っていることを確認した（verified の昇格は承認キューを通すので、ここでは変えない）
+      url: https://www.kyoukaikenpo.or.jp/benefit/high_cost_medical_expenses/002/index.html
       effectiveFrom: "2015-01-01"
       verified: false
       pendingChange: >-
@@ -139,11 +141,13 @@ kogaku:
     householdAggregationMin:
       label: 全国健康保険協会「高額療養費」世帯合算（70歳未満は自己負担21,000円以上のみ合算）
       url: https://www.kyoukaikenpo.or.jp/benefit/high_cost_medical_expenses/002/index.html
-      # 一次情報に施行日の記載が無い。**推測で日付を埋めない**
-      effectiveFrom: "不明（一次情報に施行日の記載なし）"
+      # **無い日付を台帳に作らない。** 一次情報に施行日の記載が無いので null
+      effectiveFrom: null
       verified: true
       displayOnly: true
-      note: 2026-09-22 に一次情報のHTMLで額を確認。計算には使わず、説明文にだけ出す
+      note: >-
+        一次情報に施行日の記載なし（2026-09-22確認）。額は同日に一次情報のHTMLで確認。
+        計算には使わず、説明文にだけ出す
   # v1 対象外（安全側の簡略化）：世帯合算・21,000円ルール・月をまたぐ入院の按分。
   # いずれも自己負担を下げる方向に効くので、入れないほうが必要額は多めに出る。
 

@@ -36,8 +36,11 @@ export interface StatutorySource {
   label: string;
   /** 一次情報のURL。**二次情報を書かない** */
   url: string;
-  /** その値が施行された日（YYYY-MM-DD） */
-  effectiveFrom: string;
+  /**
+   * その値が施行された日（YYYY-MM-DD）。
+   * **一次情報に記載が無ければ null**（2026-09-22）。無い日付を台帳に作らない。理由は note に書く
+   */
+  effectiveFrom: string | null;
   /** 一次情報に当たって確認したか。false のまま本番に出さない */
   verified: boolean;
   /** 改正が判明しているが未反映のとき、何がどう変わるかを書く */

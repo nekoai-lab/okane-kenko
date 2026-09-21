@@ -66,7 +66,10 @@ export function setAt(p: ParamSet, path: string[], value: number): void {
 /** 台帳の中身を1行にする（行動ログと承認画面用）。**判断はしない。書いてあることを見せるだけ** */
 export function describeLedger(ledger: StatutorySource | undefined, now: Date): string {
   if (!ledger) return "台帳なし（public の値。出典は source 文字列のみ）";
-  const parts = [`施行 ${ledger.effectiveFrom}`, `verified: ${ledger.verified}`];
+  const parts = [
+    ledger.effectiveFrom ? `施行 ${ledger.effectiveFrom}` : "施行日の記載なし",
+    `verified: ${ledger.verified}`,
+  ];
   if (ledger.revisionCycle) parts.push(`改定周期 ${ledger.revisionCycle}`);
   if (ledger.expires) {
     const days = Math.ceil(
