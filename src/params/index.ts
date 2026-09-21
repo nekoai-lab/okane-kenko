@@ -105,6 +105,8 @@ export interface ParamSet {
     benefitRate: number;
     dailyCapByAge: { fromAge: number; cap: number }[];
     daysGeneral: { insuredYearsFrom: number; days: number }[];
+    /** 自己都合の給付制限（月）。会社都合には無い */
+    restrictionMonthsVoluntary: number;
     source: string;
     verified: boolean;
   };

@@ -56,3 +56,33 @@ export function aggregateHousehold(verdicts: Verdict3[]): HouseholdVerdict {
   if (hasShortage) return "shortage";
   return "uncertain";
 }
+
+/**
+ * 貯蓄で受けられるかの判定（病気・けが・失業の行）。
+ *
+ * **死亡とは比較対象が違う。** 死亡は「保険の過不足」だが、こちらは「貯蓄という受け皿で足りるか」。
+ * 内部の3値は同じものを使い、**画面のラベルだけ行ごとに出し分ける**
+ * （`reducible`＝大丈夫のめやす／`uncertain`＝圏内・要精査／`shortage`＝備え不足の可能性）。
+ *
+ * **貯蓄もレンジで比べる。** 回答が「500〜1,000万円」の幅で来ているのに点推定と比べると、
+ * 幅で計算するという原則（仕様 §4-4）と矛盾する。両側が幅なので、保守側に対称なルールにする：
+ *
+ * | 条件 | 判定 |
+ * |---|---|
+ * | `貯蓄の下端 > 必要額の上端` | 大丈夫のめやす |
+ * | `貯蓄の上端 < 必要額の下端` | 備え不足の可能性 |
+ * | それ以外（重なる） | 圏内・要精査 |
+ *
+ * **不等号は厳密。両端は圏内に入る。** 死亡側の境界裁定と同じ理由で、
+ * ナイフエッジで「大丈夫」と言わない。
+ */
+export function verdictBySavings(
+  savingsLow: number,
+  savingsHigh: number,
+  needLow: number,
+  needHigh: number,
+): Verdict3 {
+  if (savingsLow > needHigh) return "reducible";
+  if (savingsHigh < needLow) return "shortage";
+  return "uncertain";
+}

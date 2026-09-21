@@ -16,7 +16,13 @@ import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
 import { loadParams } from "../params/index.js";
 import { diagnose } from "./index.js";
-import { type HouseholdVerdict, type Verdict3, aggregateHousehold, verdict3 } from "./verdict3.js";
+import {
+  type HouseholdVerdict,
+  type Verdict3,
+  aggregateHousehold,
+  verdict3,
+  verdictBySavings,
+} from "./verdict3.js";
 
 const P = loadParams("2026-08");
 const AS_OF = new Date("2026-08-01T00:00:00+09:00");
@@ -174,5 +180,40 @@ describe("実在10世帯：導出記録との一致", () => {
         expect(at(g.input.coverageSpouse, r.spouse.range.low, r.spouse.range.high)).toBe(false);
       }
     }
+  });
+});
+
+/**
+ * 貯蓄軸の判定（病気・けが・失業の行）。仕様 §1。
+ * **死亡側と同じ3値を使い、比較対象だけ替える。**
+ */
+describe("verdictBySavings：貯蓄という受け皿で足りるか", () => {
+  it("貯蓄の下端が必要額の上端を上回れば『大丈夫のめやす』", () => {
+    expect(verdictBySavings(man(500), man(1000), man(28), man(77))).toBe("reducible");
+  });
+
+  it("貯蓄の上端が必要額の下端に届かなければ『備え不足の可能性』", () => {
+    expect(verdictBySavings(man(0), man(50), man(100), man(300))).toBe("shortage");
+  });
+
+  it("幅が重なっていれば『圏内・要精査』── 言い切らない", () => {
+    expect(verdictBySavings(man(50), man(200), man(100), man(300))).toBe("uncertain");
+  });
+
+  /**
+   * **不等号は厳密。両端は圏内。** 死亡側と同じ理由で、ナイフエッジで「大丈夫」と言わない。
+   */
+  it("境界①：貯蓄の下端＝必要額の上端ちょうど → 圏内", () => {
+    expect(verdictBySavings(man(77), man(1000), man(28), man(77))).toBe("uncertain");
+  });
+
+  it("境界②：貯蓄の上端＝必要額の下端ちょうど → 圏内", () => {
+    expect(verdictBySavings(man(0), man(100), man(100), man(300))).toBe("uncertain");
+  });
+
+  it("**貯蓄を点で比べると幅の情報が消える**（下端と上端が同じなら死亡側と同じ形になる）", () => {
+    // 点＝幅ゼロ。必要額の幅の中に入れば圏内
+    expect(verdictBySavings(man(200), man(200), man(100), man(300))).toBe("uncertain");
+    expect(verdictBySavings(man(400), man(400), man(100), man(300))).toBe("reducible");
   });
 });

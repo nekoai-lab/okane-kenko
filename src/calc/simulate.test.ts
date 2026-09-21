@@ -65,36 +65,79 @@ describe("simulate('death')：既存 diagnose への委譲", () => {
   });
 });
 
-describe("未実装シナリオ：計算未対応は正規の診断結果", () => {
-  const pending: Scenario[] = ["sick_short", "sick_long", "disability", "unemployment"];
-
-  it.each(pending)("%s ─ 例外を投げずに not_supported を返す", (s) => {
-    expect(() => simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s)).not.toThrow();
-    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+describe("計算未対応は正規の診断結果（いま空欄なのは障害だけ）", () => {
+  it("障害 ─ 例外を投げずに not_supported を返す", () => {
+    expect(() => simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "disability")).not.toThrow();
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "disability");
     expect(r.status).toBe("not_supported");
     expect(r.precision).toBe("not_supported");
   });
 
-  it.each(pending)("%s ─ **金額は 0 ではなく null**（0円で足りる、と読ませない）", (s) => {
-    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+  it("障害 ─ **金額は 0 ではなく null**（0円で足りる、と読ませない）", () => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "disability");
     expect(r.amounts).toBeNull();
     expect(r.yearly).toBeNull();
   });
 
-  it.each(pending)("%s ─ 画面にそのまま出せる理由文を持つ", (s) => {
-    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+  it("障害 ─ 画面にそのまま出せる理由文を持つ", () => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "disability");
     expect(r.notSupported?.reason).toBe("not_implemented");
-    expect(r.notSupported?.detail.length ?? 0).toBeGreaterThan(10);
+    expect(r.notSupported?.detail).toContain("根拠なく数字を置かないため");
+  });
+});
+
+/**
+ * 病気・けが・失業は**制度式で概算する**（仕様 §5.3）。
+ * タスク1で作った3モジュール（高額療養費・傷病手当金・基本手当）がここで初めて使われる。
+ */
+describe("制度式で概算するシナリオ", () => {
+  const statutory: Scenario[] = ["sick_short", "sick_long", "unemployment"];
+
+  it.each(statutory)("%s ─ 計算できて、精度は statutory_estimate", (s) => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+    expect(r.status).toBe("ok");
+    expect(r.precision).toBe("statutory_estimate");
+    expect(r.notSupported).toBeNull();
   });
 
-  it("失業は「まだ計算していない」ではなく「保険で備える領域ではない」と言う", () => {
+  it.each(statutory)("%s ─ 必要額を**レンジで**返す（点で潰さない）", (s) => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+    expect(r.amounts).not.toBeNull();
+    expect(r.amounts!.needLow).toBeGreaterThanOrEqual(0);
+    expect(r.amounts!.needHigh).toBeGreaterThan(r.amounts!.needLow);
+  });
+
+  it.each(statutory)("%s ─ 保険の額とは並べない（比較対象が貯蓄なので null）", (s) => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+    expect(r.amounts!.currentCoverage).toBeNull();
+  });
+
+  it.each(statutory)("%s ─ 簡約した前提を全部返す", (s) => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+    expect(r.assumptions.length).toBeGreaterThan(2);
+    expect(r.sources.length).toBeGreaterThan(0);
+  });
+
+  it("長期休職は短期より必要額が大きい（期間が4倍）", () => {
+    const short = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "sick_short");
+    const long = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "sick_long");
+    expect(long.amounts!.needHigh).toBeGreaterThan(short.amounts!.needHigh);
+  });
+
+  it("失業の幅は、離職理由の違いから作る（下端＝会社都合・上端＝自己都合）", () => {
     const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "unemployment");
-    expect(r.notSupported?.detail).toContain("保険で備える領域ではない");
+    expect(r.assumptions.join()).toContain("会社都合");
+    expect(r.assumptions.join()).toContain("給付制限");
+  });
+
+  it("雇用保険の加入年数は設問に無いので、推定したことを前提に残す", () => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "unemployment");
+    expect(r.assumptions.join()).toContain("設問に無いため");
   });
 });
 
 describe("simulateAll：診断表の5行", () => {
-  it("5行を返し、いま計算できるのは death だけ", () => {
+  it("5行を返し、空欄は障害だけ", () => {
     const rows = simulateAll(P, { answers: GOLDEN[0].input, asOf: AS_OF });
     expect(rows.map((r) => r.scenario)).toEqual([
       "death",
@@ -103,8 +146,11 @@ describe("simulateAll：診断表の5行", () => {
       "disability",
       "unemployment",
     ]);
-    expect(rows.filter((r) => r.status === "ok")).toHaveLength(1);
-    expect(rows.filter((r) => r.precision === "not_supported")).toHaveLength(4);
+    // 計算できるのは4行。空欄は障害だけ（仕様 §5.3）
+    expect(rows.filter((r) => r.status === "ok")).toHaveLength(4);
+    expect(rows.filter((r) => r.precision === "not_supported")).toHaveLength(1);
+    expect(rows.filter((r) => r.precision === "statutory_estimate")).toHaveLength(3);
+    expect(rows.filter((r) => r.precision === "calculated")).toHaveLength(1);
   });
 });
 

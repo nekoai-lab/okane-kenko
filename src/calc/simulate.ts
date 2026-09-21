@@ -15,6 +15,8 @@
 import type { ParamSet } from "../params/index.js";
 import { type DiagnoseInput, diagnose } from "./index.js";
 import { type ProjectionRow, projectDeath } from "./projection.js";
+import { needForSickness, needForUnemployment, type ScenarioInput } from "./scenarios.js";
+import { type Verdict3, verdict3, verdictBySavings } from "./verdict3.js";
 import { jstYear } from "../time/jstYear.js";
 import type { HouseholdDiagnosis } from "./types.js";
 
@@ -68,23 +70,30 @@ export interface SimulateResult {
   notSupported: NotSupported | null;
   /** 出典（機関名＋制度名）。画面の出典チップ */
   sources: string[];
+  /**
+   * この行の判定（3値）。**比較対象は行によって違う**。
+   * 死亡＝保険の過不足／病気・失業＝貯蓄という受け皿で足りるか。
+   * 画面のラベルは行ごとに出し分ける（`reducible` は死亡なら「減らせる可能性」、
+   * 病気・失業なら「大丈夫のめやす」）。計算未対応の行は null。
+   */
+  verdict: Verdict3 | null;
   /** `death` のときだけ入る、既存エンジンの結果そのもの（画面はまだこれを使う） */
   death: HouseholdDiagnosis | null;
 }
 
-/** まだ計算式を持っていないシナリオ。**空欄であることを結果として返す** */
-const NOT_IMPLEMENTED: Record<Exclude<Scenario, "death">, string> = {
-  sick_short:
-    "入院・手術（〜3か月）の必要額は、まだ計算していません。根拠なく数字を置かないため、いまは空欄です。",
-  sick_long:
-    "長期休職（〜1年半）の必要額は、まだ計算していません。根拠なく数字を置かないため、いまは空欄です。",
+/**
+ * まだ計算式を持っていないシナリオ。**空欄であることを結果として返す**。
+ * 仕様 §5.3 のとおり、いま空欄なのは**障害だけ**。
+ */
+const NOT_IMPLEMENTED: Record<"disability", string> = {
   disability:
-    "就業不能・障害（1年半超）の必要額は、まだ計算していません。根拠なく数字を置かないため、いまは空欄です。",
-  unemployment:
-    "失業は、基本手当と生活防衛資金で受ける領域です。保険で備える領域ではないため、必要額は出していません。",
+    "傷病手当金が切れた先の領域です。障害年金と団信の特約が鍵になります。根拠なく数字を置かないため、いまは空欄です。",
 };
 
-function notSupported(scenario: Exclude<Scenario, "death">): SimulateResult {
+/** シナリオごとの既定の期間（仕様 §5.3／モック check.html） */
+const DEFAULT_MONTHS = { sick_short: 3, sick_long: 12 } as const;
+
+function notSupported(scenario: "disability"): SimulateResult {
   return {
     scenario,
     status: "not_supported",
@@ -95,6 +104,61 @@ function notSupported(scenario: Exclude<Scenario, "death">): SimulateResult {
     assumptions: [],
     notSupported: { reason: "not_implemented", detail: NOT_IMPLEMENTED[scenario] },
     sources: [],
+    verdict: null,
+    death: null,
+  };
+}
+
+/**
+ * 制度式で概算するシナリオ（病気・けが・失業）。
+ *
+ * **死亡と比較対象が違う。** 死亡は「保険で備える額」だが、ここは「貯蓄で受けられるか」なので
+ * `currentCoverage` は入れない（保険の額と並べると読み手が取り違える）。
+ * 判定（貯蓄軸）はステップ2で足す。
+ */
+function statutory(
+  p: ParamSet,
+  input: SimulateInput,
+  scenario: "sick_short" | "sick_long" | "unemployment",
+): SimulateResult {
+  const a = input.answers;
+  // 雇用保険の加入年数は設問に無いので、就業開始を22歳と置いて年齢から推定する
+  const insuredYears = Math.max(0, a.self.age - 22);
+  const si: ScenarioInput = {
+    annualIncome: a.self.income,
+    employment: a.self.employment,
+    monthlyLiving: a.monthlyLiving,
+    age: a.self.age,
+    insuredYears,
+  };
+
+  const need =
+    scenario === "unemployment"
+      ? needForUnemployment(p, si)
+      : needForSickness(p, si, DEFAULT_MONTHS[scenario]);
+
+  // 貯蓄もレンジで比べる（点推定と比べると、幅で計算するという原則と矛盾する）
+  const savings = input.assetsRange ?? { low: a.assets, high: a.assets };
+  const assumptions = [...need.assumptions];
+  if (!input.assetsRange) {
+    assumptions.push("貯蓄は幅ではなく1点として比べた（回答の幅が渡されていないため）");
+  }
+  if (scenario === "unemployment") {
+    assumptions.push(`雇用保険の加入年数は設問に無いため、22歳就業開始として${insuredYears}年と置いた`);
+  }
+
+  return {
+    scenario,
+    status: "ok",
+    // 回答からの試算ではなく、公的制度の計算式どおりの概算
+    precision: "statutory_estimate",
+    amounts: { needLow: need.low, needHigh: need.high, currentCoverage: null },
+    yearly: null,
+    events: null,
+    assumptions,
+    notSupported: null,
+    sources: need.sources,
+    verdict: verdictBySavings(savings.low, savings.high, need.low, need.high),
     death: null,
   };
 }
@@ -104,6 +168,12 @@ export interface SimulateInput {
   answers: DiagnoseInput;
   /** 前提の目盛り（仕様 §4-6）。タスク4で効かせる。いまは受け取るだけ */
   assumptions?: { livingLevel?: "tight" | "asis" | "roomy" };
+  /**
+   * 貯蓄のレンジ（円）。ウィザードの「500〜1,000万円」をそのまま渡す。
+   * **省略したら点として扱う**（`answers.assets` を上下端に使う）。
+   * アダプタ側で幅を作らない ── 幅は回答が持っている情報であって、ここで発明しない。
+   */
+  assetsRange?: { low: number; high: number };
   asOf?: Date;
 }
 
@@ -114,7 +184,8 @@ export interface SimulateInput {
  * `simulate(x, "death")` と `diagnose(x)` は全フィールドで一致する（テストで固定している）。
  */
 export function simulate(p: ParamSet, input: SimulateInput, scenario: Scenario): SimulateResult {
-  if (scenario !== "death") return notSupported(scenario);
+  if (scenario === "disability") return notSupported(scenario);
+  if (scenario !== "death") return statutory(p, input, scenario);
 
   // **入力をそのまま渡す。** 既定値の補完も丸めもここでは行わない
   const a = input.answers;
@@ -155,6 +226,8 @@ export function simulate(p: ParamSet, input: SimulateInput, scenario: Scenario):
     assumptions: d.self.assumptions.map((a) => a.note),
     notSupported: null,
     sources: [`制度パラメータ版 ${d.paramVersion}`],
+    // 死亡は「保険の過不足」で見る
+    verdict: verdict3(a.coverageSelf, d.self.range.low, d.self.range.high),
     death: d,
   };
 }

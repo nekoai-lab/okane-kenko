@@ -151,6 +151,9 @@ kihonTeate:
       days: 120
     - insuredYearsFrom: 1
       days: 90
+  # 自己都合の給付制限。この間は基本手当が出ないので、生活費を貯蓄で受けることになる。
+  # 会社都合（特定受給資格者）には給付制限が無い。**未指定なら両方を幅の両端として使う。**
+  restrictionMonthsVoluntary: 2
   source: 雇用保険法／厚生労働省「基本手当の所定給付日数」
   verified: false
 
