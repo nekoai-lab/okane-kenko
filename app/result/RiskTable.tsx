@@ -207,30 +207,39 @@ export function RiskTable({ rows, caption }: { rows: RiskRow[]; caption: string 
         同じ貯蓄を各行の受け皿として見ています。
       </p>
 
-      <dl className={s.legend}>
-        <dt>判定</dt>
-        <dd>
-          <span className={`${s.badge} ${s.ok}`}>大丈夫のめやす</span>
-          <span className={`${s.badge} ${s.check}`}>圏内・要精査</span>
-          <span className={`${s.badge} ${s.short}`}>備え不足の可能性</span>
-          <span className={`${s.badge} ${s.none}`}>未診断</span>
-        </dd>
-        <dt>図の読み方</dt>
-        <dd className={s.legendText}>
-          <span className={s.swatchBand} />
-          帯が必要額の幅（幅が無いときは
-          <span className={s.swatchTick} />
-          の目盛り）、
-          <span className={s.swatchHold} />
-          縦線がいまの受け皿（保障・貯蓄）です。<strong>カードごとに目盛りが違います</strong>
-          ──左端は0円、右端は必要額と受け皿の大きいほうです。
-        </dd>
-        <dt>精度</dt>
-        <dd className={s.legendText}>
-          「計算済み」はあなたの回答からの試算、「制度式で概算」は公的制度の計算式どおりの概算、
-          「計算未対応」は正直な空欄です。
-        </dd>
-      </dl>
+      {/*
+        凡例・図の読み方・精度の説明。**参照材なのでまとめて畳む**
+        （2026-09-21・視覚の DoD (a)）。3項目で 828px あり、
+        カードの図が終わったあとに文字だけの区間を作っていた。
+        露出は件数を明示した1行、中身はそのまま（開示の規約）。
+      */}
+      <details className={s.legendFold}>
+        <summary className={s.legendSummary}>この表の読み方（判定・図・精度の3点）</summary>
+        <dl className={s.legend}>
+          <dt>判定</dt>
+          <dd>
+            <span className={`${s.badge} ${s.ok}`}>大丈夫のめやす</span>
+            <span className={`${s.badge} ${s.check}`}>圏内・要精査</span>
+            <span className={`${s.badge} ${s.short}`}>備え不足の可能性</span>
+            <span className={`${s.badge} ${s.none}`}>未診断</span>
+          </dd>
+          <dt>図の読み方</dt>
+          <dd className={s.legendText}>
+            <span className={s.swatchBand} />
+            帯が必要額の幅（幅が無いときは
+            <span className={s.swatchTick} />
+            の目盛り）、
+            <span className={s.swatchHold} />
+            縦線がいまの受け皿（保障・貯蓄）です。<strong>カードごとに目盛りが違います</strong>
+            ──左端は0円、右端は必要額と受け皿の大きいほうです。
+          </dd>
+          <dt>精度</dt>
+          <dd className={s.legendText}>
+            「計算済み」はあなたの回答からの試算、「制度式で概算」は公的制度の計算式どおりの概算、
+            「計算未対応」は正直な空欄です。
+          </dd>
+        </dl>
+      </details>
     </section>
   );
 }

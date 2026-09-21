@@ -237,6 +237,11 @@ export function Step2({
   });
   const stepAndEnd = [...stepRows, last];
 
+  /** 大学期の範囲（接続文の「大学の山」に添える年）。無ければ -1 */
+  const uniRows = rows.filter((r) => r.inUniversity);
+  const uniFrom = uniRows.length > 0 ? rows.indexOf(uniRows[0]) : -1;
+  const uniTo = uniRows.length > 0 ? rows.indexOf(uniRows[uniRows.length - 1]) : -1;
+
   return (
     <div className={s.step2}>
       <MonthlyLedger
@@ -317,8 +322,28 @@ export function Step2({
         </p>
       </details>
 
+      {/*
+        接続文。**文の中の数字を、あるべき声量にする**（2026-09-21・視覚の DoD (a)）。
+        「毎月の不足」と「大学の山」はどちらも上の図が出した具体的な数で、
+        文中に埋めると DoD (b)（金額を文章に埋めない）にも反する。
+        **文言は変えず、数字だけを明朝で立てる**（装飾を足したのではない）。
+      */}
       <p className={s.bridge}>
-        この「毎月の不足」と「大学の山」を、算定期間の全部で足し合わせたものが、次の STEP&nbsp;3
+        <span className={s.bridgeNums}>
+          <span className={s.bridgeNum}>{netText(netLowM, netHighM).amount}</span>
+          <span className={s.bridgeUnit}>／月</span>
+          {uniFrom >= 0 && uniTo > uniFrom && (
+            <>
+              <span className={s.bridgeSep}>＋</span>
+              <span className={s.bridgeNum}>
+                {rows[uniFrom].year}〜{rows[uniTo].year}年
+              </span>
+              <span className={s.bridgeUnit}>の大学の山</span>
+            </>
+          )}
+        </span>
+        この「毎月の{netText(netLowM, netHighM).suffix === "残ります" ? "差し引き" : "不足"}
+        」と「大学の山」を、算定期間の全部で足し合わせたものが、次の STEP&nbsp;3
         の「必要な総額」です。葬儀・予備費のような一度きりの支出も、そこで足します。
       </p>
     </div>

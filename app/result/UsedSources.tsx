@@ -39,7 +39,7 @@ export function UsedSources({ items, note }: { items: UsedSource[]; note: string
         件数を出すのは開示の規約（数の無い「すべて見る」は隠蔽に近い）。
       */}
       <h2 className={s.head} id="sources-heading">
-        使った前提と出典 — 全{items.length}件をここに残しています
+        使った前提と出典 — 全<span className={s.count}>{items.length}</span>件をここに残しています
       </h2>
       {/* 参照材なので畳む（視覚の DoD (a)）。露出は件数を含む見出しだけ */}
       <details className={s.fold}>

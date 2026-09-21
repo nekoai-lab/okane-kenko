@@ -42,11 +42,20 @@ export function Narration({
   values,
   initialText,
   aiEnabled,
+  summary,
 }: {
   query: string;
   values: PlaceholderValues;
   initialText: string;
   aiEnabled: boolean;
+  /**
+   * 既定露出のサマリー（2026-09-21・視覚の DoD (a)）。
+   *
+   * **よみときは算定結果の数字を差し込んでいる**（G-1）のだから、
+   * その数字を明朝で見せれば、この区間には本来アンカーがある。
+   * 冒頭1文の散文だけを出していたのは、**持っている数字を使っていなかった**だけ。
+   */
+  summary: { verdict: string; tone: string; needText: string; coverageText: string };
 }) {
   const [template, setTemplate] = useState("");
   const [text, setText] = useState(initialText);
@@ -128,9 +137,27 @@ export function Narration({
         この1文に畳み、※注は**実際に起きたこと**（AI が動いたか／検査に落ちたか）だけにした。
       */}
       <p className={s.basis}>
-        ことばは AI が書いています。数字と判定は計算エンジンのもの（このページの内訳と同じ値を差し込んでいます）で、AI
+        ことばは AI
+        が書いています。数字と判定は計算エンジンのもの（このページの内訳と同じ値を差し込んでいます）で、AI
         は変えられません。
       </p>
+
+      {/*
+        **既定露出は、判定バッジ＋必要額といまの保障の1行サマリー。**
+        散文の冒頭1文だけを出していたときは、この区間に視覚アンカーが1つも無かった。
+        数字はすべて算定結果から来ており、ここで作っていない。
+      */}
+      <div className={s.narrationSummary}>
+        <span className={`${s.narrationBadge} ${s[summary.tone] ?? ""}`}>{summary.verdict}</span>
+        <span className={s.narrationStat}>
+          <span className={s.narrationStatLabel}>必要額</span>
+          <span className={s.narrationStatValue}>{summary.needText}</span>
+        </span>
+        <span className={s.narrationStat}>
+          <span className={s.narrationStatLabel}>いまの保障</span>
+          <span className={s.narrationStatValue}>{summary.coverageText}</span>
+        </span>
+      </div>
 
       <div
         aria-busy={mode === "streaming" || mode === "waiting"}
@@ -144,7 +171,10 @@ export function Narration({
       {hasMore && (
         <details className={s.criteria}>
           {/* **件数（ここでは文字数）を出す。** 数の無い「すべて見る」は開示ではなく隠蔽に近い */}
-          <summary>続きを読む（全文 {body.length} 字）</summary>
+          {/* 字数は**既にある数字**。あるべき声量で出す（DoD (b) の組版を (a) の解に使う） */}
+          <summary>
+            続きを読む（全文 <span className={s.foldCount}>{body.length}</span> 字）
+          </summary>
           <p className={s.narrationFull}>{body}</p>
         </details>
       )}

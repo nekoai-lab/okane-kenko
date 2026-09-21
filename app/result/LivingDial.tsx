@@ -12,11 +12,17 @@ import Link from "next/link";
 import type { LivingLevel } from "../../src/wizard/dial.js";
 import s from "./livingDial.module.css";
 
-/** ラベルとサブラベルは仕様 §4-6 の表と同文（「切り詰める＝今の7割」は誤りだった） */
-const LABELS: Record<LivingLevel, { name: string; sub: string }> = {
-  tight: { name: "切り詰める", sub: "いまの生活費から1割しぼる前提" },
-  asis: { name: "いま通り", sub: "いまと同じ水準（既定）" },
-  roomy: { name: "ゆとりを持つ", sub: "1割のゆとりを見る前提" },
+/**
+ * ラベルとサブラベルは仕様 §4-6 の表と同文（「切り詰める＝今の7割」は誤りだった）。
+ *
+ * `delta` は**そのサブラベルが既に言っている数**（1割しぼる／同じ水準／1割のゆとり）を
+ * 数字で書き出したもの。ADR-022 の乗数 `m`（0.9 / 1.0 / 1.1）と同じ値で、
+ * **新しい基準を作っていない**。文中に沈んでいた数を、あるべき声量にするだけ。
+ */
+const LABELS: Record<LivingLevel, { name: string; sub: string; delta: string }> = {
+  tight: { name: "切り詰める", sub: "いまの生活費から1割しぼる前提", delta: "−10%" },
+  asis: { name: "いま通り", sub: "いまと同じ水準（既定）", delta: "±0%" },
+  roomy: { name: "ゆとりを持つ", sub: "1割のゆとりを見る前提", delta: "+10%" },
 };
 
 export interface LivingDialProps {
@@ -49,6 +55,7 @@ export function LivingDial({ current, hrefFor, absorbedNote }: LivingDialProps) 
               scroll={false}
             >
               <span className={s.btnName}>{LABELS[level].name}</span>
+              <span className={s.btnDelta}>{LABELS[level].delta}</span>
               <span className={s.btnSub}>{LABELS[level].sub}</span>
             </Link>
           );

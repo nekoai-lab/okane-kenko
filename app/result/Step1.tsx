@@ -99,6 +99,19 @@ export function Step1({ chips, estimations, terms, editHref }: Step1Props) {
       </div>
 
       {/*
+        **この節の要約数字**（2026-09-21・視覚の DoD (a)）。
+        装飾ではなく、STEP1 が何件の回答と何件の推定でできているかの数。
+        DoD (b)（金額は明朝で主役に）と同じ組版を、金額以外の要約数にも当てる。
+      */}
+      <p className={s.counter}>
+        <span className={s.counterNum}>{chips.length - estimations.length}</span>
+        <span className={s.counterUnit}>問に回答</span>
+        <span className={s.counterSep}>／</span>
+        <span className={s.counterNum}>{estimations.length}</span>
+        <span className={s.counterUnit}>件を推定で補いました</span>
+      </p>
+
+      {/*
         **3組に割って小見出しを付ける。** 小見出しは台帳のセクション見出しと同じトークン。
         推定に回った項目はこの列から抜けるので、**組ごと空になることがある** ── そのときは出さない。
       */}

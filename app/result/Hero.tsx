@@ -45,7 +45,11 @@ export interface HeroProps {
   modeText: string;
 }
 
-const BADGE: Record<HeroVerdict, string> = {
+/**
+ * バッジの文言。**export して「よみとき」のサマリーからも同じものをバインドする**
+ * ── 同じ判定に2つの呼び名ができるのを防ぐ（CLAUDE.md「判定ラベルは手打ちで再入力しない」）。
+ */
+export const HERO_BADGE: Record<HeroVerdict, string> = {
   reducible: "減らせる可能性",
   uncertain: "圏内・要精査",
   shortage: "不足の可能性",
@@ -72,6 +76,15 @@ function headline(v: HeroVerdict, diff: string | null): string {
   }
 }
 
+/** バッジの色チャンネル（判定バッジのステータス体系）。よみときのサマリーと共有する */
+export const HERO_TONE: Record<HeroVerdict, string> = {
+  reducible: "ok",
+  uncertain: "check",
+  shortage: "short",
+  rebalanceable: "check",
+  pending: "none",
+};
+
 export function Hero(props: HeroProps) {
   const {
     verdict,
@@ -93,7 +106,7 @@ export function Hero(props: HeroProps) {
       </div>
 
       <div>
-        <span className={`${s.badge} ${s[verdict]}`}>{BADGE[verdict]}</span>
+        <span className={`${s.badge} ${s[verdict]}`}>{HERO_BADGE[verdict]}</span>
       </div>
 
       <h1 className={s.head} id="hero-head">

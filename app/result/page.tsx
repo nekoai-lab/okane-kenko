@@ -18,7 +18,7 @@ import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
 import { decisionPoints } from "../../src/calc/decisionPoints.js";
 import { reform2028 } from "../../src/calc/reform2028.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
-import { Hero } from "./Hero.js";
+import { HERO_BADGE, HERO_TONE, Hero } from "./Hero.js";
 import { LivingDial } from "./LivingDial.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
 import { Step1, type AnswerChip } from "./Step1.js";
@@ -964,6 +964,23 @@ export default async function ResultPage({
    * **不足している側は過不足軸（`Verdict3`）で名指す。** ニーズ軸ではない
    * （CLAUDE.md「判定には必ず軸名を添える」）。
    */
+  /**
+   * 見直し導線に再掲する「次にお知らせが要りそうな時期」。
+   * **段差チャートの段差①と同じ材料**（`projectDeath` の年次）から取る。
+   * 画面で年を作らない ── 図と導線で別の年を出すと、どちらが正か分からなくなる。
+   */
+  const watchYear = (() => {
+    const rows = selfProjection.rows;
+    for (let i = 1; i < rows.length; i++) {
+      const prev = rows[i - 1];
+      const now = rows[i];
+      const pen = (r: typeof now) =>
+        r.income.pensionBasic + r.income.pensionKosei + r.income.chukoreiKafu;
+      if (Math.abs(pen(now) - pen(prev)) >= 1000 * 12) return now.year;
+    }
+    return null;
+  })();
+
   const rebalanceNote = (() => {
     if (hh.verdict !== "rebalanceable") return null;
     const shortSides = [
@@ -1070,9 +1087,15 @@ export default async function ResultPage({
       {/* 3. 玄関：リスク別健康診断表（仕様 §5.3）。この下に死亡の詳細が縦1本で続く */}
       <RiskTable caption={caption} rows={riskRows} />
 
+      {/*
+        **既にある数字を、あるべき声量にする**（DoD (a)(b)）。
+        算定基準日とパラメータ版は、この結果が「いつの・どの制度で」出たかの情報で、
+        散文の中に沈めると出どころが読めない。
+      */}
       <p className={s.meta}>
-        これは<strong>概算・要精査</strong>です／算定基準日：{new Date().toISOString().slice(0, 10)}
-        ／使用パラメータ版：{result.paramVersion}
+        これは<strong>概算・要精査</strong>です ／ 算定基準日{" "}
+        <span className={s.metaValue}>{new Date().toISOString().slice(0, 10)}</span> ／
+        使用パラメータ版 <span className={s.metaValue}>{result.paramVersion}</span>
       </p>
 
       {/* やさしい説明（T-07）。数値はAIに書かせず算定結果を差し込む。
@@ -1081,6 +1104,13 @@ export default async function ResultPage({
         aiEnabled={Boolean(process.env.GEMINI_API_KEY)}
         initialText={narrate(result).text}
         query={q.toString()}
+        /* **持っている数字を露出に出す。** すべて算定結果から来ている（画面で作らない） */
+        summary={{
+          verdict: HERO_BADGE[hh.verdict],
+          tone: HERO_TONE[hh.verdict],
+          needText: formatRange(hh.totalNeed.low, hh.totalNeed.high),
+          coverageText: hh.totalCoverage === null ? "未入力" : `約${money(hh.totalCoverage)}`,
+        }}
         values={placeholderValues(result)}
       />
 
@@ -1102,7 +1132,9 @@ export default async function ResultPage({
       <div className={s.section}>
         {totalExcess > 0 ? (
           <div className={s.reduce}>
-            <strong>減らせそうな箇所：</strong> 世帯全体で、いまの保障を約{money(totalExcess)}
+            {/* **既にある金額を、あるべき声量にする**（DoD (b) の組版を (a) の解に使う） */}
+            <strong>減らせそうな箇所：</strong> 世帯全体で、いまの保障を
+            <span className={s.reduceAmount}>約{money(totalExcess)}</span>
             減らせる余地があります。保険料が浮くのは良い知らせです（いまの前提では）。
           </div>
         ) : (
@@ -1212,7 +1244,8 @@ export default async function ResultPage({
       {eduWhatIf.length > 0 && (
         <details className={s.section}>
           <summary className={s.foldHead}>
-            進路で教育費はこう変わる（{eduWhatIf.length}通り・お子さん合計）
+            進路で教育費はこう変わる（<span className={s.foldCount}>{eduWhatIf.length}</span>
+            通り・お子さん合計）
           </summary>
           <div className={s.rows}>
             {eduWhatIf.map((w) => (
@@ -1229,8 +1262,12 @@ export default async function ResultPage({
         </details>
       )}
 
-      {/* 平均の中立併記（社会的証明＝煽りにしない。平均は目標ではない） */}
-      <div className={s.section}>
+      {/*
+        平均の中立併記（社会的証明＝煽りにしない。平均は目標ではない）。
+        **参照材なので畳む**（2026-09-21・視覚の DoD (a)）。
+      */}
+      <details className={s.section}>
+        <summary className={s.foldHead}>ご参考：世帯の死亡保険金額の平均</summary>
         <div className={s.reformNote}>
           <strong>ご参考：</strong> 世帯の死亡保険金額の平均は約
           {formatMan(v(params, "householdDeathCoverageAvg"))}
@@ -1239,11 +1276,33 @@ export default async function ResultPage({
           。必要な額は世帯の前提で大きく変わります。額の大小ではなく、
           <strong>あなたの前提での必要額（上の目安）</strong>で見てください。
         </div>
-      </div>
+      </details>
 
       {/* 次の一歩（T-06）。文面は保険業法の自己診断サンプル（正式レビュー前） */}
       <div className={s.section}>
         <h2 className={s.h2}>次の一歩</h2>
+        {/*
+          **導線カードに、本文の数字を再掲する**（2026-09-21・視覚の DoD (a)）。
+          窓口に持っていくのはこの2つの数なので、**再掲であって装飾ではない**。
+          値は `householdSummary` から来ており、ここで作っていない。
+        */}
+        <div className={s.narrationSummary}>
+          <span className={`${s.narrationBadge} ${s[HERO_TONE[hh.verdict]] ?? ""}`}>
+            {HERO_BADGE[hh.verdict]}
+          </span>
+          <span className={s.narrationStat}>
+            <span className={s.narrationStatLabel}>必要額のめやす</span>
+            <span className={s.narrationStatValue}>
+              {formatRange(hh.totalNeed.low, hh.totalNeed.high)}
+            </span>
+          </span>
+          <span className={s.narrationStat}>
+            <span className={s.narrationStatLabel}>いまの保障</span>
+            <span className={s.narrationStatValue}>
+              {hh.totalCoverage === null ? "未入力" : `約${money(hh.totalCoverage)}`}
+            </span>
+          </span>
+        </div>
         {(result.householdHeadline.kind === "reducible" ||
           result.householdHeadline.kind === "rebalanceable") && (
           <p className={s.meta}>
@@ -1289,6 +1348,27 @@ export default async function ResultPage({
           ただし CTA の赤は使わない。押させたい場所ではなく、選べる場所として出す。 */}
       <div className={`${s.section} ${s.watchCard}`}>
         <h2 className={s.h3}>このあと、状況が変わったら</h2>
+        {/*
+          **導線カードに、本文の数字を再掲する**（DoD (a)）。
+          お知らせが効いてくるのはこの年なので、再掲であって装飾ではない。
+          年は段差チャートと同じ `projectDeath` の出力から来ている。
+        */}
+        {selfProjection.rows.length > 1 && (
+          <p className={s.narrationSummary}>
+            <span className={s.narrationStat}>
+              <span className={s.narrationStatLabel}>
+              {watchYear === null ? "お知らせが対象にする期間" : "次にお知らせが要りそうな時期"}
+            </span>
+              <span className={s.narrationStatValue}>
+                {watchYear === null
+                  ? // 公的収入が動かない世帯（遺族がいない等）では節目が無い。
+                    // **数字が無いと言わず、お知らせが対象にする期間の終端を出す**
+                    `${selfProjection.rows[selfProjection.rows.length - 1].year}年まで`
+                  : `${watchYear}年ごろ`}
+              </span>
+            </span>
+          </p>
+        )}
         <p className={s.watchLead}>
           お子さんの進学など、必要な保障が変わる時期にだけ一言お知らせします。
           保存するのは今日の入力（範囲）と結果の要点だけで、
@@ -1320,7 +1400,7 @@ export default async function ResultPage({
       <details className={s.section}>
         <summary className={s.foldHead}>
           当社基準（公的出典のない当社の見立て・全
-          {Object.keys(params.ownStandard).length}件）
+          <span className={s.foldCount}>{Object.keys(params.ownStandard).length}</span>件）
         </summary>
         <ul className={s.list}>
           {Object.entries(params.ownStandard).map(([key, e]) => (

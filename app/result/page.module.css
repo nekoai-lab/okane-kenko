@@ -62,7 +62,17 @@
 .meta {
   font-size: var(--font-size-std-s);
   color: var(--color-text-secondary);
-  margin: var(--space-2) 0;
+  margin: var(--space-1) 0;
+}
+
+/* 基準日・パラメータ版。既にある数字を、あるべき声量で */
+.metaValue {
+  font-family: var(--mk-font-display);
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
 }
 
 .list {
@@ -94,7 +104,7 @@
   なので、図を増やすのではなく間隔を詰めて画面に収める。
 */
 .section {
-  margin: var(--space-6) 0;
+  margin: var(--space-5) 0;
 }
 
 .caseCard {
@@ -201,7 +211,7 @@
 .narration {
   font-size: var(--font-size-std-m);
   line-height: var(--line-height-body-loose);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-card);
   background: var(--color-surface-subtle);
 }
@@ -221,6 +231,71 @@
   text-underline-offset: 3px;
 }
 
+/*
+  よみときの既定露出サマリー。**持っている数字を、あるべき声量で出す**（DoD (a)(b)）。
+  金額は算定結果から来ており、ここで作っていない。
+*/
+.narrationSummary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0;
+}
+
+.narrationBadge {
+  font-size: var(--font-size-std-s);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  border: 1.5px solid var(--mk-grey-border);
+  color: var(--mk-muted-2);
+  white-space: nowrap;
+}
+.narrationBadge.ok {
+  border-color: var(--mk-green);
+  color: var(--mk-green-deep);
+  background: var(--mk-green-bg);
+}
+.narrationBadge.check {
+  border-color: var(--mk-amber);
+  color: var(--mk-amber-deep);
+  background: var(--mk-amber-bg);
+}
+.narrationBadge.short {
+  border-color: var(--mk-red);
+  color: var(--mk-red-deep);
+  background: var(--mk-red-bg);
+}
+
+.narrationStat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.narrationStatLabel {
+  font-size: var(--font-size-std-xs);
+  color: var(--color-text-secondary);
+}
+
+.narrationStatValue {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 折りたたみ見出しの件数。**既にある数字**なので、あるべき声量で出す */
+.foldCount {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  margin: 0 1px;
+}
+
 /* 折りたたみの中の全文。露出部と同じ読み味にそろえる */
 .narrationFull {
   font-size: var(--font-size-std-m);
@@ -232,20 +307,20 @@
 .scope {
   border-left: 6px solid var(--color-accent);
   background: var(--color-surface-subtle);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-control);
   font-size: var(--font-size-std-s);
 }
 .scope p {
-  margin: var(--space-2) 0;
+  margin: var(--space-1) 0;
 }
 
 /* 「もっと知りたい：選ぶ基準」の開閉 */
 .criteria {
-  margin: var(--space-3) 0;
+  margin: var(--space-2) 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
 }
 .criteria > summary {
   cursor: pointer;
@@ -258,9 +333,19 @@
 .reduce {
   border-left: 6px solid var(--color-success);
   background: var(--color-surface-subtle);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-control);
 }
+/* 既にある金額を、あるべき声量で（文章に埋めない・DoD (b)） */
+.reduceAmount {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  margin: 0 2px;
+}
+
 .reduceNone {
   border-left: 6px solid var(--color-border);
   background: var(--color-surface-subtle);

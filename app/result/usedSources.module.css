@@ -15,6 +15,15 @@
   margin: 0;
 }
 
+/* 件数は**既にある数字**なので、あるべき声量で出す（DoD (b) の組版） */
+.count {
+  font-family: var(--mk-font-display);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin: 0 1px;
+}
+
 /* 参照材の折りたたみ。露出は件数を含む見出しだけ */
 .fold {
   margin: 0;
