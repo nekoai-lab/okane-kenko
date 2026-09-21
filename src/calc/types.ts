@@ -89,6 +89,12 @@ export interface DeathResult {
 
 export interface Assumption {
   field: string;
+  /**
+   * 拾い読みのための見出し語（数語）。**画面ではなくここで持つ**
+   * ── 式を変えたときに文だけ古いまま残るのを防ぐ。
+   * 見出し語が無いと、前提の一覧は全部読まないと何の話か分からない壁になる。
+   */
+  label?: string;
   value: string | number;
   reason: "estimated" | "default" | "unknown";
   note: string;

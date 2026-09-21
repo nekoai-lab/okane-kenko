@@ -53,48 +53,54 @@ function buildSurvivorAssumptions(
   if (x.hasSurvivor && x.survivorIncome > 0) {
     out.push({
       field: "survivor.income.flat",
+      label: `${x.yTotal}年間ずっと働き続ける`,
       value: x.survivorIncome,
       reason: "estimated",
-      note: `この判定は、遺されたご家族が働き続ける前提に立っています。65歳になるまでの${x.yTotal}年間、年収${man(x.survivorIncome)}万円を途切れず維持するものとして、合計 約${man(x.survivorWork)}万円を収入に見込みました。昇給も減収も見込んでいません。`,
+      note: `年収${man(x.survivorIncome)}万円が65歳まで途切れない前提で、合計 約${man(x.survivorWork)}万円を収入に見込みました。`,
     });
   }
   if (x.hasSurvivor && x.yAlone > 0) {
     out.push({
       field: "survivor.income.floor",
+      label: "独立後も収入は下がらない",
       value: v(p, "postIndepMinIncome"),
       reason: "estimated",
-      note: `この判定は、お子さんの独立後も遺されたご家族の収入が下がらない前提に立っています（年${man(v(p, "postIndepMinIncome"))}万円を下限に置き、いまの収入がそれを上回る場合はいまの収入のままとしています）。`,
+      note: `お子さんが独立したあとも同じ収入が続く前提です（下限は年${man(v(p, "postIndepMinIncome"))}万円）。`,
     });
   }
   if (x.hasSurvivor) {
     out.push({
         field: "survivor.disability",
+      label: "遺族が働けなくなることは起きない",
       value: "起きない",
       reason: "default",
       // 同じページの「就業不能・障害」の行で診ているリスクを、この計算では起きないものとして扱っている
-      note: "この判定は、遺されたご家族自身が病気やけがで働けなくなることは起きない前提に立っています。そのリスクは上の「就業不能・障害」の行で別に診ており、この死亡の計算には含めていません。",
+      note: "そのリスクは上の「就業不能・障害」の行で別に診ていて、この計算には含めていません。",
     });
   }
   if (x.hasChildren) {
     out.push({
       field: "childcare.extra",
+      label: "追加の保育費・学童費用は未計上",
       value: 0,
       reason: "default",
-      note: "この判定は、遺されたご家族が就労を増やす場合の追加の保育費・学童費用を支出に見込んでいません。実際にかかる場合、必要額はこの試算より増えます。",
+      note: "就労を増やす場合にかかる分を支出に入れていません。実際にかかるなら必要額は増えます。",
     });
   }
   out.push({
     field: "assets.growth",
+    label: "新しい貯蓄はゼロ",
     value: 0,
     reason: "default",
-    note: "この判定は、算定期間中に新しく貯蓄が増えることはない前提に立っています。金融資産はいまの額のまま置いています。",
+    note: "算定期間中に貯蓄が増える分は見ていません（金融資産はいまの額のまま）。",
   });
   if (x.hasSurvivor) {
     out.push({
       field: "period.end",
+      label: "65歳以降は対象外",
       value: 65,
       reason: "default",
-      note: `この判定は、遺されたご家族が65歳になるまでの${x.yTotal}年だけを見ています。65歳以降の生活費はこの計算の対象外です（老齢年金に切り替わるため）。`,
+      note: `見ているのは65歳になるまでの${x.yTotal}年だけです（以降は老齢年金に切り替わるため）。`,
     });
   }
   return out;

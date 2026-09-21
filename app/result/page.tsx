@@ -506,7 +506,16 @@ export default async function ResultPage({
       },
       note: `${reason}${body}`,
       // 判定を支えている前提（仕様 §5.3 の開示6点）。`ample` 系のときだけ engine が返す
-      assumptions: dr.assumptions.map((a) => a.note),
+      assumptions: dr.assumptions.map((a) => ({ label: a.label ?? "前提", note: a.note })),
+      // 前提の重みを図にする。金額は算定結果（income）から取り、UI では作らない
+      premiseWeight:
+        dr.assumptions.length > 0 && dr.income.total > 0 && dr.income.survivorWork > 0
+          ? {
+              share: dr.income.survivorWork / dr.income.total,
+              totalText: `約${money(dr.income.total)}`,
+              onPremiseText: `約${money(dr.income.survivorWork)}`,
+            }
+          : null,
       link: { href: "#death-detail", label: "詳しく →" },
     };
   };
@@ -555,6 +564,7 @@ export default async function ResultPage({
       note: `${lead}${tail}`,
       // 開示6点は死亡の算定の前提なので、貯蓄軸の行には出さない
       assumptions: [],
+      premiseWeight: null,
       // ラボは未実装。**押せないことを黙らせない**
       link: { pending: "もしもラボで見る（準備中）" },
     };
@@ -589,6 +599,7 @@ export default async function ResultPage({
       scale: null,
       note: bySc.disability.notSupported?.detail ?? "",
       assumptions: [],
+      premiseWeight: null,
       link: { pending: "もしもラボで見る（準備中）" },
     },
     savingsRow(

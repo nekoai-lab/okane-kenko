@@ -168,16 +168,22 @@ describe("判定を支えている前提を黙って置かない（ample系の�
   it("**判定を決めている額そのものを文面に出す**（前提と金額を離さない）", () => {
     const r = diagnose(P, GOLDEN[0].input, AS_OF);
     const flat = r.self.assumptions.find((a) => a.field === "survivor.income.flat");
-    expect(flat!.note).toContain("遺されたご家族が働き続ける前提");
-    expect(flat!.note).toContain("途切れず維持する");
+    // 見出し語で拾い読みできること（全部読まないと分からない壁にしない）
+    expect(flat!.label).toBeTruthy();
+    expect(flat!.note).toContain("途切れない前提");
+    // **判定を決めている額そのものを出す。** 前提と金額を離すと、重みが伝わらない
     expect(flat!.note).toContain("合計");
   });
 
   it("**遺されるのが誰かで文言が逆にならない**（配偶者死亡のケースでも成り立つ書き方にする）", () => {
     const r = diagnose(P, GOLDEN[0].input, AS_OF);
-    const notes = [...r.self.assumptions, ...(r.spouse?.assumptions ?? [])].map((a) => a.note);
+    const notes = [...r.self.assumptions, ...(r.spouse?.assumptions ?? [])].flatMap((a) => [
+      a.label ?? "",
+      a.note,
+    ]);
     // 配偶者が亡くなるケースでは遺されるのは本人なので、「配偶者が働き続ける」は事実と逆になる
     expect(notes.some((t) => t.includes("配偶者が働き続ける"))).toBe(false);
+    expect(notes.some((t) => t.startsWith("配偶者が"))).toBe(false);
   });
 
   it("配偶者がいない世帯では、配偶者にまつわる前提を語らない", () => {

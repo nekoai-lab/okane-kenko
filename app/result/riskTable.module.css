@@ -364,3 +364,38 @@
 .premisesList li {
   margin-bottom: 5px;
 }
+
+/* 拾い読みできるように、各項目は見出し語＋1行にする（全部読まないと分からない壁にしない） */
+.premisesLabel {
+  display: block;
+  color: var(--amber-deep);
+}
+
+/*
+  前提の重みの帯。**開示そのものを図にする。**
+  6行の文章だけだと、図も大きな数字も無い区間が844px（=1画面）できて視覚のDoD(a)を割る。
+  「この前提が外れたらどれだけの収入が消えるか」は、読ませるより見せたほうが速い。
+*/
+.weight {
+  margin: 0 0 var(--space-3);
+}
+
+.weightBar {
+  height: 14px;
+  border-radius: 7px;
+  background: #e8dcc2;
+  overflow: hidden;
+}
+
+.weightBar span {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+}
+
+.weightNote {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #6b5a38;
+  margin: 5px 0 0;
+}

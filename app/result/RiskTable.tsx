@@ -62,7 +62,13 @@ export interface RiskRow {
    * **畳まない。** 必要額が1点に潰れる世帯では、前提が外れたときの動きが幅から読めないので、
    * ここが唯一の手がかりになる。折りたたむと開示にならない。
    */
-  assumptions: string[];
+  assumptions: { label: string; note: string }[];
+  /**
+   * 前提の重み。**開示そのものを図にする。**
+   * 「この前提が外れたらどれだけの収入が消えるか」は、6行の文章より1本の帯のほうが速い。
+   * `share` は描画のための比率（0〜1）で、画面に出す金額は両端の文字列のほうを使う。
+   */
+  premiseWeight: { share: number; totalText: string; onPremiseText: string } | null;
   /** 同ページ内へのアンカー、または準備中の表示 */
   link: { href: string; label: string } | { pending: string };
 }
@@ -167,10 +173,33 @@ export function RiskTable({ rows, caption }: { rows: RiskRow[]; caption: string 
 
             {r.assumptions.length > 0 && (
               <div className={s.premises}>
-                <p className={s.premisesHead}>この判定を支えている前提（{r.assumptions.length}点）</p>
+                {/* 「この判定は◯◯の前提に立っています」の型は、**見出しで1回だけ**言う。
+                    6項目すべての頭に付けると、同じ12文字が6回並んで壁になる（2026-09-21 の実測で
+                    図も大きな数字も無い区間が975px＝1画面ぶんできた） */}
+                <p className={s.premisesHead}>
+                  この判定は、次の{r.assumptions.length}つの前提に立っています
+                </p>
+                {r.premiseWeight && (
+                  <div className={s.weight}>
+                    <div
+                      className={s.weightBar}
+                      role="img"
+                      aria-label={`見込んだ収入 ${r.premiseWeight.totalText} のうち ${r.premiseWeight.onPremiseText} が、遺されたご家族の就労収入です。`}
+                    >
+                      <span style={{ width: `${Math.round(r.premiseWeight.share * 100)}%` }} />
+                    </div>
+                    <p className={s.weightNote}>
+                      見込んだ収入 {r.premiseWeight.totalText} のうち{" "}
+                      <b>{r.premiseWeight.onPremiseText}</b> が、遺されたご家族の就労収入です
+                    </p>
+                  </div>
+                )}
                 <ul className={s.premisesList}>
                   {r.assumptions.map((a) => (
-                    <li key={a}>{a}</li>
+                    <li key={a.label}>
+                      <b className={s.premisesLabel}>{a.label}</b>
+                      {a.note}
+                    </li>
                   ))}
                 </ul>
               </div>
