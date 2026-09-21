@@ -30,21 +30,18 @@ function roundToUnit(x: number, unit: number): number {
  * 係数に公的出典が無く `survivorLivingRatio` 0.70 と同じ問題を再生産するため採らない。
  * 下振れの体験はもしもラボの就労シナリオ（200万継続／100万に減額／就労なし）が担う。
  */
-function buildSurvivorAssumptions(
-  p: ParamSet,
-  x: {
-    /** 配偶者がいない世帯では、遺族にまつわる前提は語らない（無い前提を語らない） */
-    hasSurvivor: boolean;
-    /** 遺族の呼び名。本人死亡なら「遺されたご家族」、配偶者死亡なら「あなた」 */
-    survivorLabel: string;
-    survivorIncome: number;
-    /** 末子独立後に使っている年額（手取り）。`max(netNow, postIndepMinIncome)` の結果 */
-    netAfter: number;
-    yTotal: number;
-    yAlone: number;
-    hasChildren: boolean;
-  },
-): Assumption[] {
+function buildSurvivorAssumptions(x: {
+  /** 配偶者がいない世帯では、遺族にまつわる前提は語らない（無い前提を語らない） */
+  hasSurvivor: boolean;
+  /** 遺族の呼び名。本人死亡なら「遺されたご家族」、配偶者死亡なら「あなた」 */
+  survivorLabel: string;
+  survivorIncome: number;
+  /** 末子独立後に使っている年額（手取り）。`max(netNow, postIndepMinIncome)` の結果 */
+  netAfter: number;
+  yTotal: number;
+  yAlone: number;
+  hasChildren: boolean;
+}): Assumption[] {
   const man = (yen: number) => Math.round(yen / 10000).toLocaleString("ja-JP");
   const out: Assumption[] = [];
 
@@ -209,7 +206,7 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
     }
   }
 
-  survivorAssumptions = buildSurvivorAssumptions(p, {
+  survivorAssumptions = buildSurvivorAssumptions({
     hasSurvivor: survivor !== null && survivor !== undefined,
     survivorLabel: h.survivorLabel ?? "遺されたご家族",
     survivorIncome: survivor?.income ?? 0,
