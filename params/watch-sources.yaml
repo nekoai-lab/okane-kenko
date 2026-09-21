@@ -59,6 +59,7 @@ watches:
     targets:
       - key: kihonTeate.restrictionMonthsVoluntary
         label: 自己都合退職の給付制限（原則）
+        unit: か月
         pattern: "退職日が令和[0-9０-９]+年[0-9０-９]+月[0-9０-９]+日以降である場合は原則([0-9０-９]+)か月"
         min: 1
         max: 3

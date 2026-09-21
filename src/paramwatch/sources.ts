@@ -15,6 +15,8 @@ export interface WatchTarget {
   label: string;
   /** 金額を1つだけ捕まえる正規表現（捕捉グループ1が値） */
   pattern: string;
+  /** 画面に出す単位（既定は「円」）。金額でない値（給付制限の月数など）に付ける */
+  unit?: string;
   /** 取り違え検知の幅。外れたら提案を作らず止める */
   min: number;
   max: number;

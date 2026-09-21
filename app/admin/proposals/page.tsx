@@ -8,6 +8,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, checkToken } from "../../../src/paramwatch/auth.js";
+import { summarizeRows } from "../../../src/paramwatch/judge.js";
 import { createFirestoreProposalStore } from "../../../src/paramwatch/store.firestore.js";
 import s from "./page.module.css";
 
@@ -55,8 +56,14 @@ export default async function ProposalsPage() {
                 {p.changes.map((c) => (
                   <tr key={c.key}>
                     <td>{c.label}</td>
-                    <td className={s.num}>{c.current.toLocaleString()}円</td>
-                    <td className={s.num}>{c.proposed.toLocaleString()}円</td>
+                    <td className={s.num}>
+                      {c.current.toLocaleString()}
+                      {c.unit ?? "円"}
+                    </td>
+                    <td className={s.num}>
+                      {c.proposed.toLocaleString()}
+                      {c.unit ?? "円"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -64,7 +71,7 @@ export default async function ProposalsPage() {
 
             <h3 className={s.h3}>影響（10世帯で再計算した結果）</h3>
             <p className={s.impact}>
-              結論が変わる世帯：<strong>{p.impact.changedCount}</strong> /{" "}
+              世帯の結論（過不足軸）が変わる世帯：<strong>{p.impact.changedCount}</strong> /{" "}
               {p.impact.households.length} 件
               {p.impact.changedCount === 0 ? "（＝利用者への通知はしません）" : null}
             </p>
@@ -79,6 +86,15 @@ export default async function ProposalsPage() {
                   </li>
                 ))}
             </ul>
+
+            {/* 2026-09-22（D2）。行ごとの前後を軸名つきで。それ以前の提案には rows が無いので出ない */}
+            {summarizeRows(p.impact).length > 0 ? (
+              <ul className={s.list}>
+                {summarizeRows(p.impact).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
 
             <h3 className={s.h3}>根拠</h3>
             <p className={s.basis}>
@@ -148,8 +164,13 @@ export default async function ProposalsPage() {
               </form>
             ) : (
               <p className={s.blocked}>
-                <strong>不変条件に落ちているため、承認ボタンは出しません。</strong>
-                {p.impact.invariantFailures.map((f) => `${f.id}: ${f.what}`).join(" / ")}
+                <strong>検算に落ちているため、承認ボタンは出しません。</strong>
+                {[
+                  ...p.impact.invariantFailures.map((f) => `不変条件 ${f.id}: ${f.what}`),
+                  ...(p.impact.baselineFailures ?? []).map(
+                    (f) => `現行 params で green でない ${f.id}: ${f.what}`,
+                  ),
+                ].join(" / ")}
               </p>
             )}
           </section>

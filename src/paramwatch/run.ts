@@ -7,7 +7,7 @@
 import type { ParamSet } from "../params/index.js";
 import { detectInstructions, extractAll } from "./extract.js";
 import { fetchSource } from "./fetch.js";
-import { assessImpact, type ParamChange, type WatchCase } from "./judge.js";
+import { assessImpact, type ParamChange, summarizeRows, type WatchCase } from "./judge.js";
 import { describeLedger, resolveTarget } from "./paths.js";
 import type { ActionLogEntry, ProposalStore } from "./store.js";
 import type { WatchSources } from "./sources.js";
@@ -145,12 +145,14 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
         const target = resolved.find((x) => x.key === r.key)?.target;
         if (target === undefined) continue;
         matchedTexts.push(r.matchedText);
+        const watchTarget = watch.targets.find((x) => x.key === r.key);
         if (target.current !== r.value) {
           changes.push({
             key: r.key,
             label: target.label ?? resolved.find((x) => x.key === r.key)?.label ?? r.key,
             current: target.current,
             proposed: r.value,
+            ...(watchTarget?.unit ? { unit: watchTarget.unit } : {}),
           });
           edits.push({ path: target.path, value: r.value });
         }
@@ -174,10 +176,19 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
 
       const impact = await step(
         "assess_impact",
-        `候補値 ${changes.length} 件で ${cases.length} 世帯を再計算`,
-        () => assessImpact(params, changes, cases),
+        `候補値 ${changes.length} 件で ${cases.length} 世帯 × 4行（死亡＋statutory 3行）を現行と比較`,
+        () => assessImpact(params, changes, cases, now()),
         (i) =>
-          `結論が変わる世帯 ${i.changedCount}/${cases.length} 件・不変条件 ${i.safe ? "合格" : `不合格(${i.invariantFailures.length})`}`,
+          [
+            `世帯の結論（過不足軸・householdHeadline）が変わる世帯 ${i.changedCount}/${cases.length}`,
+            ...summarizeRows(i),
+            `不変条件 ${i.invariantFailures.length === 0 ? "合格" : `不合格(${i.invariantFailures.length})`}`,
+            `現行 params のゴールデン ${
+              (i.baselineFailures ?? []).length === 0
+                ? "green"
+                : `green でない(${(i.baselineFailures ?? []).length})`
+            }`,
+          ].join(" ｜ "),
       );
 
       /**

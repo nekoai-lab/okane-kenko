@@ -25,7 +25,8 @@ export async function POST(req: Request): Promise<Response> {
       params: loadParams(),
       sources: loadWatchSources(),
       // 影響を測る世帯は、算定の正本と同じ10世帯を使う（別の corpus を作らない）
-      cases: GOLDEN.map((g) => ({ id: g.id, label: g.label, input: g.input })),
+      // 期待値は「現行 params で green か」を確かめるためだけに渡す（候補値とは比べない）
+      cases: GOLDEN.map((g) => ({ id: g.id, label: g.label, input: g.input, expect: g.expect })),
       store: createFirestoreProposalStore(),
       paramsYaml: loadParamsText(),
       now: () => new Date(),

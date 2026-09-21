@@ -152,6 +152,7 @@ describe("runParamWatch", () => {
         label: "自己都合退職の給付制限（原則）",
         current: 2,
         proposed: 1,
+        unit: "か月",
       },
     ]);
     // 台帳（何を疑うべきか）を読んだことが提案に残る
