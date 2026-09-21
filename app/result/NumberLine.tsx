@@ -142,7 +142,9 @@ export function NumberLine({ need, coverage, fmt, verdict, points }: NumberLineP
           トグルと同時に入れた（2026-09-21）。
         */}
         <p className={s.closing}>
-          この{points.length}点を頭に置いて、上の「暮らし方の前提」を選び直してみてください。判定が連動して変わります。
+          この{points.length}点を頭に置いて、上の「暮らし方の前提」を選び直してみてください。
+          {/* モックは「判定が連動して変わります」。ample 世帯では偽になるので同じ型に揃える */}
+          下の計算と判定は、その前提で計算し直されます。
         </p>
         {/* ラボは未実装。**押せないことを黙らせない** */}
         <p className={s.pending}>もしもラボで「この場合は？」を試す（準備中）</p>

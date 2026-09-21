@@ -16,7 +16,13 @@
 import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
 import { loadParams } from "../params/index.js";
+import { toHousehold } from "./index.js";
 import { projectDeath } from "./projection.js";
+
+/** **Household を手で組まない**（`toHousehold` を通す。画面と同じ入口） */
+function project(input: (typeof GOLDEN)[number]["input"]) {
+  return projectDeath(P, toHousehold(input, "self"), { asOfYear: 2026 });
+}
 
 const P = loadParams("2026-08");
 
@@ -27,23 +33,15 @@ function ledgerOut(row: {
   return row.expense.living + row.expense.education + row.expense.housing;
 }
 
+/** 生活費以外（住宅ローン・教育費）。こちらは点で、幅を作らない */
+function othersOut(row: { expense: { education: number; housing: number } }): number {
+  return row.expense.education + row.expense.housing;
+}
+
 describe("家計台帳：表の行を足したら差し引きになる（#6a）", () => {
   for (const g of GOLDEN) {
     it(`${g.id}：入る計 −（表に出した支出）＝ 差し引き`, () => {
-      const pj = projectDeath(
-        P,
-        {
-          children: g.input.children,
-          housing: g.input.housing,
-          assets: g.input.assets,
-          monthlyLiving: g.input.monthlyLiving,
-          educationPlan: g.input.educationPlan,
-          deceased: g.input.self,
-          survivor: g.input.spouse,
-          currentCoverage: g.input.coverageSelf,
-        },
-        { asOfYear: 2026 },
-      );
+      const pj = project(g.input);
       const first = pj.rows[0];
       const net = first.income.total - ledgerOut(first);
 
@@ -54,6 +52,29 @@ describe("家計台帳：表の行を足したら差し引きになる（#6a）"
       byHand -= first.expense.education;
       expect(byHand).toBeCloseTo(net, 6);
     });
+
+    /**
+     * **幅を差し引きの手前で消さない**（D-01・2026-09-21）。
+     * 生活費が帯で出ているなら、差し引きも帯で出る。
+     * 下端（残りが最小）＝ 入る計 − 生活費の**上端** − その他。上端はその逆。
+     * **幅を作るのは生活費の帯だけ**なので、幅の大きさは帯の幅と一致する。
+     */
+    it(`${g.id}：差し引きの幅も、行を足せば合う（下端・上端の2本）`, () => {
+      const pj = project(g.input);
+      const first = pj.rows[0];
+      // 回答帯の代わりに、実際の生活費を中心に ±10% の帯を置いて検算の形だけを見る
+      const livingLow = first.expense.living * 0.9;
+      const livingHigh = first.expense.living * 1.1;
+
+      const netLow = first.income.total - livingHigh - othersOut(first);
+      const netHigh = first.income.total - livingLow - othersOut(first);
+
+      // 読者と同じ手順：上端の生活費を引いたら下端、下端の生活費を引いたら上端
+      expect(first.income.total - livingHigh - first.expense.housing - first.expense.education).toBeCloseTo(netLow, 6);
+      expect(first.income.total - livingLow - first.expense.housing - first.expense.education).toBeCloseTo(netHigh, 6);
+      // 差し引きの幅 ＝ 生活費の幅（他の行は点なので幅を作らない）
+      expect(netHigh - netLow).toBeCloseTo(livingHigh - livingLow, 6);
+    });
   }
 
   /**
@@ -63,20 +84,7 @@ describe("家計台帳：表の行を足したら差し引きになる（#6a）"
    */
   it("葬儀・予備費は初年度に一括で立っており、月次の差し引きには含めない", () => {
     const g = GOLDEN[0];
-    const pj = projectDeath(
-      P,
-      {
-        children: g.input.children,
-        housing: g.input.housing,
-        assets: g.input.assets,
-        monthlyLiving: g.input.monthlyLiving,
-        educationPlan: g.input.educationPlan,
-        deceased: g.input.self,
-        survivor: g.input.spouse,
-        currentCoverage: g.input.coverageSelf,
-      },
-      { asOfYear: 2026 },
-    );
+    const pj = project(g.input);
     const first = pj.rows[0];
     expect(first.expense.funeral).toBeGreaterThan(0);
     expect(pj.rows[1].expense.funeral).toBe(0);

@@ -4,6 +4,7 @@
  * 家計台帳・段差チャート・段差の説明・接続文をまとめる。
  * **金額はここで作らない。** `projectDeath` の年次配列を月額に直して渡すだけ。
  */
+import { manDigits, toMonthlyDisplay } from "../../src/design/ledgerRound.js";
 import type { Projection } from "../../src/calc/projection.js";
 import { REFORM_2028_NOT_APPLIED_TAIL } from "../../src/calc/reform2028.js";
 import { MonthlyLedger } from "./MonthlyLedger.js";
@@ -13,12 +14,25 @@ import s from "./step2.module.css";
 const MONTHS = 12;
 
 /**
- * 円/年 → 表示用の 月あたり万円。
- * **万円・小数1桁にする。** モックの台帳も万円表記で、`111,000円/月` のような桁の多い表示は
- * 並べたときに比べられない（この台帳は「入る合計 vs 出る合計」を見る場所）。
+ * すでに表示単位に丸めた 円/月 → 1桁の文字列（単位は呼び出し側で付ける）。
+ *
+ * **台帳の数はすべて `toMonthlyDisplay` で丸めてから足し引きする**（`ledgerRound.ts`）。
+ * 正確な値から行と合計を別々に丸めると 0.1 ずれて、**画面の中で検算が通らなくなる**
+ * （2026-09-21：`11.1 + 6.0 + 13.3 = 30.4` なのに計が `30.5` と出ていた）。
  */
-function perMonthMan(yen: number): string {
-  return `約${(yen / MONTHS / 10_000).toFixed(1)}万円`;
+const bare = (yenMonthly: number) => manDigits(yenMonthly);
+
+/**
+ * 差し引きの文。**0 をまたぐ世帯を「ほぼ収支圏内」で誤魔化さない。**
+ * 足りない側と残る側の両方を出す（どちらもあり得る、が事実）。
+ */
+function netText(low: number, high: number): string {
+  if (low === high) {
+    return low < 0 ? `約${manDigits(low)}万円 足りません` : `約${manDigits(low)}万円 残ります`;
+  }
+  if (low >= 0) return `約${bare(low)}〜${bare(high)}万円 残ります`;
+  if (high <= 0) return `約${bare(high)}〜${bare(low)}万円 足りません`;
+  return `約${bare(low)}万円 足りない〜約${bare(high)}万円 残る の幅です`;
 }
 
 export interface Step2Props {
@@ -96,21 +110,22 @@ export function Step2({
     events: r.events,
   }));
 
-  const incomes = [
+  // **表示単位に丸めた月額**で組む（行の和＝計、になる）
+  const incomeRows = [
+    { label: "遺族基礎年金＋子の加算", from: from.pension, m: toMonthlyDisplay(first.income.pensionBasic) },
+    { label: "遺族厚生年金", from: from.kosei, m: toMonthlyDisplay(first.income.pensionKosei) },
     {
-      label: "遺族基礎年金＋子の加算",
-      from: from.pension,
-      value: perMonthMan(first.income.pensionBasic),
-    },
-    { label: "遺族厚生年金", from: from.kosei, value: perMonthMan(first.income.pensionKosei) },
-        {
-      // **（手取り）と書く。** 年収200万 ÷ 12 ＝ 16.7万 と検算されると合わない
-      //（エンジンは手取り率 0.8 を掛けた額を使っている）
       label: `${survivorLabel}の収入（手取り）`,
       from: from.work,
-      value: perMonthMan(first.income.work),
+      m: toMonthlyDisplay(first.income.work),
     },
-  ].filter((r) => r.value !== "約0.0万円");
+  ].filter((r) => r.m !== 0);
+  const incomeTotalM = incomeRows.reduce((sum, r) => sum + r.m, 0);
+  const incomes = incomeRows.map((r) => ({
+    label: r.label,
+    from: r.from,
+    value: `約${bare(r.m)}万円`,
+  }));
 
   /**
    * **出ていくお金は、差し引きに使う行と1対1にする。**
@@ -123,33 +138,54 @@ export function Step2({
    *
    * 葬儀・予備費は**一度きりの支出**なので月次の表には入れない（STEP3 の総額に入る）。
    */
-  const expenseYen = [
-    { label: "生活費", from: from.living, yen: first.expense.living },
+  // 生活費の幅（月・表示単位に丸めたもの）。帯が無い区分では点
+  const livingLowM = toMonthlyDisplay(livingBand ? livingBand.low * MONTHS : first.expense.living);
+  const livingHighM = toMonthlyDisplay(
+    livingBand ? livingBand.high * MONTHS : first.expense.living,
+  );
+
+  const otherRows = [
     ...(danshinCovered
-      ? [{ label: "住宅ローン", from: from.housing, yen: 0 }]
+      ? [{ label: "住宅ローン", from: from.housing, m: 0 }]
       : first.expense.housing > 0
-        ? [{ label: "住居費", from: from.housing, yen: first.expense.housing }]
+        ? [{ label: "住居費", from: from.housing, m: toMonthlyDisplay(first.expense.housing) }]
         : []),
     ...(first.expense.education > 0
-      ? [{ label: "教育費", from: from.education, yen: first.expense.education }]
+      ? [{ label: "教育費", from: from.education, m: toMonthlyDisplay(first.expense.education) }]
       : []),
   ];
-  const expenses = expenseYen.map((r) => ({
-    label: r.label,
-    from: r.from,
-    // 生活費だけは**回答帯の幅**で出す（D-01）。帯が無い区分では点のまま
-    value:
-      r.label === "生活費" && livingBand
-        ? `約${(livingBand.low / 10_000).toFixed(1)}〜${(livingBand.high / 10_000).toFixed(1)}万円`
-        : r.yen === 0
-          ? "0円"
-          : perMonthMan(r.yen),
-  }));
 
-  // **差し引き＝入る計 −（表に出した支出の合計）。** 表の行を足せば必ずこの数になる
-  const outTotal = expenseYen.reduce((sum, r) => sum + r.yen, 0);
-  const netYear = first.income.total - outTotal;
-  const short = netYear < 0;
+  const expenses = [
+    {
+      label: "生活費",
+      from: from.living,
+      // 生活費だけは**回答帯の幅**で出す（D-01）。帯が無い区分では点のまま
+      value:
+        livingLowM === livingHighM
+          ? `約${bare(livingLowM)}万円`
+          : `約${bare(livingLowM)}〜${bare(livingHighM)}万円`,
+    },
+    ...otherRows.map((r) => ({
+      label: r.label,
+      from: r.from,
+      value: r.m === 0 ? "0円" : `約${bare(r.m)}万円`,
+    })),
+  ];
+
+  /**
+   * **差し引き＝入る計 −（表に出した支出の合計）。** 表の行を足せば必ずこの数になる。
+   *
+   * **幅を差し引きの手前で消さない**（D-01・2026-09-21）。
+   * 生活費が帯で出ているのに差し引きが点だと、揺れが最後の1行で潰れる。
+   * 生活費以外（住宅ローン・教育費）は点なので、幅は生活費の帯だけが作る：
+   * - 下端（残りが最小）＝ 入る計 − 生活費の**上端** − その他
+   * - 上端（残りが最大）＝ 入る計 − 生活費の**下端** − その他
+   *
+   * **すべて表示単位に丸めた数で計算する**ので、読者が画面の数字で足し引きしても必ず合う。
+   */
+  const othersM = otherRows.reduce((sum, r) => sum + r.m, 0);
+  const netLowM = incomeTotalM - livingHighM - othersM;
+  const netHighM = incomeTotalM - livingLowM - othersM;
 
   /**
    * 段差として出す年。
@@ -175,15 +211,11 @@ export function Step2({
     <div className={s.step2}>
       <MonthlyLedger
         expenses={expenses}
-        incomeTotal={perMonthMan(first.income.total)}
+        incomeTotal={`約${bare(incomeTotalM)}万円`}
         incomes={incomes}
         netLabel="毎月 "
-        netTone={short ? "short" : "ok"}
-        netValue={
-          short
-            ? `${perMonthMan(Math.abs(netYear))} 足りません`
-            : `${perMonthMan(netYear)} 残ります`
-        }
+        netTone={netLowM < 0 ? "short" : "ok"}
+        netValue={netText(netLowM, netHighM)}
       />
 
       <StepChart
