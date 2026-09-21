@@ -58,7 +58,7 @@ describe("ledgerOps：T-G の台帳を自己整合させる", () => {
 describe("ledgerOps：改定周期の expires は残す", () => {
   it("pendingChange の無い expires（次の改定日）は消さない", () => {
     const target = resolveTarget(P, "kihonTeate.restrictionMonthsVoluntary");
-    if (!target || !target.ledger) throw new Error("target");
+    if (!target?.ledger) throw new Error("target");
     const synthetic = {
       ...target,
       ledger: { ...target.ledger, pendingChange: undefined, expires: "2027-08-01" },
