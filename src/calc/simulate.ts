@@ -14,7 +14,8 @@
  */
 import type { ParamSet } from "../params/index.js";
 import { type DiagnoseInput, diagnose } from "./index.js";
-import type { ProjectionRow } from "./projection.js";
+import { type ProjectionRow, projectDeath } from "./projection.js";
+import { jstYear } from "../time/jstYear.js";
 import type { HouseholdDiagnosis } from "./types.js";
 
 /** 全リスクを最初から閉じた列挙で切る。足すときに型が落ちて、対応漏れが見つかる */
@@ -47,8 +48,20 @@ export interface SimulateResult {
    * 0 を置くと「0円で足りる」と読めてしまうので、計算未対応と0円を型で区別する。
    */
   amounts: { needLow: number; needHigh: number; currentCoverage: number | null } | null;
-  /** 年次キャッシュフロー（タスク3で全シナリオぶんを埋める） */
+  /**
+   * 年次キャッシュフロー。段差チャート・タイムライン・ラボ・ロードマップは
+   * **すべてこの配列の別ビュー**（仕様 §4-2）。計算未対応のシナリオでは null。
+   */
   yearly: ProjectionRow[] | null;
+  /**
+   * その年に起きること。段差チャートの注記①②③はここから引く（仕様 §5.3）。
+   *
+   * ⚠️ **この文言は人が書いた注記ではなく、年次の金額変化から自動生成している**
+   * （`projection.ts`：前年と比べて遺族基礎年金が0になった、中高齢寡婦加算が立った、など）。
+   * だからルールを二重に持たずに済む一方、**文面を画面側で言い換えるなら
+   * 金額変化の判定まで遡って直す**こと。ここだけ書き換えると図と注記がずれる。
+   */
+  events: { year: number; elapsed: number; events: string[] }[] | null;
   /** 簡約・推定をすべてここに集める。`social.ts` の assumptions[] がそのまま流れ込む */
   assumptions: string[];
   /** `status === "not_supported"` のときだけ入る */
@@ -78,6 +91,7 @@ function notSupported(scenario: Exclude<Scenario, "death">): SimulateResult {
     precision: "not_supported",
     amounts: null,
     yearly: null,
+    events: null,
     assumptions: [],
     notSupported: { reason: "not_implemented", detail: NOT_IMPLEMENTED[scenario] },
     sources: [],
@@ -103,7 +117,24 @@ export function simulate(p: ParamSet, input: SimulateInput, scenario: Scenario):
   if (scenario !== "death") return notSupported(scenario);
 
   // **入力をそのまま渡す。** 既定値の補完も丸めもここでは行わない
-  const d = diagnose(p, input.answers, input.asOf);
+  const a = input.answers;
+  const d = diagnose(p, a, input.asOf);
+
+  // 年次キャッシュフロー。**結果画面と同じ引数で同じ関数を呼ぶ**（別経路で別の数を作らない）
+  const projection = projectDeath(
+    p,
+    {
+      children: a.children,
+      housing: a.housing,
+      assets: a.assets,
+      monthlyLiving: a.monthlyLiving,
+      educationPlan: a.educationPlan,
+      deceased: a.self,
+      survivor: a.spouse,
+      currentCoverage: a.coverageSelf,
+    },
+    { asOfYear: jstYear(input.asOf ?? new Date()) },
+  );
 
   return {
     scenario: "death",
@@ -115,8 +146,11 @@ export function simulate(p: ParamSet, input: SimulateInput, scenario: Scenario):
       needHigh: d.self.range.high,
       currentCoverage: input.answers.coverageSelf,
     },
-    // 年次CFはタスク3で接続する（いまは既存の projectDeath を呼ばない＝二重計算しない）
-    yearly: null,
+    yearly: projection.rows,
+    // 何も起きない年は落とす（注記に使うのは段差のある年だけ）
+    events: projection.rows
+      .filter((r) => r.events.length > 0)
+      .map((r) => ({ year: r.year, elapsed: r.elapsed, events: r.events })),
     // 既存エンジンが記録した推定を、そのまま前提として引き継ぐ
     assumptions: d.self.assumptions.map((a) => a.note),
     notSupported: null,

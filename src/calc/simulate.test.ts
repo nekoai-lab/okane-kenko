@@ -107,3 +107,76 @@ describe("simulateAll：診断表の5行", () => {
     expect(rows.filter((r) => r.precision === "not_supported")).toHaveLength(4);
   });
 });
+
+/**
+ * モック（`docs/design-mock/result.html`）の段差とつき合わせる（仕様 §6 のサンプル世帯）。
+ *
+ * **金額は突き合わせない。** 仕様が「モック内の金額はすべてサンプル値」と明記しているため、
+ * ここで固定すると、実装ではなくモックの飾りをテストすることになる。
+ * 固定するのは**段差が起きる年・そのときの配偶者の年齢・何が起きたか**＝図の骨格。
+ */
+describe("段差チャートの骨格：モックのサンプル世帯と突き合わせる", () => {
+  // 仕様 §6：40歳会社員／配偶者38歳パート／子8歳・5歳／持ち家ローン団信あり
+  const ANSWERS = {
+    self: { age: 40, income: 6_000_000, employment: "employee" as const },
+    spouse: { age: 38, income: 1_000_000, employment: "employee" as const },
+    children: [8, 5],
+    housing: { type: "own" as const, loan: 25_000_000, danshin: true },
+    assets: 7_500_000,
+    monthlyLiving: 280_000,
+    educationPlan: "public" as const,
+    coverageSelf: 30_000_000,
+    coverageSpouse: null,
+  };
+  const r = simulate(P, { answers: ANSWERS, asOf: AS_OF }, "death");
+  const rows = r.yearly ?? [];
+  /** 公的年金の月額（円） */
+  const publicMonthly = (y: number) => {
+    const row = rows.find((x) => x.year === y);
+    if (!row) throw new Error(`${y}年の行が無い`);
+    return (row.income.pensionBasic + row.income.pensionKosei + row.income.chukoreiKafu) / 12;
+  };
+
+  it("段差①は 2036年・配偶者48歳（モックと一致）", () => {
+    expect(rows.find((x) => x.year === 2036)?.ages.survivor).toBe(48);
+    expect(publicMonthly(2036)).toBeLessThan(publicMonthly(2035));
+  });
+
+  it("段差②は 2039年・配偶者51歳で、最大の崖（モックと一致）", () => {
+    expect(rows.find((x) => x.year === 2039)?.ages.survivor).toBe(51);
+    const drop1 = publicMonthly(2035) - publicMonthly(2036);
+    const drop2 = publicMonthly(2038) - publicMonthly(2039);
+    expect(drop2).toBeGreaterThan(drop1); // ②のほうが大きく落ちる＝「最大の崖」
+  });
+
+  it("2039年に『遺族基礎年金が終わる』と『中高齢寡婦加算が始まる』が同時に立つ", () => {
+    const e = r.events?.find((x) => x.year === 2039);
+    expect(e?.events).toContain("遺族基礎年金が終わる");
+    expect(e?.events).toContain("中高齢寡婦加算が始まる");
+  });
+
+  it("公的年金の月額は段差ごとに下がり、途中で増えない", () => {
+    for (let y = 2027; y <= 2039; y++) {
+      expect(publicMonthly(y)).toBeLessThanOrEqual(publicMonthly(y - 1) + 1);
+    }
+  });
+
+  it("大学費用と重なる帯が取れる（2039〜2043に教育費が残っている）", () => {
+    const band = rows.filter((x) => x.year >= 2039 && x.year <= 2043);
+    expect(band.some((x) => x.expense.education > 0)).toBe(true);
+  });
+
+  /**
+   * ⚠️ **モックと1年ずれている（未解決）。**
+   * モックは「2053年(妻65歳)」。エンジンは算定期間の最終行（2052年・配偶者64歳）で
+   * 「配偶者が65歳」を立てる（`projection.ts` の `t === yTotal - 1`）。
+   * **その行の `ages.survivor` は 64** なので、年次表では年齢と注記が食い違って見える。
+   * ここでは年を固定せず、イベントが存在することだけを見る（直し方は人の判断待ち）。
+   */
+  it("『配偶者が65歳』のイベント自体は立つ（年はモックと1年ずれ・要判断）", () => {
+    const e = r.events?.find((x) => x.events.includes("配偶者が65歳"));
+    expect(e).toBeDefined();
+    const row = rows.find((x) => x.year === e?.year);
+    expect(row?.ages.survivor).toBe(64); // ← 65 ではない。これが食い違いの正体
+  });
+});
