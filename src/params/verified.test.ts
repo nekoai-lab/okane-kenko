@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
 import { diagnose } from "../calc/index.js";
 import { needForSickness } from "../calc/scenarios.js";
+import { simulate } from "../calc/simulate.js";
 import { ownStandardValueText } from "./display.js";
 import { assertUsable, loadParams, type ParamSet, unverifiedKeys } from "./index.js";
 
@@ -181,5 +182,19 @@ describe("当社基準の在庫を動かすと、算定結果が動く（直書�
     const end = d.assumptions.find((a) => a.field === "period.end");
     expect(end?.label).toBe("対象は70歳まで");
     expect(end?.value).toBe(70);
+  });
+
+  it("workStartAge が失業の加入年数と開示文を決める（計算と文の両方）", () => {
+    const base = simulate(loadParams(), { answers: gt("GT-01"), asOf: AS_OF }, "unemployment");
+    const moved = simulate(
+      withOwn("workStartAge", 30),
+      { answers: gt("GT-01"), asOf: AS_OF },
+      "unemployment",
+    );
+    expect(base.premises.map((x) => x.note).join()).toContain("22歳就業開始");
+    expect(moved.premises.map((x) => x.note).join()).toContain("30歳就業開始");
+    expect(moved.assumptions.join()).toContain("30歳就業開始");
+    // 加入年数が短くなると給付日数が減り、必要額は動く
+    expect(moved.amounts).not.toEqual(base.amounts);
   });
 });

@@ -13,6 +13,7 @@
  *   診断表の未診断行と精度ラベルがこれを直接消費する（仕様 §5.3）
  */
 import type { ParamSet } from "../params/index.js";
+import { v } from "../params/index.js";
 import type { ScenarioPremise } from "./scenarios.js";
 import { type DiagnoseInput, diagnose } from "./index.js";
 import { type ProjectionRow, projectDeath } from "./projection.js";
@@ -126,8 +127,10 @@ function statutory(
   scenario: "sick_short" | "sick_long" | "unemployment",
 ): SimulateResult {
   const a = input.answers;
-  // 雇用保険の加入年数は設問に無いので、就業開始を22歳と置いて年齢から推定する
-  const insuredYears = Math.max(0, a.self.age - 22);
+  // 雇用保険の加入年数は設問に無いので、就業開始の年齢を置いて年齢から推定する
+  // （値は当社基準 `workStartAge`。2026-09-22 まで 22 を直書きしていた）
+  const workStartAge = v(p, "workStartAge");
+  const insuredYears = Math.max(0, a.self.age - workStartAge);
   const si: ScenarioInput = {
     annualIncome: a.self.income,
     employment: a.self.employment,
@@ -154,7 +157,9 @@ function statutory(
     assumptions.push("貯蓄は幅ではなく1点として比べた（回答の幅が渡されていないため）");
   }
   if (scenario === "unemployment") {
-    assumptions.push(`雇用保険の加入年数は設問に無いため、22歳就業開始として${insuredYears}年と置いた`);
+    assumptions.push(
+      `雇用保険の加入年数は設問に無いため、${workStartAge}歳就業開始として${insuredYears}年と置いた`,
+    );
   }
 
   return {

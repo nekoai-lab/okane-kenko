@@ -173,7 +173,7 @@ export function needForUnemployment(p: ParamSet, input: ScenarioInput): Scenario
       {
         // **設問に無い値を年齢から推定している。** 給付日数がこれで決まるので前に出す
         label: `雇用保険の加入年数は${input.insuredYears}年と推定`,
-        note: "設問に無いため、22歳就業開始として年齢から置いた扱いです。実際が短ければ給付日数が減り、必要額は増えます。",
+        note: `設問に無いため、${v(p, "workStartAge")}歳就業開始として年齢から置いた扱いです。実際が短ければ給付日数が減り、必要額は増えます。`,
       },
       {
         label: `再就職までは${Math.round(benefitMonths)}か月`,

@@ -19,6 +19,8 @@ export function ownStandardValueText(e: ParamEntry): string | null {
       return e.values ? Object.values(e.values).map(ratio).join("／") : ratio(e.value);
     case "months":
       return `${e.value}か月`;
+    case "age":
+      return `${e.value}歳`;
     case "JPY":
       return formatMan(e.value);
     case "JPY/year":

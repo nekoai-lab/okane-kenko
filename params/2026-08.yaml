@@ -352,6 +352,15 @@ ownStandard:
     source: 当社基準（公的出典なし）
     note: 同上
     userAdjustable: false
+  # 雇用保険の加入年数の推定に使う（設問に無いため年齢から置く）。2026-09-22 在庫へ登録。
+  # 失業カードの開示文「◯歳就業開始として推定」もこの値から描く（書き写さない）
+  workStartAge:
+    value: 22
+    unit: age
+    label: 雇用保険の加入年数を推定するときの就業開始年齢
+    source: 当社基準（公的出典なし）
+    note: 設問に無い加入年数を年齢から置くための仮置き。短ければ給付日数が減り、失業の必要額は増える
+    userAdjustable: false
   # **旧来の gap（excess / adequate）の境目。** カードのバッジ（Verdict3）ではなく、
   # householdHeadline（rebalanceable / reducible / all_covered）に効く。
   excessCoverageRatio:
