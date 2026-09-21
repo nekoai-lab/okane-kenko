@@ -103,7 +103,8 @@ function MiniScale({ scale, label }: { scale: RiskScale; label: string }) {
         {isPoint ? (
           <line className={s.needTick} x1={`${left}%`} x2={`${left}%`} y1="3" y2="17" />
         ) : (
-          <rect className={s.band} x={`${left}%`} width={`${width}%`} y="3" height="14" rx="3" />
+          // **角丸と枠線を付けない。** 幅の狭い帯が「つまみ」に見え、動かせる部品と誤解される
+          <rect className={s.band} x={`${left}%`} width={`${width}%`} y="5" height="10" />
         )}
         {scale.hold !== null && (
           <line

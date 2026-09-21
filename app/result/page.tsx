@@ -477,7 +477,15 @@ export default async function ResultPage({
         ? `手取り 年${bare(sv.annualNet)}万円×${sv.yearsTotal}年`
         : `手取り 年${bare(sv.annualNet)}万円×${sv.yearsDependent}年＋年${bare(sv.netAfter)}万円×${sv.yearsAlone}年`;
     const lead = `この判定を支えているのは、${label}の就労収入 ${total}（${breakdown}）です。`;
-    const halfMan = bare(sv.annualGross / 2);
+    /**
+     * **半額の軸を裸にしない。** 直前の括弧が「手取り 年560万円」なので、
+     * ここで「年350万円」とだけ書くと、額面の半分なのか手取りなのかを読者が決められない
+     * （手取りの半分だと思って検算すると 280万 になり、文が崩れる）。
+     * 動かしているのは**回答された年収（額面）**なので、そう書く。
+     * `half` は常に額面側・「年収」の語を添える
+     * （折りたたみ1項目目の「年収＝答えた値、手取り＝計算に使う値」という役割分担と揃える）。
+     */
+    const halfGross = `年収が半分（${bare(sv.annualGross / 2)}万円）`;
 
     /**
      * **判定が動かなくても「影響が無い」ではない。**
@@ -492,11 +500,11 @@ export default async function ResultPage({
     }
     if (sv.branch === "zero_only") {
       return {
-        text: `${lead}年${halfMan}万円でも判定は変わりませんが、働けない場合は「${DEATH_LABEL[sv.verdictAtZero]}」に変わります。`,
+        text: `${lead}${halfGross}になっても判定は変わりませんが、働けない場合は「${DEATH_LABEL[sv.verdictAtZero]}」に変わります。`,
       };
     }
     return {
-      text: `${lead}年${halfMan}万円なら「${DEATH_LABEL[sv.verdictAtHalf]}」、働けない場合は「${DEATH_LABEL[sv.verdictAtZero]}」に変わります。`,
+      text: `${lead}${halfGross}になると「${DEATH_LABEL[sv.verdictAtHalf]}」、働けない場合は「${DEATH_LABEL[sv.verdictAtZero]}」に変わります。`,
     };
   };
 
