@@ -818,3 +818,31 @@
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-normal);
 }
+
+/*
+  照合表 #10：`check.html` 末尾の黒帯。**ページ最下部に置く。**
+  全部読み終えた人への一文なので、玄関の直後には置かない。
+  色はモック（`docs/design-mock/tokens.css`）の ink / 反転テキストをそのまま使う。
+*/
+.statement {
+  background: #1e2a26;
+  border-radius: 16px;
+  padding: var(--space-6) var(--space-5);
+  margin: var(--space-7) 0 0;
+}
+
+.statementHead {
+  font-family: "Shippori Mincho", serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #f7f5f0;
+  line-height: 1.5;
+  margin: 0 0 var(--space-2);
+}
+
+.statementBody {
+  font-size: 13px;
+  color: #b9c4bd;
+  line-height: 1.8;
+  margin: 0;
+}

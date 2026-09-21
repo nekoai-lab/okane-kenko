@@ -189,6 +189,16 @@ export function projectDeath(
     if (prev) {
       if (prev.income.pensionBasic > 0 && income.pensionBasic === 0) {
         row.events.push("遺族基礎年金が終わる");
+      } else if (prev.income.pensionBasic > income.pensionBasic && income.pensionBasic > 0) {
+        /**
+         * **子の加算が1人分減る段差**（2026-09-21 追加）。
+         *
+         * 遺族基礎年金は、子が18歳の年度末を超えるたびに加算が1人分ずつ落ちる。
+         * 全員が超えたときの「終わる」だけを出していたため、**その手前の段差が図から消えていた**。
+         * この世帯では月17.1万→15.1万の実在する段差で、エンジンは計算しているのに
+         * マーカーにも説明にも出ていなかった。
+         */
+        row.events.push("お子さんが18歳の年度末を超え、子の加算が1人分減る");
       }
       if (prev.income.chukoreiKafu === 0 && income.chukoreiKafu > 0) {
         row.events.push("中高齢寡婦加算が始まる");

@@ -21,21 +21,6 @@ import { formatMan } from "../../src/design/tokens.js";
 import s from "./page.module.css";
 
 /** 表に出てくる制度の用語。**中学生が読める語彙で1行**（CLAUDE.md） */
-const TERMS: { term: string; note: string }[] = [
-  {
-    term: "遺族基礎年金",
-    note: "18歳までのお子さんがいる間、国から遺族に支払われる年金です。",
-  },
-  {
-    term: "遺族厚生年金",
-    note: "会社員・公務員だった方の遺族が受け取れる年金です。自営業の方には出ません。",
-  },
-  {
-    term: "中高齢寡婦加算",
-    note: "遺族基礎年金が終わったあと、40〜64歳の配偶者に上乗せされる分です。",
-  },
-];
-
 function ages(row: ProjectionRow): string {
   const kids = row.ages.children.length > 0 ? `子${row.ages.children.join("・")}` : "";
   const sp = row.ages.survivor !== null ? `配偶者${row.ages.survivor}` : "";
@@ -126,16 +111,6 @@ export function YearTables({ pj }: { pj: Projection }) {
         単位は万円。金額は概算で、四捨五入のため内訳の合計と一致しないことがあります。
         表は横にスクロールできます。
       </p>
-
-      <h3 className={s.h3}>ことばの意味</h3>
-      <dl className={s.terms}>
-        {TERMS.map((t) => (
-          <div className={s.termRow} key={t.term}>
-            <dt className={s.termName}>{t.term}</dt>
-            <dd className={s.termNote}>{t.note}</dd>
-          </div>
-        ))}
-      </dl>
 
       <h3 className={s.h3}>1年ごとのまとめ</h3>
       <div className={s.cfTableWrap}>

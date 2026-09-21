@@ -32,8 +32,10 @@ export interface StepYear {
   work: number;
   /** 生活費の月額 */
   living: number;
-  /** 教育費の月額（大学の山のブレースに使う） */
+  /** 教育費の月額 */
   education: number;
+  /** その年に大学期（18〜21歳）のお子さんがいるか。ブレースの範囲に使う */
+  inUniversity: boolean;
   events: string[];
 }
 
@@ -104,10 +106,16 @@ export function StepChart({
     .map((y) => rows.find((r) => r.year === y))
     .filter((r): r is StepYear => r !== undefined);
 
-  // 大学の学費がかかる時期＝教育費がいちばん重い連続区間
-  const eduYears = rows.filter((r) => r.education > 0);
-  const eduFrom = eduYears.length > 0 ? rows.indexOf(eduYears[0]) : -1;
-  const eduTo = eduYears.length > 0 ? rows.indexOf(eduYears[eduYears.length - 1]) : -1;
+  /**
+   * **大学の学費がかかる時期**を指す。
+   *
+   * 2026-09-21、「教育費 > 0 の年」で引いていたため、幼稚園から大学までの
+   * ほぼ全期間（2026〜2042）が帯になり、**帯が何も指していなかった**。
+   * この帯の役目は、**最大の崖と大学費が重なる山場**を指すこと。
+   */
+  const uni = rows.filter((r) => r.inUniversity);
+  const eduFrom = uni.length > 0 ? rows.indexOf(uni[0]) : -1;
+  const eduTo = uni.length > 0 ? rows.indexOf(uni[uni.length - 1]) : -1;
 
   // 不足がいちばん厚い年を帯で強調する（モックの「不足が最大」）
   const worst = rows.reduce((a, b) => (b.living - b.pension > a.living - a.pension ? b : a));
@@ -235,7 +243,7 @@ export function StepChart({
               y={PLOT_BOTTOM + 53}
               textAnchor="middle"
             >
-              教育費がかかる時期（{rows[eduFrom].year}〜{rows[eduTo].year}）
+              大学の学費がかかる時期（{rows[eduFrom].year}〜{rows[eduTo].year}）
             </text>
           </g>
         )}

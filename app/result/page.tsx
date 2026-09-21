@@ -73,6 +73,7 @@ function CaseCard({
   danshinCovered,
   koseiFrom,
   workFrom,
+  reform2028Reason,
 }: {
   title: string;
   r: DeathResult;
@@ -86,6 +87,7 @@ function CaseCard({
   danshinCovered: boolean;
   koseiFrom: string | null;
   workFrom: string | null;
+  reform2028Reason: string;
 }) {
   const verdict = VERDICT[r.verdict] ?? VERDICT.sufficient;
   const expenseItems = [
@@ -183,8 +185,11 @@ function CaseCard({
           kosei: koseiFrom,
           work: workFrom,
           housing: danshinCovered ? "「団信あり」" : null,
+          living: "「毎月の生活費」",
+          education: "「お子さんの進路」",
         }}
         pj={pj}
+        reform2028Reason={reform2028Reason}
         survivorLabel={survivorLabel}
       />
 
@@ -870,6 +875,7 @@ export default async function ResultPage({
           koseiFrom={input.self.employment === "employee" ? "「会社員」" : null}
           pj={selfProjection}
           r={result.self}
+          reform2028Reason={result.reform2028.reason}
           survivorLabel="配偶者"
           title="あなたが亡くなった場合"
           workFrom={input.spouse && input.spouse.income > 0 ? "「配偶者の年収」" : null}
@@ -902,6 +908,7 @@ export default async function ResultPage({
               koseiFrom={input.spouse?.employment === "employee" ? "「配偶者は会社員」" : null}
               pj={spouseProjection}
               r={result.spouse}
+              reform2028Reason={result.reform2028.reason}
               survivorLabel="あなた"
               title="配偶者が亡くなった場合"
               workFrom={input.self.income > 0 ? "「あなたの年収」" : null}
@@ -1058,6 +1065,18 @@ export default async function ResultPage({
           入力をやり直す
         </Link>
       </div>
+
+      {/*
+        照合表 #10：`check.html` 末尾の黒帯を**ページ最下部**へ（キックオフの積み残し）。
+        診断表の直下ではなく最下部に置くのは、この2行が**全部読み終えた人への一文**だから。
+        玄関（診断表）の直後に置くと、まだ根拠を見ていない人に結論だけ言う形になる。
+      */}
+      <aside className={s.statement}>
+        <p className={s.statementHead}>万が一しか診ない計算機は、要らない。</p>
+        <p className={s.statementBody}>
+          人生のリスクを、正直な精度表示つきで、全部診る。それが「お金の主治医」の仕事です。
+        </p>
+      </aside>
     </main>
   );
 }
