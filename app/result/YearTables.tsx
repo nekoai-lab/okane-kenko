@@ -7,14 +7,17 @@
  * こちらは対面がない前提なので、**紙が自分で説明しきる**必要がある。
  *
  * そのために足したもの：
- * 1. **注目する年**を先に抜き出す（なぜ効くのかを1行で書く）。FPの表には無い
- * 2. **できごと列**を表に入れる（FPの「主なライフイベント」行にあたる）
- * 3. **配偶者の年齢**を入れる（FPは家族全員の年齢を並べる。こちらは死亡後の話なので
+ * 1. **できごと列**を表に入れる（FPの「主なライフイベント」行にあたる）
+ * 2. **配偶者の年齢**を入れる（FPは家族全員の年齢を並べる。こちらは死亡後の話なので
  *    生存者と子だけが意味を持つ）
- * 4. **収入・支出を項目別の表に分ける**。1枚に16列を詰めるとスマホでは読めないので、
+ * 3. **収入・支出を項目別の表に分ける**。1枚に16列を詰めるとスマホでは読めないので、
  *    6列の表を3枚に割る（FPはA3横1枚に詰め込んでいる）
- * 5. **用語の注釈を表の中に置く**（団信・遺族基礎年金・遺族厚生年金・中高齢寡婦加算）。
+ * 4. **用語の注釈を表の中に置く**（団信・遺族基礎年金・遺族厚生年金・中高齢寡婦加算）。
  *    CLAUDE.md の「専門用語は初出で1行注釈」が結果画面で守られていなかった
+ *
+ * **「この期間で、とくに見ておきたい年」（`KeyYears`）は 2026-09-21 に撤去した。**
+ * 段差チャートの段差①②③＋その説明が同じ情報を出しており、
+ * 「置換であって共存ではない」（CLAUDE.md）に当たるため。対応表はそのコミットにある。
  */
 import type { Projection, ProjectionRow } from "../../src/calc/projection.js";
 import { formatMan } from "../../src/design/tokens.js";
@@ -38,64 +41,6 @@ function yen(v: number): string {
 
 function signed(v: number): string {
   return `${v < 0 ? "▲" : ""}${formatMan(Math.abs(v))}`;
-}
-
-/**
- * 注目する年。**ここがFPの表には無い部分。**
- * 全年を等しく並べても、どこを見ればよいかは分からない。
- */
-export function KeyYears({ pj }: { pj: Projection }) {
-  const rows = pj.rows;
-  if (rows.length < 2) return null;
-
-  const picks: { row: ProjectionRow; why: string }[] = [];
-  if (pj.tightest) {
-    picks.push({ row: pj.tightest, why: "1年の収支がいちばん小さい年です" });
-  }
-  if (pj.depletedAt) {
-    picks.push({ row: pj.depletedAt, why: "この前提のままだと、残高がマイナスになる年です" });
-  }
-  for (const r of rows) {
-    const e = events(r);
-    if (e && picks.length < 5 && !picks.some((p) => p.row.year === r.year)) {
-      picks.push({ row: r, why: `${e}年です` });
-    }
-  }
-  picks.sort((a, b) => a.row.year - b.row.year);
-  if (picks.length === 0) return null;
-
-  return (
-    <div className={s.keyYears}>
-      <h3 className={s.h3}>この期間で、とくに見ておきたい年</h3>
-      <div className={s.cfTableWrap}>
-        <table className={s.cfTable}>
-          <thead>
-            <tr>
-              <th scope="col">西暦</th>
-              <th scope="col">年齢</th>
-              <th scope="col">年間収支</th>
-              <th scope="col">年末の残高</th>
-              <th className={s.cfWhy} scope="col">
-                なぜ見ておくか
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {picks.map((p) => (
-              <tr className={p.row.balance < 0 ? s.cfRowNeg : undefined} key={p.row.year}>
-                <th scope="row">{p.row.year}</th>
-                <td>{ages(p.row)}</td>
-                <td>{signed(p.row.net)}</td>
-                <td>{signed(p.row.balance)}</td>
-                <td className={s.cfWhy}>{p.why}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className={s.basis}>単位は万円。年齢はその年の年末時点です。</p>
-    </div>
-  );
 }
 
 /** 全年の表。1枚に詰め込まず、まとめ・収入の内訳・支出の内訳の3枚に割る */
