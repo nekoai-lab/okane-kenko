@@ -57,6 +57,12 @@ export interface RiskRow {
   scale: RiskScale | null;
   /** 所見。**2文以内**。金額はここに書かず figures に出す */
   note: string;
+  /**
+   * 判定を支えている前提（仕様 §5.3 の開示6点）。
+   * **畳まない。** 必要額が1点に潰れる世帯では、前提が外れたときの動きが幅から読めないので、
+   * ここが唯一の手がかりになる。折りたたむと開示にならない。
+   */
+  assumptions: string[];
   /** 同ページ内へのアンカー、または準備中の表示 */
   link: { href: string; label: string } | { pending: string };
 }
@@ -158,6 +164,18 @@ export function RiskTable({ rows, caption }: { rows: RiskRow[]; caption: string 
             )}
 
             <p className={s.note}>{r.note}</p>
+
+            {r.assumptions.length > 0 && (
+              <div className={s.premises}>
+                <p className={s.premisesHead}>この判定を支えている前提（{r.assumptions.length}点）</p>
+                <ul className={s.premisesList}>
+                  {r.assumptions.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className={s.cardFoot}>
               <span className={`${s.precision} ${s[r.precisionTone]}`}>{r.precisionLabel}</span>
               {"href" in r.link ? (

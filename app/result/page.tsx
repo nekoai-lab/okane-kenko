@@ -505,6 +505,8 @@ export default async function ResultPage({
         axisMaxText: `約${money(Math.max(dr.range.high, hold ?? 0))}`,
       },
       note: `${reason}${body}`,
+      // 判定を支えている前提（仕様 §5.3 の開示6点）。`ample` 系のときだけ engine が返す
+      assumptions: dr.assumptions.map((a) => a.note),
       link: { href: "#death-detail", label: "詳しく →" },
     };
   };
@@ -551,6 +553,8 @@ export default async function ResultPage({
         : null,
       // 所見は2文以内。金額は figures と数直線が持つ（視覚の DoD (b)）
       note: `${lead}${tail}`,
+      // 開示6点は死亡の算定の前提なので、貯蓄軸の行には出さない
+      assumptions: [],
       // ラボは未実装。**押せないことを黙らせない**
       link: { pending: "もしもラボで見る（準備中）" },
     };
@@ -584,6 +588,7 @@ export default async function ResultPage({
       figures: null,
       scale: null,
       note: bySc.disability.notSupported?.detail ?? "",
+      assumptions: [],
       link: { pending: "もしもラボで見る（準備中）" },
     },
     savingsRow(
@@ -653,7 +658,7 @@ export default async function ResultPage({
    */
   const deathResults = [result.self, ...(result.spouse ? [result.spouse] : [])];
   const funeralOnlyNote = deathResults.every((r) => r.verdict === "ample")
-    ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。上乗せで要るのは葬儀費用だけです。"
+    ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。上乗せで要るのは葬儀費用だけです。この判定は、遺されたご家族が働き続ける前提に立っています（前提は下の各行に出しています）。"
     : deathResults.every((r) => r.verdict === "not_needed")
       ? "扶養しているご家族がいないため、上乗せの保障は要りません。見込むのは葬儀費用だけです。"
       : null;

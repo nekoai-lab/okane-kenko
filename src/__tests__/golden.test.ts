@@ -138,6 +138,72 @@ describe("世帯単位で見ないと分からないこと（ADR-007）", () => 
   });
 });
 
+/**
+ * 判定を支えている前提の開示（2026-09-21 オーナー決定）。
+ *
+ * **黙って置いた前提は、間違っているより悪い。** この世帯では配偶者の就労収入だけで
+ * 4,320万円が収入に立ち、**これ単独で `ample` か `shortage` かが決まる**。
+ * それだけの重みを持つ前提が `survivor.income === 0` のときしか画面に出ていなかった。
+ *
+ * ここが守るのは金額ではなく**開示そのもの**なので、5点それぞれを field で固定する。
+ * 文面を変えるのは自由だが、項目を落としたらこのテストが落ちる。
+ */
+describe("判定を支えている前提を黙って置かない（ample系の開示6点）", () => {
+  const FIELDS = [
+    "survivor.income.flat", // ① 65歳まで定額で積んでいる
+    "survivor.income.floor", // ② 子の独立後も下がらない床
+    "survivor.disability", // ③ 配偶者自身の就業不能は起きない前提
+    "childcare.extra", // ④ 追加の保育費・学童費用は見ていない
+    "assets.growth", // ⑤ 期間中の新規貯蓄はゼロ
+    "period.end", // ⑥ 配偶者65歳以降は対象外
+  ];
+
+  it("配偶者と子のいる `ample` 世帯では6点すべてを assumptions に出す", () => {
+    const r = diagnose(P, GOLDEN[0].input, AS_OF);
+    for (const f of FIELDS) {
+      expect(r.self.assumptions.map((a) => a.field)).toContain(f);
+    }
+  });
+
+  it("**判定を決めている額そのものを文面に出す**（前提と金額を離さない）", () => {
+    const r = diagnose(P, GOLDEN[0].input, AS_OF);
+    const flat = r.self.assumptions.find((a) => a.field === "survivor.income.flat");
+    expect(flat!.note).toContain("遺されたご家族が働き続ける前提");
+    expect(flat!.note).toContain("途切れず維持する");
+    expect(flat!.note).toContain("合計");
+  });
+
+  it("**遺されるのが誰かで文言が逆にならない**（配偶者死亡のケースでも成り立つ書き方にする）", () => {
+    const r = diagnose(P, GOLDEN[0].input, AS_OF);
+    const notes = [...r.self.assumptions, ...(r.spouse?.assumptions ?? [])].map((a) => a.note);
+    // 配偶者が亡くなるケースでは遺されるのは本人なので、「配偶者が働き続ける」は事実と逆になる
+    expect(notes.some((t) => t.includes("配偶者が働き続ける"))).toBe(false);
+  });
+
+  it("配偶者がいない世帯では、配偶者にまつわる前提を語らない", () => {
+    // 配偶者なしで `not_needed` に落ちる世帯（開示が出る枝）を正本から取る
+    const solo = GOLDEN.find((g) => {
+      const d = diagnose(P, g.input, AS_OF);
+      return g.input.spouse === null && (d.self.verdict === "not_needed" || d.self.verdict === "ample");
+    });
+    expect(solo).toBeDefined();
+    const r = diagnose(P, solo!.input, AS_OF);
+    const fields = r.self.assumptions.map((a) => a.field);
+    expect(fields).not.toContain("survivor.income.flat");
+    expect(fields).not.toContain("survivor.disability");
+    expect(fields).not.toContain("period.end");
+    // 貯蓄が増えない前提は配偶者の有無に関係なく効く
+    expect(fields).toContain("assets.growth");
+  });
+
+  it("**`ample` 系でないときは出さない。** 幅が残っている世帯では前提が幅に表れている", () => {
+    const shortage = GOLDEN.find((g) => diagnose(P, g.input, AS_OF).self.verdict === "shortage");
+    expect(shortage).toBeDefined();
+    const fields = diagnose(P, shortage!.input, AS_OF).self.assumptions.map((a) => a.field);
+    expect(fields).not.toContain("survivor.income.flat");
+  });
+});
+
 describe("自営世帯（遺族厚生年金なし）", () => {
   it("同条件の会社員より必要額が大きくなる", () => {
     const selfEmployed = diagnose(P, GOLDEN[5].input, AS_OF);
