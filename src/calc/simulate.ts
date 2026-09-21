@@ -139,7 +139,13 @@ function statutory(
   const need =
     scenario === "unemployment"
       ? needForUnemployment(p, si)
-      : needForSickness(p, si, DEFAULT_MONTHS[scenario]);
+      : // 低端の取り方は行ごとの役割分担。月数から推測せず、ここで明示する（仕様 §5.3）
+        needForSickness(
+          p,
+          si,
+          DEFAULT_MONTHS[scenario],
+          scenario === "sick_short" ? "one_month" : "full_period",
+        );
 
   // 貯蓄もレンジで比べる（点推定と比べると、幅で計算するという原則と矛盾する）
   const savings = input.assetsRange ?? { low: a.assets, high: a.assets };
