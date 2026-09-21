@@ -155,7 +155,7 @@ export function shobyoTeate(
 /**
  * 失業したときに受け取れる見込み額。
  *
- * 基本手当日額 ＝ 賃金日額 × 給付率（実際は賃金日額に応じ 45〜80%）。
+ * 基本手当日額 ＝ 賃金日額 × 給付率（実際は賃金日額に応じ 50〜80%。60〜64歳のみ 45〜80%）。
  * **v1 は中位の給付率で概算し、年齢別の日額上限で頭打ちにする。**
  *
  * 所定給付日数は**自己都合など一般の受給資格者**の表（加入期間のみで決まる）。
@@ -187,11 +187,18 @@ export function kihonTeate(
   const raw = wageDaily * t.benefitRate;
   const daily = Math.min(raw, cap);
 
-  if (daily === cap && raw > cap) {
-    assumptions.push(`年齢${input.age}歳の日額上限（${cap.toLocaleString()}円）で頭打ちにした`);
-  }
+  /**
+   * **日額上限を先に出す。** 上限で頭打ちになる世帯では、給付率より上限のほうが額を決めている。
+   * 頭打ちにならない世帯でも、上限がいくらかは先に言う（順番が世帯によって変わらないようにする）。
+   */
   assumptions.push(
-    `給付率を${Math.round(t.benefitRate * 100)}%として概算した（実際は賃金日額に応じ45〜80%）`,
+    daily === cap && raw > cap
+      ? `年齢${input.age}歳の日額上限（${cap.toLocaleString()}円）で頭打ちにした`
+      : `年齢${input.age}歳の日額上限（${cap.toLocaleString()}円）には届いていない`,
+  );
+  assumptions.push(
+    // 45〜80% は60〜64歳の区分。それ以外の年齢は 50〜80%（令和8年8月1日の計算式で確認）
+    `給付率を${Math.round(t.benefitRate * 100)}%として概算した（実際は賃金日額に応じ50〜80%。60〜64歳のみ45〜80%）`,
     "自己都合など一般の受給資格者の給付日数で計算した（会社都合ならこれより長い）",
   );
 
