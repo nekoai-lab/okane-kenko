@@ -6,8 +6,9 @@
  */
 import type { ParamSet } from "../params/index.js";
 import { assertUsable } from "../params/index.js";
+import { jstYear } from "../time/jstYear.js";
 import { calcDeath } from "./death.js";
-import { REFORM_2028_NO_CHILDREN, REFORM_2028_WITH_CHILDREN } from "./reform2028.js";
+import { reform2028 as judgeReform2028 } from "./reform2028.js";
 import { calcMedical } from "./medical.js";
 import type {
   DeathResult,
@@ -76,11 +77,15 @@ export function diagnose(
     input.assets,
   );
 
-  // 文言は `reform2028.ts` に1か所だけ置く（同じ改正を場所によって違う言い方で書かない）
-  const hasChild = input.children.length > 0;
-  const reform2028 = hasChild
-    ? { applicable: false, reason: REFORM_2028_WITH_CHILDREN }
-    : { applicable: true, reason: REFORM_2028_NO_CHILDREN };
+  /**
+   * 2028年改正の該当判定。**子の有無ではなく配偶者の生年コホートで決まる**（`reform2028.ts`）。
+   * 子がいることは末子が18歳になるまでの猶予にしかならない。
+   */
+  const reform2028 = judgeReform2028({
+    survivorAge: input.spouse?.age ?? null,
+    asOfYear: jstYear(asOf),
+    hasChildren: input.children.length > 0,
+  });
 
   return {
     paramVersion: p.version,

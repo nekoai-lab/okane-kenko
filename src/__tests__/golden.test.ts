@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { diagnose } from "../calc/index.js";
+import { RUSHING_WORDS } from "../narrate/guard.js";
 import { loadParams } from "../params/index.js";
 import { GOLDEN } from "./households.js";
 
@@ -101,10 +102,50 @@ describe("芯の担保：煽らないこと", () => {
     expect(r.self.margin).toBeGreaterThan(r.self.expense.total * 0.2);
   });
 
-  it("子のいる世帯には『2028年改正は直撃しない』と言える", () => {
-    const r = diagnose(P, GOLDEN[0].input, AS_OF);
-    expect(r.reform2028.applicable).toBe(false);
-    expect(r.reform2028.reason).toContain("直撃しません");
+  /**
+   * **「煽らない」の定義（2026-09-21 オーナー確定）**
+   *
+   * 1. **事実と異なる安心を言わない**
+   * 2. 不安を与える事実には「いつ・誰が・何が変わるか」を必ず添える
+   * 3. **行動を急かす語彙を使わない**（語彙の本籍は `src/narrate/guard.ts` の `RUSHING_WORDS`）
+   *
+   * ここまで、このブロックには「子のいる世帯には『2028年改正は直撃しない』と言える」という
+   * テストが置かれていた。**それは芯ではなく、芯の誤った実装を固定していた。**
+   * 35歳の配偶者がいる世帯に「直撃しません」と言うのは事実と異なる安心で、
+   * この製品が保険業界に対して批判している行為そのものだった（定義1に反する）。
+   */
+  it("影響コホートには『可能性があります』と言い、事実と異なる安心を言わない", () => {
+    const affected = GOLDEN.filter((g) => diagnose(P, g.input, AS_OF).reform2028.applicable);
+    expect(affected.length).toBeGreaterThan(0);
+    for (const g of affected) {
+      const reason = diagnose(P, g.input, AS_OF).reform2028.reason;
+      expect(reason).toContain("可能性があります");
+      expect(reason).not.toContain("直撃しません");
+      expect(reason).not.toContain("ご安心");
+      // 定義2：いつ・誰が・何が変わるかを添える
+      expect(reason).toContain("2028年度");
+      expect(reason).toMatch(/5年の有期給付|中高齢寡婦加算/);
+    }
+  });
+
+  it("非影響コホートには『当面これまで通り』と言える", () => {
+    const safe = GOLDEN.filter((g) => {
+      const d = diagnose(P, g.input, AS_OF);
+      return !d.reform2028.applicable && g.input.spouse !== null;
+    });
+    expect(safe.length).toBeGreaterThan(0);
+    for (const g of safe) {
+      expect(diagnose(P, g.input, AS_OF).reform2028.reason).toContain("当面これまで通り");
+    }
+  });
+
+  it("**全世帯で、行動を急かす語彙を使わない**（語彙の本籍は guard.ts）", () => {
+    for (const g of GOLDEN) {
+      const reason = diagnose(P, g.input, AS_OF).reform2028.reason;
+      for (const w of RUSHING_WORDS) {
+        expect(reason).not.toContain(w);
+      }
+    }
   });
 
   it("『入らなくていい』と言える箇所が全体の過半で検出される（FR-19 / ADR-009）", () => {

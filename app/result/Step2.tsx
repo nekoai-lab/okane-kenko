@@ -96,7 +96,13 @@ export function Step2({
       value: perMonthMan(first.income.pensionBasic),
     },
     { label: "遺族厚生年金", from: from.kosei, value: perMonthMan(first.income.pensionKosei) },
-    { label: `${survivorLabel}の収入`, from: from.work, value: perMonthMan(first.income.work) },
+        {
+      // **（手取り）と書く。** 年収200万 ÷ 12 ＝ 16.7万 と検算されると合わない
+      //（エンジンは手取り率 0.8 を掛けた額を使っている）
+      label: `${survivorLabel}の収入（手取り）`,
+      from: from.work,
+      value: perMonthMan(first.income.work),
+    },
   ].filter((r) => r.value !== "約0.0万円");
 
   /**

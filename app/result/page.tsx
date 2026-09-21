@@ -14,6 +14,7 @@ import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstYear } from "../../src/time/jstYear.js";
 import { simulateAll } from "../../src/calc/simulate.js";
 import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
+import { reform2028 } from "../../src/calc/reform2028.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
 import { Hero } from "./Hero.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
@@ -908,7 +909,16 @@ export default async function ResultPage({
               koseiFrom={input.spouse?.employment === "employee" ? "「配偶者は会社員」" : null}
               pj={spouseProjection}
               r={result.spouse}
-              reform2028Reason={result.reform2028.reason}
+              /* **配偶者が亡くなるケースでは遺族は本人。** `result.reform2028` は
+                 遺族＝配偶者のケースで作られているので、そのまま出すと別人の年齢で判定した
+                 注記を出すことになる（2026-09-21 の検品で発見） */
+              reform2028Reason={
+                reform2028({
+                  survivorAge: input.self.age,
+                  asOfYear,
+                  hasChildren: input.children.length > 0,
+                }).reason
+              }
               survivorLabel="あなた"
               title="配偶者が亡くなった場合"
               workFrom={input.self.income > 0 ? "「あなたの年収」" : null}

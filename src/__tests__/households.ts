@@ -11,6 +11,14 @@ export interface GoldenCase {
     self: { verdict: string; low: number; high: number; gap: string; gapAmount: number };
     spouse?: { verdict: string; low: number; high: number; gap: string; gapAmount: number };
     medical: string;
+    /**
+     * 2028年改正の該当（**遺族＝配偶者のケース**）。
+     * **子の有無ではなく、配偶者が2028年度に40歳未満かで決まる**（女性の場合）。
+     * 2026-09-21 まで「子がいる＝直撃しない」という誤ったルールを固定しており、
+     * 10世帯中5世帯で実際に誤った値が入っていた。
+     * 出典：厚生労働省「遺族厚生年金の見直しについて」
+     * https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000147284_00020.html
+     */
     reform2028: boolean;
     headline: string;
   };
@@ -42,7 +50,7 @@ export const GOLDEN: GoldenCase[] = [
       self: { verdict: "ample", low: 200, high: 200, gap: "excess", gapAmount: 1800 },
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "self_insurable",
-      reform2028: false,
+      reform2028: true,
       headline: "rebalanceable",
     },
   },
@@ -65,7 +73,7 @@ export const GOLDEN: GoldenCase[] = [
       self: { verdict: "shortage", low: 2000, high: 3000, gap: "shortage", gapAmount: 1000 },
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "self_insurable",
-      reform2028: false,
+      reform2028: true,
       headline: "shortage",
     },
   },
@@ -132,7 +140,7 @@ export const GOLDEN: GoldenCase[] = [
     expect: {
       self: { verdict: "not_needed", low: 200, high: 200, gap: "excess", gapAmount: 800 },
       medical: "self_insurable",
-      reform2028: true,
+      reform2028: false,
       headline: "reducible",
     },
   },
@@ -201,7 +209,7 @@ export const GOLDEN: GoldenCase[] = [
       self: { verdict: "sufficient", low: 400, high: 600, gap: "adequate", gapAmount: 0 },
       spouse: { verdict: "ample", low: 200, high: 200, gap: "shortage", gapAmount: 200 },
       medical: "partial",
-      reform2028: false,
+      reform2028: true,
       headline: "shortage",
     },
   },
@@ -247,7 +255,7 @@ export const GOLDEN: GoldenCase[] = [
       self: { verdict: "ample", low: 200, high: 200, gap: "excess", gapAmount: 800 },
       spouse: { verdict: "ample", low: 200, high: 200, gap: "excess", gapAmount: 300 },
       medical: "self_insurable",
-      reform2028: false,
+      reform2028: true,
       headline: "reducible",
     },
   },
