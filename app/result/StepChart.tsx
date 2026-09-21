@@ -59,6 +59,7 @@ export function StepChart({
   caption,
   survivorLabel,
   stepYears,
+  depletedYear,
 }: {
   rows: StepYear[];
   caption: string;
@@ -69,6 +70,17 @@ export function StepChart({
    * ここで独自に拾い直すと、下の説明カードの①②③と番号がずれる（2026-09-21 に実際にずれた）。
    */
   stepYears: number[];
+  /**
+   * **貯蓄が尽きる年**（西暦）。尽きない世帯では null。
+   *
+   * 旧「検査値パネル」（`Vitals`）が数字のタイルで出していた項目の移し先。
+   * 数字1つで「2041年ごろ」と出すより、**いつ起きるかを時間軸の上で指す**ほうが、
+   * この事実の性質（時点の話である）に合う。
+   *
+   * **尽きない世帯では出さない。** `decisionPoints` の「全世帯同文禁止」と同じ理由で、
+   * 起きない事実の目印を全世帯に出すと、隣の世帯で嘘になる。
+   */
+  depletedYear: number | null;
 }) {
   if (rows.length < 2) return null;
 
@@ -229,6 +241,38 @@ export function StepChart({
             </text>
           </g>
         ))}
+
+        {/*
+          **貯蓄が尽きる年**を縦マーカーで指す（2026-09-21・`Vitals` からの移設）。
+          段差①②③と同じ語彙（西暦＋年齢）で書き、**段差とは別の見た目**にする
+          ── 段差は「公的収入が減った」、これは「受け皿が無くなった」で、種類が違う。
+        */}
+        {depletedYear !== null &&
+          (() => {
+            const i = rows.findIndex((r) => r.year === depletedYear);
+            if (i < 0) return null;
+            const age = rows[i].survivorAge;
+            return (
+              <g>
+                <line
+                  className={s.depletedLine}
+                  x1={x(i)}
+                  x2={x(i)}
+                  y1={PLOT_TOP}
+                  y2={PLOT_BOTTOM}
+                />
+                <text
+                  className={s.depletedLabel}
+                  x={x(i)}
+                  y={PLOT_BOTTOM - 4}
+                  textAnchor={i > rows.length / 2 ? "end" : "start"}
+                  dx={i > rows.length / 2 ? -4 : 4}
+                >
+                  {depletedYear}年{age !== null ? `（${survivorLabel}${age}歳）` : ""}・貯蓄が尽きる
+                </text>
+              </g>
+            );
+          })()}
 
         {/* 大学の学費がかかる時期を軸下のブレースで示す */}
         {eduFrom >= 0 && eduTo > eduFrom && (

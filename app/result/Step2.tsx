@@ -251,6 +251,8 @@ export function Step2({
 
       <StepChart
         caption={`${rows[0].year}年から${rows[rows.length - 1].year}年までの、公的年金・就労収入・生活費の推移。単位は月あたりの円。`}
+        /* **貯蓄が尽きない世帯では null。** 起きない事実の目印を全世帯に出さない */
+        depletedYear={pj.depletedAt?.year ?? null}
         rows={rows}
         stepYears={stepAndEnd.map((r) => r.year)}
         survivorLabel={survivorLabel}
