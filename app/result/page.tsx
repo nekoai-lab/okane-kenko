@@ -1127,9 +1127,27 @@ export default async function ResultPage({
         </ul>
       </div>
 
+      {/*
+        照合表 #9「使った前提と出典」。
+        **当社基準は手書きで並べない。** `params` の `ownStandard` を**在庫一覧としてそのまま出す**
+        ── 散らばった当社基準が一覧されていないと、増えたときに画面だけ古くなる。
+        2026-09-21、葬儀・予備費の「床として使う置き方」をここに昇格させた
+        （時期の根拠がどの文書にも無いと全文確認で分かったため）。
+      */}
+      <h3 className={s.h3}>当社基準（公的出典のない当社の見立て）</h3>
+      <ul className={s.list}>
+        {Object.entries(params.ownStandard).map(([key, e]) => (
+          <li key={key}>
+            {e.label ?? key}
+            {e.userAdjustable ? "（画面で動かせます）" : ""}
+          </li>
+        ))}
+      </ul>
+
       <p className={s.sources}>
         出典：遺族年金は日本年金機構・厚生年金保険法（令和8年度の年金額は報道値ベースで確定前）、教育費は文部科学省
-        子供の学習費調査。生活費率・就労推定などの「当社基準」は公的出典のない当社の見立てです。
+        子供の学習費調査、高額療養費・傷病手当金・雇用保険は各制度の一次情報（制度パラメータ版{" "}
+        {result.paramVersion} に出典URLと施行日を記録しています）。上の当社基準には公的出典がありません。
       </p>
 
       <div className={s.draftNote}>
