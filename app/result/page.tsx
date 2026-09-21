@@ -6,18 +6,19 @@
  * 芯：概算・要精査／前提／出典を必ず添える。減らせる箇所は無ければ「見つかりませんでした」と明示する。
  */
 import Link from "next/link";
-import { diagnose } from "../../src/calc/index.js";
+import { diagnose, toHousehold } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import type { Projection } from "../../src/calc/projection.js";
 import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstYear } from "../../src/time/jstYear.js";
-import { simulateAll } from "../../src/calc/simulate.js";
+import { dialFor, simulateAll } from "../../src/calc/simulate.js";
 import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
 import { decisionPoints } from "../../src/calc/decisionPoints.js";
 import { reform2028 } from "../../src/calc/reform2028.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
 import { Hero } from "./Hero.js";
+import { LivingDial } from "./LivingDial.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
 import { Step2 } from "./Step2.js";
 import { CoverageCurve } from "./CoverageCurve.js";
@@ -31,6 +32,11 @@ import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
 import { normalize } from "../../src/wizard/normalize.js";
+import {
+  LIVING_LEVELS,
+  decodeLivingLevel,
+  withLivingLevel,
+} from "../../src/wizard/dial.js";
 import { decodeSelections } from "../../src/wizard/url.js";
 import s from "./page.module.css";
 
@@ -145,6 +151,7 @@ function CaseCard({
   workFrom,
   reform2028Reason,
   loan,
+  livingBand,
 }: {
   title: string;
   r: DeathResult;
@@ -161,6 +168,8 @@ function CaseCard({
   reform2028Reason: string;
   /** 住宅ローン残高（判断ポイントの文面に使う） */
   loan: number | null;
+  /** 生活費の幅（円/月・率と目盛りを掛けたあと）。帯が無い区分では null */
+  livingBand: { low: number; high: number } | null;
 }) {
   /**
    * STEP4 の判定カード。**過不足軸**（`Verdict3`）を使う ── バッジと同じ軸。
@@ -266,6 +275,7 @@ function CaseCard({
           living: "「毎月の生活費」",
           education: "「お子さんの進路」",
         }}
+        livingBand={livingBand}
         pj={pj}
         reform2028Reason={reform2028Reason}
         survivorLabel={survivorLabel}
@@ -428,35 +438,60 @@ export default async function ResultPage({
   }
 
   const params = loadParams();
-  const { input } = normalize(params, complete, new Date());
+  /**
+   * 暮らし方の目盛り（#4・D-02・ADR-022）。**URL が状態そのもの**なので、
+   * 押すたびにサーバで全部計算し直す ── 部分更新の取り残しが原理的に起きない。
+   * 既定（いま通り）は URL に書かない。
+   */
+  const livingLevel = decodeLivingLevel(q);
+  const dial = dialFor(params, livingLevel);
+  const { input: rawInput } = normalize(params, complete, new Date());
+  const input = { ...rawInput, lifestyleDial: dial };
   const result = diagnose(params, input);
+
+  /**
+   * **目盛りを動かしても必要額が変わらない世帯がある。**
+   * `ample` / `not_needed` は必要額が葬儀・予備費の床に張り付くので、
+   * 生活費が動いても必要額は動かない。**無反応ではなく「吸収されている」**ので、そう言う
+   * （感度文と同じ分岐の作り・2026-09-21 オーナー指示）。
+   */
+  /**
+   * 生活費の幅（D-01）。**出どころは回答帯**で、目盛り（D-02）ではない。
+   * 帯 × 率（子育て期の 0.70） × 目盛り。
+   * 上端の無い区分（`35万円以上`）と「年収から推定」では幅を作らない ── 無い幅を発明しない。
+   */
+  const band = complete.livingCost !== "estimate"
+    ? params.inputRanges.monthlyLivingBand[complete.livingCost]
+    : undefined;
+  const livingBand =
+    band?.high !== undefined
+      ? {
+          low: band.low * v(params, "survivorLivingRatioChild") * dial,
+          high: band.high * v(params, "survivorLivingRatioChild") * dial,
+        }
+      : null;
+
+  const needsAcrossDials = LIVING_LEVELS.map((lv) => {
+    const r = diagnose(params, { ...rawInput, lifestyleDial: dialFor(params, lv) });
+    return `${r.self.range.low}-${r.self.range.high}`;
+  });
+  const absorbedNote =
+    new Set(needsAcrossDials).size === 1 &&
+    (result.self.verdict === "ample" || result.self.verdict === "not_needed")
+      ? "前提を変えても、公的な年金と資産の範囲に収まっています。必要額は葬儀・予備費のぶんのままです。"
+      : null;
 
   // 年次キャッシュフロー（US-04b）。総額と同じ係数・同じ前提で、合計する前の姿を出す。
   // 変動率は既定の0（実値への切り替えはパラメータ版の更新でやる。SPEC 参照）。
   const asOfYear = jstYear(new Date());
-  const base = {
-    children: input.children,
-    housing: input.housing,
-    assets: input.assets,
-    monthlyLiving: input.monthlyLiving,
-    educationPlan: input.educationPlan,
-  };
-  const selfProjection = projectDeath(
-    params,
-    { ...base, deceased: input.self, survivor: input.spouse, currentCoverage: input.coverageSelf },
-    { asOfYear },
-  );
+  /**
+   * **`Household` を手で組まない。** `toHousehold` を通す（src/calc）。
+   * 2026-09-21、ここで `lifestyleDial` を1つ落としており、必要額だけ動いて
+   * 年次（台帳・段差チャート）が古いまま残った。入力に項目が増えても落ちない形にする。
+   */
+  const selfProjection = projectDeath(params, toHousehold(input, "self"), { asOfYear });
   const spouseProjection = input.spouse
-    ? projectDeath(
-        params,
-        {
-          ...base,
-          deceased: input.spouse,
-          survivor: input.self,
-          currentCoverage: input.coverageSpouse ?? null,
-        },
-        { asOfYear },
-      )
+    ? projectDeath(params, toHousehold(input, "spouse"), { asOfYear })
     : null;
 
   /**
@@ -593,7 +628,11 @@ export default async function ResultPage({
    */
   // **同じ日付で回す。** 感度文と診断表で asOf がずれると、年齢が1歳違う結果を並べてしまう
   const asOfDate = new Date();
-  const sims = simulateAll(params, { answers: input, asOf: asOfDate });
+  const sims = simulateAll(params, {
+    answers: input,
+    asOf: asOfDate,
+    assumptions: { livingLevel },
+  });
   const bySc = Object.fromEntries(sims.map((x) => [x.scenario, x]));
   const TONE = { reducible: "ok", uncertain: "check", shortage: "short" } as const;
   const DEATH_LABEL = {
@@ -920,7 +959,14 @@ export default async function ResultPage({
         modeText="いま通り"
       />
 
-      {/* 2. 玄関：リスク別健康診断表（仕様 §5.3）。この下に死亡の詳細が縦1本で続く */}
+      {/* 照合表 #4：暮らし方の前提トグル。**ヒーロー直下**（仕様 §5.3 のページ順） */}
+      <LivingDial
+        absorbedNote={absorbedNote}
+        current={livingLevel}
+        hrefFor={(lv) => `/result?${withLivingLevel(q, lv)}`}
+      />
+
+      {/* 3. 玄関：リスク別健康診断表（仕様 §5.3）。この下に死亡の詳細が縦1本で続く */}
       <RiskTable caption={caption} rows={riskRows} />
 
       {/* 検査値パネル。健康診断書がまず数値の表を出すのと同じ順序にする */}
@@ -1003,6 +1049,7 @@ export default async function ResultPage({
           koseiFrom={input.self.employment === "employee" ? "「会社員」" : null}
           pj={selfProjection}
           r={result.self}
+          livingBand={livingBand}
           loan={input.housing.loan ?? null}
           reform2028Reason={result.reform2028.reason}
           survivorLabel="配偶者"
@@ -1047,6 +1094,7 @@ export default async function ResultPage({
                   hasChildren: input.children.length > 0,
                 }).reason
               }
+              livingBand={livingBand}
               loan={input.housing.loan ?? null}
               survivorLabel="あなた"
               title="配偶者が亡くなった場合"

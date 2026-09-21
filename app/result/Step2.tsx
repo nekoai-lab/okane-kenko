@@ -36,6 +36,12 @@ export interface Step2Props {
   };
   /** 団信で住居費が消えているか（0円の行を出すかどうか） */
   danshinCovered: boolean;
+  /**
+   * 生活費の幅（円/月・すでに率と目盛りを掛けたもの）。
+   * **幅の出どころは回答帯（D-01）**で、目盛り（D-02）ではない（ADR-022）。
+   * 帯の上端が無い区分（`35万円以上`）や「年収から推定」では null。
+   */
+  livingBand: { low: number; high: number } | null;
   /** 2028年改正がこの世帯に該当するかの1行（`diagnose` の `reform2028.reason`） */
   reform2028Reason: string;
 }
@@ -72,6 +78,7 @@ export function Step2({
   from,
   danshinCovered,
   reform2028Reason,
+  livingBand,
 }: Step2Props) {
   const first = pj.rows[0];
   if (!first) return null;
@@ -130,7 +137,13 @@ export function Step2({
   const expenses = expenseYen.map((r) => ({
     label: r.label,
     from: r.from,
-    value: r.yen === 0 ? "0円" : perMonthMan(r.yen),
+    // 生活費だけは**回答帯の幅**で出す（D-01）。帯が無い区分では点のまま
+    value:
+      r.label === "生活費" && livingBand
+        ? `約${(livingBand.low / 10_000).toFixed(1)}〜${(livingBand.high / 10_000).toFixed(1)}万円`
+        : r.yen === 0
+          ? "0円"
+          : perMonthMan(r.yen),
   }));
 
   // **差し引き＝入る計 −（表に出した支出の合計）。** 表の行を足せば必ずこの数になる

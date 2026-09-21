@@ -41,6 +41,36 @@ export interface DiagnoseInput {
   lifestyleDial?: number;
 }
 
+/**
+ * `DiagnoseInput` から `Household` を作る。**画面が手で組み立てない**ための入口。
+ *
+ * 2026-09-21、結果画面が `projectDeath` に渡す `Household` を手で組んでおり、
+ * **暮らし方の目盛り（`lifestyleDial`）を1つ落としていた**。
+ * その結果、必要額だけが動いて年次（台帳・段差チャート）は古いまま残った
+ * ── #4 で最も起きやすい「部分更新の取り残し」そのもの。
+ *
+ * テストでは画面の手組みを見られないので、**構造で塞ぐ**。
+ * 入力に項目が増えても、ここを通していれば落ちない。
+ */
+export function toHousehold(
+  input: DiagnoseInput,
+  who: "self" | "spouse",
+): Household {
+  const deceased = who === "self" ? input.self : input.spouse;
+  if (!deceased) throw new Error("配偶者がいない世帯で配偶者の死亡ケースは作れない");
+  return {
+    children: input.children,
+    housing: input.housing,
+    assets: input.assets,
+    monthlyLiving: input.monthlyLiving,
+    educationPlan: input.educationPlan,
+    lifestyleDial: input.lifestyleDial,
+    deceased,
+    survivor: who === "self" ? input.spouse : input.self,
+    currentCoverage: who === "self" ? input.coverageSelf : (input.coverageSpouse ?? null),
+  };
+}
+
 export function diagnose(
   p: ParamSet,
   input: DiagnoseInput,
@@ -49,33 +79,12 @@ export function diagnose(
   // 期限切れの中核パラメータでは診断しない（PR-04）。古い値で黙って出さない。
   assertUsable(p, asOf);
 
-  const base = {
-    children: input.children,
-    housing: input.housing,
-    assets: input.assets,
-    monthlyLiving: input.monthlyLiving,
-    educationPlan: input.educationPlan,
-    // 目盛りは両方の死亡ケースに同じものを掛ける（片方だけ別の水準で計算しない）
-    lifestyleDial: input.lifestyleDial,
-  };
-
-  const self = calcDeath(p, {
-    ...base,
-    deceased: input.self,
-    survivor: input.spouse,
-    currentCoverage: input.coverageSelf,
-  });
+  const self = calcDeath(p, toHousehold(input, "self"));
 
   let spouse: DeathResult | null = null;
   if (input.spouse && input.coverageSpouse !== undefined) {
-    spouse = calcDeath(p, {
-      ...base,
-      deceased: input.spouse,
-      survivor: input.self,
-      // 配偶者が亡くなるケースで遺されるのは**本人**
-      survivorLabel: "あなた",
-      currentCoverage: input.coverageSpouse,
-    });
+    // 配偶者が亡くなるケースで遺されるのは**本人**
+    spouse = calcDeath(p, { ...toHousehold(input, "spouse"), survivorLabel: "あなた" });
   }
 
   const medical = calcMedical(

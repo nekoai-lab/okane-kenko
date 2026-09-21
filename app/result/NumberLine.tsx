@@ -137,6 +137,13 @@ export function NumberLine({ need, coverage, fmt, verdict, points }: NumberLineP
             </li>
           ))}
         </ol>
+        {/*
+          閉じ文（照合表 #8c）。**#4 のトグルが存在して初めて真になる文**なので、
+          トグルと同時に入れた（2026-09-21）。
+        */}
+        <p className={s.closing}>
+          この{points.length}点を頭に置いて、上の「暮らし方の前提」を選び直してみてください。判定が連動して変わります。
+        </p>
         {/* ラボは未実装。**押せないことを黙らせない** */}
         <p className={s.pending}>もしもラボで「この場合は？」を試す（準備中）</p>
       </div>
