@@ -324,28 +324,28 @@ ownStandard:
   shortageRangeLowFactor:
     value: 0.8
     unit: ratio
-    label: 不足のときの必要額の幅（下端＝差額の0.8倍）
+    label: 不足のときの必要額の幅（下端の係数）
     source: 当社基準（公的出典なし）
     note: 機能仕様書 §4.2.7 の shortage 枝。幅の根拠は無く、概算であることを示すための置き方
     userAdjustable: false
   shortageRangeHighFactor:
     value: 1.2
     unit: ratio
-    label: 不足のときの必要額の幅（上端＝差額の1.2倍）
+    label: 不足のときの必要額の幅（上端の係数）
     source: 当社基準（公的出典なし）
     note: 同上
     userAdjustable: false
   sufficientTopUpMonthsLow:
     value: 12
     unit: months
-    label: 上乗せの目安の下端（遺族の生活費12か月ぶん＋葬儀・予備費）
+    label: 上乗せの目安の下端（遺族の生活費の月数）
     source: 当社基準（公的出典なし）
     note: 機能仕様書 §4.2.7 の sufficient 枝（生活の立て直し期間の見立て）
     userAdjustable: false
   sufficientTopUpMonthsHigh:
     value: 24
     unit: months
-    label: 上乗せの目安の上端（遺族の生活費24か月ぶん＋葬儀・予備費）
+    label: 上乗せの目安の上端（遺族の生活費の月数）
     source: 当社基準（公的出典なし）
     note: 同上
     userAdjustable: false
@@ -354,7 +354,7 @@ ownStandard:
   excessCoverageRatio:
     value: 1.5
     unit: ratio
-    label: いまの保障を「多すぎる」とみなす境目（必要額の上端の1.5倍を超えたら）
+    label: いまの保障を「多すぎる」とみなす境目（必要額の上端に対する倍率）
     source: 当社基準（公的出典なし）
     note: 判定の分かれ目を決める当社基準・公的出典なし。機能仕様書 §4.2.7「現在の保障との比較」
     userAdjustable: false
