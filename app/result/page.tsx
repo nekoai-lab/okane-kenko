@@ -12,6 +12,9 @@ import type { Projection } from "../../src/calc/projection.js";
 import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstYear } from "../../src/time/jstYear.js";
+import { simulateAll } from "../../src/calc/simulate.js";
+import { verdict3 } from "../../src/calc/verdict3.js";
+import { RiskTable, type RiskRow } from "./RiskTable.js";
 import { Cashflow } from "./Cashflow.js";
 import { CoverageCurve } from "./CoverageCurve.js";
 import { GapWaterfall } from "./GapWaterfall.js";
@@ -405,6 +408,135 @@ export default async function ResultPage({
               }
             : { label: "世帯の過不足", value: "0円", note: "過不足なし", tone: "good" };
 
+  /**
+   * リスク別健康診断表の6行（仕様 §5.3）。
+   *
+   * **死亡は本人・配偶者を2行に分ける。** 個人の判定が正で、世帯の集約（組み替えの余地など）は
+   * 軸が違うのでここには混ぜない（世帯の結論は下の死亡詳細セクションに出る）。
+   * **所見の文言はモック `docs/design-mock/check.html` が正で、金額だけ実計算値に差し替える。**
+   */
+  const sims = simulateAll(params, { answers: input, asOf: new Date() });
+  const bySc = Object.fromEntries(sims.map((x) => [x.scenario, x]));
+  const TONE = { reducible: "ok", uncertain: "check", shortage: "short" } as const;
+  const DEATH_LABEL = {
+    reducible: "減らせる可能性",
+    uncertain: "圏内・要精査",
+    shortage: "不足の可能性",
+    pending: "判定できません",
+  } as const;
+  const SAVINGS_LABEL = {
+    reducible: "大丈夫のめやす",
+    uncertain: "圏内・要精査",
+    shortage: "備え不足の可能性",
+    pending: "判定できません",
+  } as const;
+
+  /** 死亡の1行を作る。本人と配偶者で同じ形にする */
+  const deathRow = (
+    who: "本人" | "配偶者",
+    dr: typeof result.self,
+    cov: number | null | undefined,
+  ): RiskRow => {
+    const v = verdict3(cov, dr.range.low, dr.range.high);
+    const range = formatRange(dr.range.low, dr.range.high);
+    const covText = cov === null || cov === undefined ? "未入力" : `約${money(cov)}`;
+    /**
+     * **必要額が葬儀費用だけになる世帯は、その理由を先に言う。**
+     * `ample`（公的年金と資産で生活費がまかなえる）と `not_needed`（扶養家族がいない）は
+     * `death.ts` で low = high = 葬儀費用になる。理由抜きで「必要額 約200万円」とだけ出すと、
+     * 読み手には桁を間違えた数字に見える。良い知らせは良い知らせとして届ける（CLAUDE.md）。
+     */
+    const whyFuneralOnly =
+      dr.verdict === "ample"
+        ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。上乗せで要るのは葬儀費用だけで、"
+        : dr.verdict === "not_needed"
+          ? "扶養しているご家族がいないため、上乗せの保障は要りません。見込むのは葬儀費用だけで、"
+          : "";
+    const note =
+      v === "pending"
+        ? `いまの保障が分からないため、過不足は出していません。必要額の目安は${range}です。`
+        : v === "uncertain"
+          ? `${whyFuneralOnly}必要額 ${range} の幅が、いまの保障 ${covText} を跨いでいます。`
+          : v === "reducible"
+            ? `${whyFuneralOnly}必要額 ${range} に対して、いまの保障は ${covText}。上端で見ても上回っています。`
+            : `${whyFuneralOnly}必要額 ${range} に対して、いまの保障は ${covText}。下端で見ても届いていません。`;
+    return {
+      key: `death-${who}`,
+      title: `死亡（${who}）`,
+      subtitle: "遺されたご家族の生活",
+      tone: v === "pending" ? "none" : TONE[v],
+      verdictLabel: DEATH_LABEL[v],
+      precisionLabel: "計算済み",
+      note,
+      link: { href: "#death-detail", label: "詳しく →" },
+    };
+  };
+
+  /** 制度式で概算する行（病気・けが・失業）。受け皿は保険ではなく貯蓄 */
+  const savingsRow = (
+    key: string,
+    title: string,
+    subtitle: string,
+    sim: (typeof sims)[number],
+    lead: string,
+  ): RiskRow => {
+    const v = sim.verdict ?? "pending";
+    const range = sim.amounts ? formatRange(sim.amounts.needLow, sim.amounts.needHigh) : "—";
+    const tail =
+      v === "reducible"
+        ? "いまの貯蓄で受けられる水準です。"
+        : v === "shortage"
+          ? "いまの貯蓄では届かない可能性があります。"
+          : "いまの貯蓄と重なる幅なので、言い切れません。";
+    return {
+      key,
+      title,
+      subtitle,
+      tone: v === "pending" ? "none" : TONE[v],
+      verdictLabel: SAVINGS_LABEL[v],
+      precisionLabel: "制度式で概算",
+      note: `${lead}必要はおよそ${range}。${tail}`,
+      // ラボは未実装。**押せないことを黙らせない**
+      link: { pending: "もしもラボで見る（準備中）" },
+    };
+  };
+
+  const riskRows: RiskRow[] = [
+    deathRow("本人", result.self, input.coverageSelf),
+    ...(result.spouse ? [deathRow("配偶者", result.spouse, input.coverageSpouse)] : []),
+    savingsRow(
+      "sick_short",
+      "病気・けが（短期）",
+      "入院・〜3か月の休み",
+      bySc.sick_short,
+      "高額療養費と傷病手当金をふまえると、",
+    ),
+    savingsRow(
+      "sick_long",
+      "病気・けが（長期休職）",
+      "がん・脳卒中・こころ／〜1年半",
+      bySc.sick_long,
+      "",
+    ),
+    {
+      key: "disability",
+      title: "就業不能・障害",
+      subtitle: "1年半を超えて働けない",
+      tone: "none",
+      verdictLabel: "未診断",
+      precisionLabel: "計算未対応",
+      note: bySc.disability.notSupported?.detail ?? "",
+      link: { pending: "もしもラボで見る（準備中）" },
+    },
+    savingsRow(
+      "unemployment",
+      "失業",
+      "仕事を失ったとき",
+      bySc.unemployment,
+      "雇用保険の基本手当と生活防衛資金で受ける領域です。ここは保険で備える領域ではありません。",
+    ),
+  ];
+
   const vitals: Vital[] = [
     {
       // 金額の呼び名は verdict で変える（同じ名前で別の数を出さない・2026-08-30 の修正と同じ理由）
@@ -457,6 +589,12 @@ export default async function ResultPage({
 
   return (
     <main className={s.page}>
+      {/* 玄関：リスク別健康診断表（仕様 §5.3）。この下に死亡の詳細が縦1本で続く */}
+      <RiskTable
+        caption={`${input.self.age}歳・${input.self.employment === "employee" ? "会社員" : input.self.employment === "self" ? "自営・フリーランス" : "無職"}${input.spouse ? `・配偶者${input.spouse.age}歳` : "・配偶者なし"}${input.children.length > 0 ? `・子${input.children.length}人` : "・子なし"}`}
+        rows={riskRows}
+      />
+
       {h ? (
         <div className={`${s.headline} ${h.tone === "good" ? s.good : s.warn}`}>
           <span className={s.icon} aria-hidden="true">
@@ -548,7 +686,7 @@ export default async function ResultPage({
           **全幅にはしない。** 一度広げてみたが、SVG は viewBox で伸縮するので
           図を広げると軸の文字まで拡大されて崩れる。30本の棒も6列の表も720pxで足りており、
           実際に幅を必要としていたのは検査値パネル（4列）だけだった。 */}
-      <div className={`${s.section} ${s.sectionMajor}`}>
+      <div className={`${s.section} ${s.sectionMajor}`} id="death-detail">
         <CaseCard
           coverage={input.coverageSelf}
           pj={selfProjection}

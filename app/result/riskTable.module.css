@@ -1,0 +1,196 @@
+/*
+  リスク別健康診断表（仕様 §5.3 / モック docs/design-mock/check.html）
+
+  色と字は再設計のトークン（docs/design-mock/tokens.css）から取る。
+  **このセクションの中だけに閉じて定義する。** ページの下半分（死亡の詳細）はまだ旧トークン
+  （Airbnb＋デジタル庁DS）なので、ここでグローバルに上書きすると既存の画面が崩れる。
+  旧→新の全面切り替えは、死亡詳細を組み直すときにまとめてやる。
+*/
+.wrap {
+  /* 地と文字 */
+  --bg: #f2efe8;
+  --surface: #fff;
+  --ink: #1e2a26;
+  --muted: #5c6660;
+  --muted-2: #45514b;
+  --hairline: #e4e0d6;
+  /* 意味色：緑＝カバー・大丈夫 / 橙＝要精査 / 赤＝不足 / 灰＝未診断 */
+  --green: #2e6b52;
+  --green-deep: #245640;
+  --green-bg: #eaf3ed;
+  --amber: #a6690f;
+  --amber-deep: #7a4a05;
+  --amber-bg: #fbf3e4;
+  --red: #9c4633;
+  --red-deep: #7e3526;
+  --red-bg: #f9ece8;
+  --grey-bg: #ede9df;
+  --grey-border: #b9b2a2;
+  --font-display: "Shippori Mincho", serif;
+
+  background: var(--bg);
+  color: var(--ink);
+  margin: 0 calc(-1 * var(--layout-margin-mobile)) var(--space-7);
+  padding: var(--space-6) var(--layout-margin-mobile) var(--space-7);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 var(--space-2);
+}
+
+.lead {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 0 0 var(--space-3);
+  line-height: 1.7;
+}
+
+.caption {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--muted-2);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 5px 14px;
+  margin: 0 0 var(--space-4);
+  line-height: 1.6;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* 1280px の5列テーブルは 390px では潰れる。1リスク＝1カードに組み直す */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  font-weight: 700;
+  font-size: 15px;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+/* 判定は「ラベル＋色」。色だけで意味を伝えない（バッジに必ず文字が入る） */
+.badge {
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+
+.ok {
+  background: var(--green-bg);
+  border: 1.5px solid var(--green);
+  color: var(--green-deep);
+}
+.check {
+  background: var(--amber-bg);
+  border: 1.5px solid var(--amber);
+  color: var(--amber-deep);
+}
+.short {
+  background: var(--red-bg);
+  border: 1.5px solid var(--red);
+  color: var(--red-deep);
+}
+.none {
+  background: var(--grey-bg);
+  border: 1.5px solid var(--grey-border);
+  color: var(--muted);
+}
+
+.precision {
+  font-size: 12px;
+  color: var(--muted-2);
+  margin: var(--space-3) 0 0;
+}
+
+.note {
+  font-size: 13.5px;
+  line-height: 1.75;
+  margin: var(--space-2) 0 0;
+}
+
+.link {
+  display: inline-block;
+  margin-top: var(--space-3);
+  color: var(--green);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: var(--target-min);
+  line-height: var(--target-min);
+}
+
+/* 押せないものを黙らせない。準備中であることを文字で出す */
+.pending {
+  display: inline-block;
+  margin-top: var(--space-3);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* **法的免責のような小さい文字にしない。** 実力以上の安心を売らないための注記 */
+.overlapNote {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink);
+  background: var(--surface);
+  border-left: 4px solid var(--amber);
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+  margin: var(--space-4) 0 0;
+}
+
+.legend {
+  margin: var(--space-4) 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend dt {
+  font-weight: 700;
+  color: var(--muted-2);
+  margin-bottom: var(--space-2);
+}
+
+.legend dd {
+  margin: 0 0 var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.legendText {
+  display: block;
+  line-height: 1.8;
+}
