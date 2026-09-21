@@ -56,24 +56,64 @@
   margin: 4px 0 0;
 }
 
+/* 3組。組と組のあいだは、チップどうしの間隔よりはっきり空ける */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* 小見出し。**台帳のセクション見出し（入ってくるお金）と同じトークン** */
+.groupHead {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted-2);
+  margin: 0;
+}
+
 .chips {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* 答えた内容＝白いチップ（推定の橙と対で意味を持つ） */
+/*
+  答えた内容＝白いチップ（推定の橙と対で意味を持つ）。
+
+  **インラインで折り返す密度に戻した**（2026-09-21）。
+  1枚が長いと390pxでは1行1枚になり、10枚が縦一列に伸びて「答えたこと」が
+  読むものになってしまう。札の中をキー・バリューに割って繰り返し語を削り、
+  余白を詰めることで、1行に2枚以上流れるようにしている。
+*/
 .chip {
-  font-size: 12.5px;
-  color: #2c3833;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
   background: #fff;
   border: 1px solid var(--hairline);
   border-radius: 999px;
-  padding: 7px 14px;
+  padding: 5px 11px;
   line-height: 1.5;
+}
+
+/* 長くて折り返す札（住まい）だけ1行を専有する。組版は他と同じ */
+.chipWide {
+  flex: 1 1 100%;
+}
+
+/* キーは「回答:」キャプションと同じ薄墨・小サイズ。目に入るのは値のほうでよい */
+.chipKey {
+  font-size: 10px;
+  color: #a5aca7;
+  white-space: nowrap;
+}
+
+.chipValue {
+  font-size: 12.5px;
+  color: #2c3833;
 }
 
 /* 推定で補った項目＝橙。**答えたことと色で分ける**のがこのブロックの要点 */

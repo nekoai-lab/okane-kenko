@@ -18,11 +18,37 @@
 import Link from "next/link";
 import s from "./step1.module.css";
 
-/** 回答チップ1つ。`field` はウィザードの項目名で、推定の記録と突き合わせるために持つ */
+/**
+ * チップの組。**小見出しを付けて3つに割る**（2026-09-21 オーナー指示）。
+ * 10枚が1列に流れると、どこまでが何の話か分からないまま縦に読むことになる。
+ */
+export type ChipGroup = "family" | "money" | "home";
+
+const GROUP_LABEL: Record<ChipGroup, string> = {
+  family: "ご家族と仕事",
+  money: "家計と資産",
+  home: "住まいと保障",
+};
+
+const GROUP_ORDER: ChipGroup[] = ["family", "money", "home"];
+
+/**
+ * 回答チップ1枚。**キー・バリュー組版**にする（`回答: 子2人` のキャプションと同じ考え方）。
+ *
+ * キーを分けると、繰り返し語を削って札が短くできる
+ * （「ご本人の年収 約700万円」→ キー「本人・年収」＋ バリュー「約700万円」）。
+ * 札が短くなるぶん1行に2枚以上流れるので、10枚が縦一列にならない。
+ */
 export interface AnswerChip {
   /** ウィザードの項目名。突き合わせる相手が無い項目（年齢など）は null */
   field: string | null;
-  text: string;
+  group: ChipGroup;
+  /** 薄墨・小サイズで出す項目名（`回答:` と同じトークン） */
+  key: string;
+  /** 墨で出す回答そのもの */
+  value: string;
+  /** 長くて1行に収まらない札（住まいなど）。1行を専有する */
+  wide?: boolean;
 }
 
 export interface Step1Props {
@@ -53,7 +79,10 @@ export function Step1({ chips, estimations, terms, editHref }: Step1Props) {
   const estimated = new Map(estimations.map((e) => [e.field, e]));
   const answered = chips.filter((c) => c.field === null || !estimated.has(c.field));
   /** 推定の項目は、補い方の理由の上に**その項目の値**を出す（チップと同じ情報を橙側に移す） */
-  const chipTextOf = (field: string) => chips.find((c) => c.field === field)?.text ?? null;
+  const chipTextOf = (field: string) => {
+    const c = chips.find((x) => x.field === field);
+    return c ? `${c.key} ${c.value}` : null;
+  };
 
   return (
     <section className={s.wrap} aria-labelledby="step1-heading">
@@ -69,13 +98,27 @@ export function Step1({ chips, estimations, terms, editHref }: Step1Props) {
         </div>
       </div>
 
-      <ul className={s.chips}>
-        {answered.map((c) => (
-          <li className={s.chip} key={c.text}>
-            {c.text}
-          </li>
-        ))}
-      </ul>
+      {/*
+        **3組に割って小見出しを付ける。** 小見出しは台帳のセクション見出しと同じトークン。
+        推定に回った項目はこの列から抜けるので、**組ごと空になることがある** ── そのときは出さない。
+      */}
+      {GROUP_ORDER.map((g) => {
+        const items = answered.filter((c) => c.group === g);
+        if (items.length === 0) return null;
+        return (
+          <div className={s.group} key={g}>
+            <p className={s.groupHead}>{GROUP_LABEL[g]}</p>
+            <ul className={s.chips}>
+              {items.map((c) => (
+                <li className={`${s.chip} ${c.wide ? s.chipWide : ""}`} key={c.key}>
+                  <span className={s.chipKey}>{c.key}</span>
+                  <span className={s.chipValue}>{c.value}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
 
       {terms.length > 0 && (
         <ul className={s.terms}>

@@ -164,39 +164,100 @@ const EDU_PLAN_LABEL: Record<EducationPlan, string> = {
  */
 function answerChips(input: DiagnoseInput, coverage: number | null): AnswerChip[] {
   const man = (yen: number) => `約${Math.round(yen / 10000).toLocaleString("ja-JP")}万円`;
-  /** `field` はウィザードの項目名。**推定の記録（`normalize`）と同じ綴り**にする */
+  /**
+   * `field` はウィザードの項目名。**推定の記録（`normalize`）と同じ綴り**にする。
+   *
+   * キーからは**繰り返し語を削る**（「ご本人の年収」→「本人・年収」）。
+   * 札が短くなるぶん1行に2枚以上流れ、10枚が縦一列に伸びない。
+   */
   return [
-    { field: null, text: `ご本人 ${input.self.age}歳・${EMPLOYMENT[input.self.employment]}` },
-    { field: "selfIncome", text: `ご本人の年収 ${man(input.self.income)}` },
+    // ── ご家族と仕事 ──
     {
       field: null,
-      text: input.spouse
-        ? `配偶者 ${input.spouse.age}歳・${EMPLOYMENT[input.spouse.employment]}`
-        : "配偶者なし",
+      group: "family",
+      key: "本人",
+      value: `${input.self.age}歳・${EMPLOYMENT[input.self.employment]}`,
     },
+    {
+      field: null,
+      group: "family",
+      key: "配偶者",
+      value: input.spouse
+        ? `${input.spouse.age}歳・${EMPLOYMENT[input.spouse.employment]}`
+        : "なし",
+    },
+    {
+      field: null,
+      group: "family",
+      key: "お子さん",
+      value:
+        input.children.length > 0
+          ? `${input.children.length}人（${input.children.map((a) => `${a}歳`).join("・")}）`
+          : "なし",
+    },
+    {
+      field: "educationPlan",
+      group: "family",
+      key: "進路",
+      value: EDU_PLAN_LABEL[input.educationPlan],
+    },
+
+    // ── 家計と資産 ──
+    { field: "selfIncome", group: "money", key: "本人・年収", value: man(input.self.income) },
     ...(input.spouse
-      ? [{ field: "spouseIncome", text: `配偶者の年収 ${man(input.spouse.income)}` }]
+      ? [
+          {
+            field: "spouseIncome",
+            group: "money" as const,
+            key: "配偶者・年収",
+            value: man(input.spouse.income),
+          },
+        ]
+      : []),
+    {
+      field: "monthlyLiving",
+      group: "money",
+      key: "毎月の生活費",
+      value: man(input.monthlyLiving),
+    },
+    { field: "assets", group: "money", key: "金融資産", value: man(input.assets) },
+
+    // ── 住まいと保障 ──
+    {
+      field: "loan",
+      group: "home",
+      key: "住まい",
+      // **1枚だけ長い。** 1行を専有させる（組版は他の札と同じ）
+      wide: true,
+      value:
+        input.housing.type === "rent"
+          ? "賃貸（住居費は生活費に含む）"
+          : (input.housing.loan ?? 0) > 0
+            ? `持ち家・ローン残り${man(input.housing.loan ?? 0)}`
+            : "持ち家（ローンなし）",
+    },
+    // 団信は住まいと別の札にする（住まいの札に押し込むと、そこだけ2行になる）
+    ...(input.housing.type === "own" && (input.housing.loan ?? 0) > 0
+      ? [
+          {
+            field: null,
+            group: "home" as const,
+            key: "団信",
+            value:
+              input.housing.danshin === false
+                ? "なし"
+                : input.housing.danshin === undefined
+                  ? "分からない"
+                  : "あり",
+          },
+        ]
       : []),
     {
       field: null,
-      text:
-        input.children.length > 0
-          ? `お子さん ${input.children.length}人（${input.children.map((a) => `${a}歳`).join("・")}）`
-          : "お子さんなし",
+      group: "home",
+      key: "いまの保障",
+      value: coverage === null ? "未入力" : man(coverage),
     },
-    { field: "educationPlan", text: `お子さんの進路 ${EDU_PLAN_LABEL[input.educationPlan]}` },
-    { field: "monthlyLiving", text: `毎月の生活費 ${man(input.monthlyLiving)}` },
-    { field: "assets", text: `金融資産 ${man(input.assets)}` },
-    {
-      field: "loan",
-      text:
-        input.housing.type === "rent"
-          ? "住まい 賃貸（住居費は生活費に含む）"
-          : (input.housing.loan ?? 0) > 0
-            ? `住まい 持ち家・ローン残り${man(input.housing.loan ?? 0)}・団信${input.housing.danshin === false ? "なし" : input.housing.danshin === undefined ? "は分からない" : "あり"}`
-            : "住まい 持ち家（ローンなし）",
-    },
-    { field: null, text: coverage === null ? "いまの保障 未入力" : `いまの保障 ${man(coverage)}` },
   ];
 }
 
