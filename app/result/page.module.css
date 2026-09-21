@@ -87,8 +87,14 @@
   text-underline-offset: 2px;
 }
 
+/*
+  セクション間隔。**40px → 32px に詰めた**（2026-09-21・視覚の DoD (a)）。
+  散文のセクションが続く区間で、余白だけで1画面ぶんの空白が積み上がっていた。
+  **DoD のためにアンカーを飾りとして足すのは本末転倒**（「汎用ビジュアルで代替しない」の裏面）
+  なので、図を増やすのではなく間隔を詰めて画面に収める。
+*/
 .section {
-  margin: var(--space-7) 0;
+  margin: var(--space-6) 0;
 }
 
 .caseCard {
@@ -191,13 +197,20 @@
   margin-top: var(--space-1);
 }
 
-/* やさしい説明（AI言語化・サンプル） */
+/* この結果のよみとき（AI言語化）。露出は冒頭1文だけ */
 .narration {
   font-size: var(--font-size-std-m);
   line-height: var(--line-height-body-loose);
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-card);
   background: var(--color-surface-subtle);
+}
+
+/* 折りたたみの中の全文。露出部と同じ読み味にそろえる */
+.narrationFull {
+  font-size: var(--font-size-std-m);
+  line-height: var(--line-height-body-loose);
+  margin: var(--space-3) 0 0;
 }
 
 /* この診断で分かること/分からないこと（先に線を引く） */
@@ -246,6 +259,22 @@
   padding-left: var(--space-5);
   font-size: var(--font-size-std-s);
   color: var(--color-text-secondary);
+}
+
+/* 折りたたみの中の根拠本文。露出の1行と同じ読み味にそろえる */
+.reformBody {
+  margin: var(--space-2) 0 0;
+}
+.reformDetails {
+  margin-top: var(--space-2);
+}
+.reformDetails > summary {
+  cursor: pointer;
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* 制度改正（2028）の該当/非該当。事実として中立に出す（煽らない） */

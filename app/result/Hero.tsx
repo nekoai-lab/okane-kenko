@@ -34,6 +34,14 @@ export interface HeroProps {
   /** 3列。ラベルも値もモックの並びのまま */
   coverageText: string;
   needText: string;
+  /**
+   * 必要額が幅を持っているか。**幅があるときだけラベルに「（幅）」を付ける**
+   * （STEP4 で決めた J1 の規約：幅のないものを幅と呼ばない・帯で描かない）。
+   *
+   * いまは `ample` / `not_needed` の世帯で `low = high` の1点になる。
+   * T-B（レンジ復活）で幅が戻れば、この分岐は常に true になる。
+   */
+  needHasRange: boolean;
   modeText: string;
 }
 
@@ -73,6 +81,7 @@ export function Hero(props: HeroProps) {
     rebalanceNote,
     coverageText,
     needText,
+    needHasRange,
     modeText,
   } = props;
 
@@ -103,7 +112,8 @@ export function Hero(props: HeroProps) {
           <p className={s.statValue}>{coverageText}</p>
         </div>
         <div>
-          <p className={s.statLabel}>必要額のめやす（幅）</p>
+          {/* **幅のないものを幅と呼ばない**（J1・数直線や滝の帯／目盛りの出し分けと同じ規約） */}
+          <p className={s.statLabel}>必要額のめやす{needHasRange ? "（幅）" : ""}</p>
           <p className={`${s.statValue} ${s.need}`}>{needText}</p>
         </div>
         <div>

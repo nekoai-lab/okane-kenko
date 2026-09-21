@@ -1056,6 +1056,7 @@ export default async function ResultPage({
         rebalanceNote={rebalanceNote}
         coverageText={hh.totalCoverage === null ? "未入力" : `約${money(hh.totalCoverage)}`}
         needText={formatRange(hh.totalNeed.low, hh.totalNeed.high)}
+        needHasRange={hh.totalNeed.low !== hh.totalNeed.high}
         modeText="いま通り"
       />
 
@@ -1109,10 +1110,23 @@ export default async function ResultPage({
         )}
       </div>
 
-      {/* 2028年の年金改正の該当/非該当（事実として中立に明示） */}
+      {/*
+        2028年の年金改正の該当/非該当（事実として中立に明示）。
+
+        **開示の型を当てて畳む**（2026-09-21・視覚の DoD (a)）。
+        実測でこの注記だけで 746px あり、前後の散文と合わせて
+        **図も大きな数字も無い区間を2画面ぶん**作っていた。
+        露出は該当/非該当の1行（決定的な部分）、全文は文字数を明示した1タップの奥。
+        **開示を減らしたのではなく、決定的な1点を前に出して残りを畳んだ**（CLAUDE.md）。
+      */}
       <div className={s.section}>
         <div className={s.reformNote}>
-          <strong>2028年の年金改正について：</strong> {result.reform2028.reason}
+          <strong>2028年の年金改正について：</strong>{" "}
+          {result.reform2028.applicable ? "この改正の対象になります。" : "この改正の対象外です。"}
+          <details className={s.reformDetails}>
+            <summary>この判断の根拠を読む（{result.reform2028.reason.length} 字）</summary>
+            <p className={s.reformBody}>{result.reform2028.reason}</p>
+          </details>
         </div>
       </div>
 

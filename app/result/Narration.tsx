@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * やさしい説明（T-07）─ AI が書いたテンプレを受け取り、**数値はこちらで差し込む**。
+ * この結果のよみとき（T-07）─ AI が書いたテンプレを受け取り、**数値はこちらで差し込む**。
  *
  * 受け取るのは `{{selfRange}}` のようなプレースホルダだけのテンプレで、金額は
  * サーバが算定した値マップ（`values`）からしか入らない。だからストリーミング中でも
@@ -10,6 +10,15 @@
  *
  * AI が使えないとき（鍵が無い・落ちた・遅い）は `initialText`（テンプレの退避文）のまま。
  * **AI を止めても結果画面が成立する**という T-07 の完了条件は、ここでも守られている。
+ *
+ * **見出しは「やさしい説明」から「この結果のよみとき」に変えた**（2026-09-21・UIラベル規約）。
+ * 「やさしい」は品質の自己評価で、しかも「AI が書いた」という由来を曖昧に抱え込んでいた。
+ * **名前は機能を名乗り、由来は本文で開示する**（`SELF_PRAISE_WORDS` が本籍）。
+ *
+ * **既定で折りたたむ**（2026-09-21・視覚の DoD (a)）。
+ * AI の本文は実測 239字・872px で、**図も大きな数字も無い区間を1画面ぶん作っていた**。
+ * 開示ブロックで確立した型をそのまま当てる ── 決定的な部分（冒頭1文）は露出し、
+ * 全文は**文字数を明示した1タップ**の奥に置く。
  */
 import { useEffect, useState } from "react";
 import type { PlaceholderValues } from "../../src/narrate/stream.js";
@@ -94,35 +103,64 @@ export function Narration({
   const streamed = mode === "streaming" || mode === "done";
   const body = streamed && template ? renderStreamed(template, values) : text;
 
+  /**
+   * 露出する冒頭。**1文だけ**（句点で切る）。
+   * 折りたたみの中が全文で、ここはその先頭を抜き出したもの
+   * ── 要約を別に書くと、露出と全文が食い違う余地ができる。
+   */
+  const firstSentence = (() => {
+    const i = body.indexOf("。");
+    return i < 0 ? body : body.slice(0, i + 1);
+  })();
+  const hasMore = firstSentence.length < body.length;
+
   return (
     <div className={s.section}>
+      <h2 className={s.h2}>この結果のよみとき</h2>
+      {/*
+        **分担を先に言う。** これは責務境界（CLAUDE.md）の開示そのものなので、
+        折りたたみの外に置く ── 畳んだ中に入れると、読まれないまま文章だけが届く。
+      */}
+      <p className={s.basis}>
+        ことばは AI が書いています。数字と判定は計算エンジンのもので、AI は変えられません。
+      </p>
+
       <div
         aria-busy={mode === "streaming" || mode === "waiting"}
         className={s.narration}
         data-testid="narration"
       >
-        {body}
+        {/* 露出は冒頭1文。残りは下のトグルの奥（開示の見せ方・CLAUDE.md） */}
+        {hasMore ? firstSentence : body}
       </div>
+
+      {hasMore && (
+        <details className={s.criteria}>
+          {/* **件数（ここでは文字数）を出す。** 数の無い「すべて見る」は開示ではなく隠蔽に近い */}
+          <summary>続きを読む（全文 {body.length} 字）</summary>
+          <p className={s.narrationFull}>{body}</p>
+        </details>
+      )}
       {/* 断り書きは「実際に起きたこと」を書く。AI が動く前から「AI が書いています」と
           出すと、定型文が出ている場面で嘘になる（JS が動かない環境ではそれが常に起きる）。 */}
       <p className={s.basis}>
         {streamed && template ? (
           <>
-            ※ この「やさしい説明」は AI が書いています。金額は AI
+            ※ 上の本文は AI が書いています。金額は AI
             に作らせず、算定結果（このページの内訳と同じ値）を差し込んでいます。
           </>
         ) : mode === "fallback" ? (
           GUARD_REASONS.includes(reason ?? "") ? (
-            <>※ この「やさしい説明」は、AI の文章が検査を通らなかったため定型文に切り替えました。</>
+            <>※ 上の本文は、AI の文章が検査を通らなかったため定型文に切り替えました。</>
           ) : (
             <>
-              ※ この「やさしい説明」は、AI をいま呼び出せなかったため定型文です。 金額は AI
+              ※ 上の本文は、AI をいま呼び出せなかったため定型文です。 金額は AI
               に作らせていないので、この結果は AI の有無にかかわらず同じです。
             </>
           )
         ) : (
           <>
-            ※ この「やさしい説明」は定型文です。数値は AI に作らせず、算定結果を差し込んでいます。
+            ※ 上の本文は定型文です。数値は AI に作らせず、算定結果を差し込んでいます。
           </>
         )}
       </p>
