@@ -100,15 +100,27 @@ const SHORTFALL_TONE: Record<string, "ok" | "check" | "short" | "none"> = {
   pending: "none",
 };
 
-const SHORTFALL_BODY: Record<string, string> = {
-  reducible:
-    "厳しめの前提（幅の右端）で計算しても、いまの保障が上回っています。減らせる可能性があります。ただし概算です。減額の手続きの前に、推定で補った項目を実際の値で答え直してください。",
-  uncertain:
-    "必要額の幅が、いまの保障を跨いでいます。この位置関係のとき、診断は「減らせる」とも「足りない」とも言い切りません。推定で補った項目を実際の値で答えると幅が狭まり、判定が確定に近づきます。",
-  shortage:
-    "緩めに見た幅の左端にも、いまの保障が届いていません。前提を見直すか、不足分の備え方を検討する段階です。",
-  pending: "いまの保障が分からないため、過不足は出していません。証券が見つかったら再診断できます。",
-};
+/**
+ * 過不足軸の判定カードの本文。
+ *
+ * **幅ゼロの世帯で「幅の右端」と言わない。**
+ * `ample` / `not_needed` では `low = high` なので、文が指す幅が画面に存在しない。
+ * 数直線は正しく「帯ではなく目盛り」で描いているのに、文だけが幅の存在を前提にしていた
+ * （2026-09-21 の要素照合で発見）。T-B でレンジが復活すれば常に幅の文で真になるが、
+ * **それまでの間も嘘をつかない**。
+ */
+function shortfallBody(v: string, hasRange: boolean): string {
+  switch (v) {
+    case "reducible":
+      return `${hasRange ? "厳しめの前提（幅の右端）で計算しても" : "この必要額で計算しても"}、いまの保障が上回っています。減らせる可能性があります。ただし概算です。減額の手続きの前に、推定で補った項目を実際の値で答え直してください。`;
+    case "uncertain":
+      return "必要額の幅が、いまの保障を跨いでいます。この位置関係のとき、診断は「減らせる」とも「足りない」とも言い切りません。推定で補った項目を実際の値で答えると幅が狭まり、判定が確定に近づきます。";
+    case "shortage":
+      return `${hasRange ? "緩めに見た幅の左端にも" : "この必要額にも"}、いまの保障が届いていません。前提を見直すか、不足分の備え方を検討する段階です。`;
+    default:
+      return "いまの保障が分からないため、過不足は出していません。証券が見つかったら再診断できます。";
+  }
+}
 
 const VERDICT: Record<string, { label: string; tone: "good" | "warn" | "muted" }> = {
   shortage: { label: "いまの前提では、備えが足りない可能性があります", tone: "warn" },
@@ -158,7 +170,7 @@ function CaseCard({
   const shortfallVerdict = {
     label: DEATH_VERDICT_LABEL[v3],
     tone: SHORTFALL_TONE[v3],
-    body: SHORTFALL_BODY[v3],
+    body: shortfallBody(v3, r.range.low !== r.range.high),
   };
   const expenseItems = [
     { label: "ご家族の生活費（子育て期）", amount: r.expense.livingChild, basis: "当社基準" },

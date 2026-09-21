@@ -36,9 +36,14 @@ function ticksFor(max: number): number[] {
 
 export function NumberLine({ need, coverage, fmt, verdict, points }: NumberLineProps) {
   const top = Math.max(need.high, coverage ?? 0);
-  // 端が切れないよう、目盛りの上端はデータより1段上に置く
   const step = top > 5000 * MAN ? 2000 * MAN : 1000 * MAN;
-  const max = Math.max(step, Math.ceil(top / step) * step);
+  /**
+   * **上限は最大値の1目盛り先に取る。**
+   * ぴったりに取ると、最大値のマーカーが右端に張り付いて見切れる
+   * （2026-09-21：保障3,000万・上限3,000万でマーカーが端に重なった）。
+   * 視覚の DoD (c)「色と位置で一覧走査できる」は、端が見えていないと成立しない。
+   */
+  const max = Math.ceil((top + 1) / step) * step;
   const pct = (v: number) => 4 + (v / max) * 92;
   const ticks = ticksFor(max);
 
