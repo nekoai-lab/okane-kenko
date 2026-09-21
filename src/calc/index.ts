@@ -7,6 +7,7 @@
 import type { ParamSet } from "../params/index.js";
 import { assertUsable } from "../params/index.js";
 import { calcDeath } from "./death.js";
+import { REFORM_2028_NO_CHILDREN, REFORM_2028_WITH_CHILDREN } from "./reform2028.js";
 import { calcMedical } from "./medical.js";
 import type {
   DeathResult,
@@ -75,18 +76,11 @@ export function diagnose(
     input.assets,
   );
 
+  // 文言は `reform2028.ts` に1か所だけ置く（同じ改正を場所によって違う言い方で書かない）
   const hasChild = input.children.length > 0;
   const reform2028 = hasChild
-    ? {
-        applicable: false,
-        reason:
-          "遺族厚生年金の5年有期化（2028年4月〜）は子のいない配偶者が対象です。お子さんがいるこの世帯は当面これまで通りで、直撃しません。",
-      }
-    : {
-        applicable: true,
-        reason:
-          "遺族厚生年金の5年有期化（2028年4月〜）は、子のいない配偶者が対象です。この世帯は該当します。",
-      };
+    ? { applicable: false, reason: REFORM_2028_WITH_CHILDREN }
+    : { applicable: true, reason: REFORM_2028_NO_CHILDREN };
 
   return {
     paramVersion: p.version,

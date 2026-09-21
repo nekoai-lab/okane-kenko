@@ -9,6 +9,7 @@
 import type { EducationParams, ParamSet } from "../params/index.js";
 import { v } from "../params/index.js";
 import { chukoreiKafuTotal, izokuKisoTotal, izokuKoseiAnnual, koseiYears } from "./pension.js";
+import { REFORM_2028_NOT_APPLIED } from "./reform2028.js";
 import type { Assumption, DeathResult, EducationPlan, Household, Verdict } from "./types.js";
 
 function roundToUnit(x: number, unit: number): number {
@@ -103,7 +104,7 @@ function buildSurvivorAssumptions(x: {
     label: "2026年度の制度で計算",
     value: 2026,
     reason: "default",
-    note: "2028年4月施行の遺族年金改正（子のいない配偶者の5年有期化・中高齢寡婦加算の段階的廃止）は反映していません。",
+    note: REFORM_2028_NOT_APPLIED,
   });
   return out;
 }
