@@ -20,6 +20,7 @@ import {
   type HouseholdVerdict,
   type Verdict3,
   aggregateHousehold,
+  householdSummary,
   verdict3,
   verdictBySavings,
 } from "./verdict3.js";
@@ -215,5 +216,60 @@ describe("verdictBySavings：貯蓄という受け皿で足りるか", () => {
     // 点＝幅ゼロ。必要額の幅の中に入れば圏内
     expect(verdictBySavings(man(200), man(200), man(100), man(300))).toBe("uncertain");
     expect(verdictBySavings(man(400), man(400), man(100), man(300))).toBe("reducible");
+  });
+});
+
+/**
+ * ヒーローの見出しは「判定」と「差額」を同時に出す。
+ * **この2つが別の規則から出ていると、見出しが自分の根拠と食い違う。**
+ * 既存の `headline()` は `gap`（`coverage > high * 1.5` で過剰）由来なので、
+ * 判定と差額の出どころを `verdict3` に揃えたことをここで固定する。
+ */
+describe("householdSummary：世帯4値と差額を同じ規則から出す", () => {
+  it("全員が減らせるなら世帯も減らせる。差額は coverage − needHigh の合計", () => {
+    const r = householdSummary([
+      { coverage: man(3000), needLow: man(200), needHigh: man(200) },
+      { coverage: man(500), needLow: man(200), needHigh: man(200) },
+    ]);
+    expect(r.verdict).toBe("reducible");
+    expect(r.totalReducible).toBe(man(2800) + man(300));
+    expect(r.totalShortage).toBe(0);
+    expect(r.totalCoverage).toBe(man(3500));
+    expect(r.totalNeed).toEqual({ low: man(400), high: man(400) });
+  });
+
+  it("不足と減らせるが同居したら『組み替えの余地』。両方の差額が出る", () => {
+    const r = householdSummary([
+      { coverage: man(3000), needLow: man(1000), needHigh: man(2000) },
+      { coverage: man(0), needLow: man(200), needHigh: man(400) },
+    ]);
+    expect(r.verdict).toBe("rebalanceable");
+    expect(r.totalReducible).toBe(man(1000));
+    expect(r.totalShortage).toBe(man(200));
+  });
+
+  it("**上端ちょうどは減らせるに入れない。** 差額0円の空主張を作らない", () => {
+    const r = householdSummary([{ coverage: man(2000), needLow: man(1000), needHigh: man(2000) }]);
+    expect(r.verdict).toBe("uncertain");
+    expect(r.totalReducible).toBe(0);
+  });
+
+  it("現保障が未入力の人は数に入れない（分からないことを世帯の結論に混ぜない）", () => {
+    const r = householdSummary([
+      { coverage: null, needLow: man(1000), needHigh: man(2000) },
+      { coverage: man(0), needLow: man(200), needHigh: man(400) },
+    ]);
+    expect(r.verdict).toBe("shortage");
+    expect(r.totalShortage).toBe(man(200));
+    expect(r.totalReducible).toBe(0);
+    // **1人でも未入力なら世帯合計は出さない。** 欠けたまま足すと実際より小さい保障額になる
+    expect(r.totalCoverage).toBeNull();
+  });
+
+  it("全員が未入力なら世帯も pending。差額は出さない", () => {
+    const r = householdSummary([{ coverage: null, needLow: man(1000), needHigh: man(2000) }]);
+    expect(r.verdict).toBe("pending");
+    expect(r.totalReducible).toBe(0);
+    expect(r.totalShortage).toBe(0);
   });
 });

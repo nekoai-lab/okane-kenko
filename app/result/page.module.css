@@ -415,6 +415,13 @@
   margin-bottom: var(--space-1);
 }
 
+/* 「残高」が何を指すかの但し書き。診断表の「いまの貯蓄」と取り違えさせない */
+.cfNote {
+  display: block;
+  font-size: var(--font-size-dense);
+  color: var(--color-text-secondary);
+}
+
 .cfEvents {
   font-size: var(--font-size-dense);
   color: var(--color-text-secondary);

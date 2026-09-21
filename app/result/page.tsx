@@ -13,7 +13,8 @@ import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstYear } from "../../src/time/jstYear.js";
 import { simulateAll } from "../../src/calc/simulate.js";
-import { verdict3 } from "../../src/calc/verdict3.js";
+import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
+import { Hero } from "./Hero.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
 import { Cashflow } from "./Cashflow.js";
 import { CoverageCurve } from "./CoverageCurve.js";
@@ -28,13 +29,6 @@ import { toCompleteSelections } from "../../src/wizard/complete.js";
 import { normalize } from "../../src/wizard/normalize.js";
 import { decodeSelections } from "../../src/wizard/url.js";
 import s from "./page.module.css";
-
-const HEADLINE: Record<string, { icon: string; label: string; tone: "good" | "warn" }> = {
-  all_covered: { icon: "✓", label: "いまの前提では、足りています", tone: "good" },
-  reducible: { icon: "💡", label: "減らせる余地がありそうです", tone: "good" },
-  rebalanceable: { icon: "🔁", label: "世帯全体で見直せそうです", tone: "good" },
-  shortage: { icon: "⚠", label: "足りない可能性があります", tone: "warn" },
-};
 
 /**
  * 金額の呼び名は verdict で変える。**同じ数字ではないから。**
@@ -308,8 +302,29 @@ export default async function ResultPage({
       )
     : null;
 
-  const anyPending = [result.self.gap, result.spouse?.gap].some((g) => g?.kind === "pending");
-  const h = anyPending ? null : (HEADLINE[result.householdHeadline.kind] ?? HEADLINE.shortage);
+  /**
+   * 冒頭ヒーローに流す世帯4値（仕様 §5.3）。
+   *
+   * **`householdHeadline` ではなく `householdSummary` を使う。** 前者の差額は `gap` 由来で、
+   * 過剰の閾値が `coverage > high * 1.5` と判定3値の不等号から外れている。
+   * 判定と差額の出どころを揃えないと、見出しが自分の根拠と食い違う。
+   */
+  const hh = householdSummary([
+    {
+      coverage: input.coverageSelf,
+      needLow: result.self.range.low,
+      needHigh: result.self.range.high,
+    },
+    ...(result.spouse
+      ? [
+          {
+            coverage: input.coverageSpouse,
+            needLow: result.spouse.range.low,
+            needHigh: result.spouse.range.high,
+          },
+        ]
+      : []),
+  ]);
 
   // 減らせる箇所（無ければ「見つかりませんでした」と明示する＝沈黙で誤解させない）
   const totalExcess = result.householdHeadline.totalExcess;
@@ -439,27 +454,36 @@ export default async function ResultPage({
   ): RiskRow => {
     const v = verdict3(cov, dr.range.low, dr.range.high);
     const range = formatRange(dr.range.low, dr.range.high);
-    const covText = cov === null || cov === undefined ? "未入力" : `約${money(cov)}`;
+    const hold = cov ?? null;
+    const covText = hold === null ? "未入力" : `約${money(hold)}`;
     /**
      * **必要額が葬儀費用だけになる世帯は、その理由を先に言う。**
      * `ample`（公的年金と資産で生活費がまかなえる）と `not_needed`（扶養家族がいない）は
      * `death.ts` で low = high = 葬儀費用になる。理由抜きで「必要額 約200万円」とだけ出すと、
      * 読み手には桁を間違えた数字に見える。良い知らせは良い知らせとして届ける（CLAUDE.md）。
      */
-    const whyFuneralOnly =
+    const funeralOnly = dr.verdict === "ample" || dr.verdict === "not_needed";
+    const reason =
       dr.verdict === "ample"
-        ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。上乗せで要るのは葬儀費用だけで、"
+        ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。"
         : dr.verdict === "not_needed"
-          ? "扶養しているご家族がいないため、上乗せの保障は要りません。見込むのは葬儀費用だけで、"
+          ? "扶養しているご家族がいないため、上乗せの保障は要りません。"
           : "";
-    const note =
+    /**
+     * **所見は2文以内で、金額を書かない。**
+     * 金額は figures の明朝20px、過不足は数直線の位置関係が伝える（視覚の DoD (b)）。
+     * ここに数字を戻すと、また「読まないと分からない画面」に戻る。
+     */
+    const body =
       v === "pending"
-        ? `いまの保障が分からないため、過不足は出していません。必要額の目安は${range}です。`
-        : v === "uncertain"
-          ? `${whyFuneralOnly}必要額 ${range} の幅が、いまの保障 ${covText} を跨いでいます。`
-          : v === "reducible"
-            ? `${whyFuneralOnly}必要額 ${range} に対して、いまの保障は ${covText}。上端で見ても上回っています。`
-            : `${whyFuneralOnly}必要額 ${range} に対して、いまの保障は ${covText}。下端で見ても届いていません。`;
+        ? "いまの保障が分からないため、過不足は出していません。"
+        : v === "reducible"
+          ? funeralOnly
+            ? "見込むのは葬儀費用だけで、いまの保障はそれを上回っています。"
+            : "厳しめに見た必要額の上端よりも、いまの保障が上回っています。"
+          : v === "uncertain"
+            ? "必要額の幅がいまの保障を跨いでいるため、減らせるとも足りないとも言い切りません。"
+            : "ゆるめに見た必要額の下端にも、いまの保障が届いていません。";
     return {
       key: `death-${who}`,
       title: `死亡（${who}）`,
@@ -467,7 +491,20 @@ export default async function ResultPage({
       tone: v === "pending" ? "none" : TONE[v],
       verdictLabel: DEATH_LABEL[v],
       precisionLabel: "計算済み",
-      note,
+      precisionTone: "calculated",
+      figures: {
+        needLabel: "必要額",
+        needText: range,
+        holdLabel: "いまの保障",
+        holdText: covText,
+      },
+      scale: {
+        needLow: dr.range.low,
+        needHigh: dr.range.high,
+        hold,
+        axisMaxText: `約${money(Math.max(dr.range.high, hold ?? 0))}`,
+      },
+      note: `${reason}${body}`,
       link: { href: "#death-detail", label: "詳しく →" },
     };
   };
@@ -482,12 +519,14 @@ export default async function ResultPage({
   ): RiskRow => {
     const v = sim.verdict ?? "pending";
     const range = sim.amounts ? formatRange(sim.amounts.needLow, sim.amounts.needHigh) : "—";
+    // 受け皿は貯蓄。`simulate` に幅を渡していないので、いまは1点（`assumptions[]` にそう書いてある）
+    const hold = input.assets;
     const tail =
       v === "reducible"
         ? "いまの貯蓄で受けられる水準です。"
         : v === "shortage"
           ? "いまの貯蓄では届かない可能性があります。"
-          : "いまの貯蓄と重なる幅なので、言い切れません。";
+          : "いまの貯蓄と幅が重なるので、言い切れません。";
     return {
       key,
       title,
@@ -495,7 +534,23 @@ export default async function ResultPage({
       tone: v === "pending" ? "none" : TONE[v],
       verdictLabel: SAVINGS_LABEL[v],
       precisionLabel: "制度式で概算",
-      note: `${lead}必要はおよそ${range}。${tail}`,
+      precisionTone: "statutory",
+      figures: {
+        needLabel: "必要額",
+        needText: range,
+        holdLabel: "いまの貯蓄",
+        holdText: `約${money(hold)}`,
+      },
+      scale: sim.amounts
+        ? {
+            needLow: sim.amounts.needLow,
+            needHigh: sim.amounts.needHigh,
+            hold,
+            axisMaxText: `約${money(Math.max(sim.amounts.needHigh, hold))}`,
+          }
+        : null,
+      // 所見は2文以内。金額は figures と数直線が持つ（視覚の DoD (b)）
+      note: `${lead}${tail}`,
       // ラボは未実装。**押せないことを黙らせない**
       link: { pending: "もしもラボで見る（準備中）" },
     };
@@ -509,14 +564,14 @@ export default async function ResultPage({
       "病気・けが（短期）",
       "入院・〜3か月の休み",
       bySc.sick_short,
-      "高額療養費と傷病手当金をふまえると、",
+      "高額療養費と傷病手当金が効く範囲です。",
     ),
     savingsRow(
       "sick_long",
       "病気・けが（長期休職）",
       "がん・脳卒中・こころ／〜1年半",
       bySc.sick_long,
-      "",
+      "傷病手当金は通算1年6か月で切れます。",
     ),
     {
       key: "disability",
@@ -525,6 +580,9 @@ export default async function ResultPage({
       tone: "none",
       verdictLabel: "未診断",
       precisionLabel: "計算未対応",
+      precisionTone: "unsupported",
+      figures: null,
+      scale: null,
       note: bySc.disability.notSupported?.detail ?? "",
       link: { pending: "もしもラボで見る（準備中）" },
     },
@@ -533,7 +591,7 @@ export default async function ResultPage({
       "失業",
       "仕事を失ったとき",
       bySc.unemployment,
-      "雇用保険の基本手当と生活防衛資金で受ける領域です。ここは保険で備える領域ではありません。",
+      "雇用保険の基本手当と生活防衛資金で受ける領域で、保険で備える場所ではありません。",
     ),
   ];
 
@@ -587,32 +645,40 @@ export default async function ResultPage({
         })
       : [];
 
+  const caption = `${input.self.age}歳・${input.self.employment === "employee" ? "会社員" : input.self.employment === "self" ? "自営・フリーランス" : "無職"}${input.spouse ? `・配偶者${input.spouse.age}歳` : "・配偶者なし"}${input.children.length > 0 ? `・子${input.children.length}人` : "・子なし"}`;
+
+  /**
+   * 必要額が葬儀費用だけになる世帯に添える1行（仕様 §5.3）。
+   * 本人と配偶者のどちらもその状態のときだけ出す。片方だけなら世帯の話にならない。
+   */
+  const deathResults = [result.self, ...(result.spouse ? [result.spouse] : [])];
+  const funeralOnlyNote = deathResults.every((r) => r.verdict === "ample")
+    ? "公的な年金と資産で、遺されたご家族の生活費はまかなえる見込みです。上乗せで要るのは葬儀費用だけです。"
+    : deathResults.every((r) => r.verdict === "not_needed")
+      ? "扶養しているご家族がいないため、上乗せの保障は要りません。見込むのは葬儀費用だけです。"
+      : null;
+
   return (
     <main className={s.page}>
-      {/* 玄関：リスク別健康診断表（仕様 §5.3）。この下に死亡の詳細が縦1本で続く */}
-      <RiskTable
-        caption={`${input.self.age}歳・${input.self.employment === "employee" ? "会社員" : input.self.employment === "self" ? "自営・フリーランス" : "無職"}${input.spouse ? `・配偶者${input.spouse.age}歳` : "・配偶者なし"}${input.children.length > 0 ? `・子${input.children.length}人` : "・子なし"}`}
-        rows={riskRows}
+      {/* 1. 冒頭ヒーロー（移植元 result.html 冒頭）。判定は §1 の世帯4値 */}
+      <Hero
+        verdict={hh.verdict}
+        caption={caption}
+        diffText={
+          hh.verdict === "shortage"
+            ? `約${money(hh.totalShortage)}`
+            : hh.totalReducible > 0
+              ? `約${money(hh.totalReducible)}`
+              : null
+        }
+        funeralOnlyNote={funeralOnlyNote}
+        coverageText={hh.totalCoverage === null ? "未入力" : `約${money(hh.totalCoverage)}`}
+        needText={formatRange(hh.totalNeed.low, hh.totalNeed.high)}
+        modeText="いま通り"
       />
 
-      {h ? (
-        <div className={`${s.headline} ${h.tone === "good" ? s.good : s.warn}`}>
-          <span className={s.icon} aria-hidden="true">
-            {h.icon}
-          </span>
-          {/* 結論をそのまま h1 にする。読み上げでも最初に結論が来る */}
-          <h1 className={s.h1}>{h.label}</h1>
-        </div>
-      ) : (
-        <div className={`${s.headline} ${s.pending}`}>
-          <span className={s.icon} aria-hidden="true">
-            ℹ
-          </span>
-          <h1 className={s.h1}>
-            いまの保険内容が分からないので、過不足はまだ出していません。必要な保障額の目安だけお見せします。証券が見つかったら再診断できます。
-          </h1>
-        </div>
-      )}
+      {/* 2. 玄関：リスク別健康診断表（仕様 §5.3）。この下に死亡の詳細が縦1本で続く */}
+      <RiskTable caption={caption} rows={riskRows} />
 
       {/* 検査値パネル。健康診断書がまず数値の表を出すのと同じ順序にする */}
       <div className={s.wide}>

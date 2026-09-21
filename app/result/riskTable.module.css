@@ -127,21 +127,129 @@
   color: var(--muted);
 }
 
-.precision {
+/*
+  視覚の DoD (b)：**金額は明朝の大サイズで主役に置く。**
+  所見の文章に埋めると、読まないと金額にたどり着けない。
+*/
+.figures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+}
+
+.figLabel {
   font-size: 12px;
-  color: var(--muted-2);
+  color: var(--muted);
+  margin: 0;
+}
+
+.figValue {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 2px 0 0;
+  /* 「約2,600万〜3,400万円」は 390px で折り返す。折り返しても読めるように詰めない */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/*
+  視覚の DoD (a)：ミニ数直線（モック result.html STEP 4 の縮小版）。
+  帯＝必要額の幅、縦線＝いまの受け皿。**この対応はモックから変えない。**
+*/
+.scaleWrap {
   margin: var(--space-3) 0 0;
+}
+
+.scale {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.axis {
+  stroke: var(--grey-border);
+  stroke-width: 2;
+}
+
+.band {
+  fill: rgb(166 105 15 / 24%);
+  stroke: var(--amber);
+  stroke-width: 1.5;
+}
+
+/* 必要額に幅が無いときの描画。帯と混同しないよう、塗りではなく線で出す */
+.needTick {
+  stroke: var(--amber);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.hold {
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.scaleTicks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* 計算未対応でも枠は見せる。空いている場所があることを図でも伝える */
+.emptyScale {
+  height: 20px;
+  border: 1.5px dashed var(--grey-border);
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .note {
   font-size: 13.5px;
   line-height: 1.75;
-  margin: var(--space-2) 0 0;
+  margin: var(--space-3) 0 0;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* 精度もモックどおりピル型バッジ。文字だけにすると判定と精度の走査しやすさが揃わない */
+.precision {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 11px;
+  white-space: nowrap;
+}
+
+.calculated {
+  border: 1.5px solid var(--green);
+  color: var(--green-deep);
+}
+.statutory {
+  border: 1.5px solid var(--amber);
+  color: var(--amber-deep);
+}
+.unsupported {
+  border: 1.5px solid var(--grey-border);
+  color: var(--muted);
 }
 
 .link {
-  display: inline-block;
-  margin-top: var(--space-3);
   color: var(--green);
   font-weight: 700;
   font-size: 13px;
@@ -153,10 +261,38 @@
 
 /* 押せないものを黙らせない。準備中であることを文字で出す */
 .pending {
-  display: inline-block;
-  margin-top: var(--space-3);
   font-size: 13px;
   color: var(--muted);
+}
+
+.swatchBand,
+.swatchTick,
+.swatchHold {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.swatchBand {
+  width: 18px;
+  height: 11px;
+  border-radius: 2px;
+  background: rgb(166 105 15 / 24%);
+  border: 1.5px solid var(--amber);
+}
+
+.swatchTick {
+  width: 2.5px;
+  height: 14px;
+  background: var(--amber);
+  margin-left: 4px;
+}
+
+.swatchHold {
+  width: 3px;
+  height: 14px;
+  background: var(--ink);
+  margin-left: 4px;
 }
 
 /* **法的免責のような小さい文字にしない。** 実力以上の安心を売らないための注記 */

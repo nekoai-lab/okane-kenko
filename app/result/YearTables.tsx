@@ -68,7 +68,7 @@ export function KeyYears({ pj }: { pj: Projection }) {
     picks.push({ row: pj.tightest, why: "1年の収支がいちばん小さい年です" });
   }
   if (pj.depletedAt) {
-    picks.push({ row: pj.depletedAt, why: "この前提のままだと、貯蓄がマイナスになる年です" });
+    picks.push({ row: pj.depletedAt, why: "この前提のままだと、残高がマイナスになる年です" });
   }
   for (const r of rows) {
     const e = events(r);
@@ -89,7 +89,7 @@ export function KeyYears({ pj }: { pj: Projection }) {
               <th scope="col">西暦</th>
               <th scope="col">年齢</th>
               <th scope="col">年間収支</th>
-              <th scope="col">年末の貯蓄</th>
+              <th scope="col">年末の残高</th>
               <th className={s.cfWhy} scope="col">
                 なぜ見ておくか
               </th>
@@ -150,7 +150,7 @@ export function YearTables({ pj }: { pj: Projection }) {
               <th scope="col">収入</th>
               <th scope="col">支出</th>
               <th scope="col">年間収支</th>
-              <th scope="col">年末の貯蓄</th>
+              <th scope="col">年末の残高</th>
             </tr>
           </thead>
           <tbody>

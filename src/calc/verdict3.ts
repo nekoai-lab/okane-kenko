@@ -57,6 +57,57 @@ export function aggregateHousehold(verdicts: Verdict3[]): HouseholdVerdict {
   return "uncertain";
 }
 
+/** 世帯ヒーローが要る値。**金額はここで作る**（画面では作らない） */
+export interface HouseholdSummary {
+  verdict: HouseholdVerdict;
+  /** `reducible` の人について `coverage − needHigh` を合計した額（円） */
+  totalReducible: number;
+  /** `shortage` の人について `needLow − coverage` を合計した額（円） */
+  totalShortage: number;
+  /** 世帯合計の現保障（円）。未入力の人は 0 ではなく**数に入れない** */
+  totalCoverage: number | null;
+  /** 世帯合計の必要額レンジ（円） */
+  totalNeed: { low: number; high: number };
+}
+
+/**
+ * 世帯の判定と、その差額。
+ *
+ * **差額は `verdict3` と同じ不等号から作る。** 既存の `headline()` は `gap` 由来で、
+ * `gap` の過剰判定は `coverage > high * 1.5` という別の閾値を使っている。
+ * そちらを流用すると「減らせる可能性」と出しながら差額 0 円という組み合わせが起きうる。
+ * 判定と差額は同じ規則から出さないと、見出しが自分の根拠と食い違う。
+ */
+export function householdSummary(
+  people: { coverage: number | null | undefined; needLow: number; needHigh: number }[],
+): HouseholdSummary {
+  const verdicts = people.map((x) => verdict3(x.coverage, x.needLow, x.needHigh));
+  let totalReducible = 0;
+  let totalShortage = 0;
+  people.forEach((x, i) => {
+    // coverage が null の人は verdict3 が pending を返すので、ここには入ってこない
+    if (verdicts[i] === "reducible") totalReducible += (x.coverage as number) - x.needHigh;
+    if (verdicts[i] === "shortage") totalShortage += x.needLow - (x.coverage as number);
+  });
+
+  // **1人でも未入力なら世帯合計は出さない。** 欠けたまま足すと、実際より小さい保障額になる
+  const anyUnknown = people.some((x) => x.coverage === null || x.coverage === undefined);
+  const totalCoverage = anyUnknown
+    ? null
+    : people.reduce((sum, x) => sum + (x.coverage as number), 0);
+
+  return {
+    verdict: aggregateHousehold(verdicts),
+    totalReducible,
+    totalShortage,
+    totalCoverage,
+    totalNeed: {
+      low: people.reduce((sum, x) => sum + x.needLow, 0),
+      high: people.reduce((sum, x) => sum + x.needHigh, 0),
+    },
+  };
+}
+
 /**
  * 貯蓄で受けられるかの判定（病気・けが・失業の行）。
  *

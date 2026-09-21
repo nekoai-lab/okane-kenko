@@ -133,18 +133,18 @@ export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
       <ChartFrame
         labelEvery={every}
         legend={[
-          { label: "年末に残っている貯蓄", color: "var(--chart-income-3)" },
+          { label: "年末に残っている額", color: "var(--chart-income-3)" },
           ...(depletedIndex >= 0
-            ? [{ label: "貯蓄が尽きた年", color: "var(--color-warning)" }]
+            ? [{ label: "残高が尽きた年", color: "var(--color-warning)" }]
             : []),
         ]}
         scale={balScale}
         summary={
           pj.depletedAt
-            ? `貯蓄の残高は${pj.depletedAt.year}年ごろに尽きる見込み。単位は万円。`
-            : `貯蓄の残高は${last.year}年まで残る見込み。単位は万円。`
+            ? `万一のあとの残高は${pj.depletedAt.year}年ごろに尽きる見込み。単位は万円。`
+            : `万一のあとの残高は${last.year}年まで残る見込み。単位は万円。`
         }
-        title="年末に残っている貯蓄（万円）"
+        title="万一のあとの残高（年末・万円）"
         years={years}
       >
         {rows.map((r, i) => {
@@ -187,8 +187,15 @@ export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
 
       {/* 図を読めなくても伝わるように、要点は文で書く */}
       <ul className={s.cfPoints}>
+        {/*
+          **「貯蓄」と呼ばない。** この残高は死亡保険金を受け取ったあとの額で、
+          診断表の「いまの貯蓄」（いま手元にある金融資産）とは軸が違う。
+          同じ名前で 750万 と 3,632万 が同じページに並ぶと、読み手には算定の誤りに見える
+          （仕様 §5.3「用語の衝突を作らない」）。
+        */}
         <li>
-          はじめ（{first.year}年）の貯蓄は <strong>約{formatMan(first.balance)}</strong>
+          はじめ（{first.year}年）の残高は <strong>約{formatMan(first.balance)}</strong>
+          <span className={s.cfNote}>（いまの金融資産に、受け取る死亡保険金を足した額です）</span>
         </li>
         {tightest ? (
           <li>
@@ -200,11 +207,11 @@ export function Cashflow({ pj, caption }: { pj: Projection; caption: string }) {
         <li>
           {pj.depletedAt ? (
             <>
-              この前提のままだと <strong>{pj.depletedAt.year}年ごろに貯蓄が底をつく</strong>見込み
+              この前提のままだと <strong>{pj.depletedAt.year}年ごろに残高が底をつく</strong>見込み
             </>
           ) : (
             <>
-              最後（{last.year}年）まで貯蓄は残る見込み（約{formatMan(Math.max(0, last.balance))}）
+              最後（{last.year}年）まで残高は残る見込み（約{formatMan(Math.max(0, last.balance))}）
             </>
           )}
         </li>
