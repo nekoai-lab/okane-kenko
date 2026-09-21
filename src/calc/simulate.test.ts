@@ -1,0 +1,186 @@
+/**
+ * アダプタの検査（再設計フェーズ1・タスク2）
+ *
+ * いちばん確かめたいのは2つ。
+ * 1. **委譲が無傷であること** ─ `simulate(x, "death")` と `diagnose(x)` が全フィールドで一致する。
+ *    アダプタ側で既定値を補ったり丸めたりすると、既存の経路と新しい経路で答えがズレる。
+ *    「レンジだけ比べる」テストではそのズレを通してしまうので、**結果を丸ごと**比べる。
+ * 2. **計算未対応が例外ではないこと** ─ 「空欄である」ことが結果として返り、
+ *    金額が 0 ではなく null であること（0 だと「0円で足りる」と読める）。
+ */
+import { describe, expect, it } from "vitest";
+import { GOLDEN } from "../__tests__/households.js";
+import { loadParams } from "../params/index.js";
+import { diagnose } from "./index.js";
+import { type Scenario, simulate, simulateAll } from "./simulate.js";
+
+const P = loadParams("2026-08");
+const AS_OF = new Date("2026-08-01T00:00:00+09:00");
+
+describe("simulate('death')：既存 diagnose への委譲", () => {
+  it.each(GOLDEN.map((g) => [g.id, g] as const))(
+    "%s ─ diagnose の出力と全フィールドが一致する",
+    (_id, g) => {
+      const direct = diagnose(P, g.input, AS_OF);
+      const viaAdapter = simulate(P, { answers: g.input, asOf: AS_OF }, "death");
+      // 丸ごと比べる。1フィールドでも加工していたらここで落ちる
+      expect(viaAdapter.death).toEqual(direct);
+    },
+  );
+
+  it("レンジと現保障を、加工せずそのまま載せている", () => {
+    const g = GOLDEN[0];
+    const direct = diagnose(P, g.input, AS_OF);
+    const r = simulate(P, { answers: g.input, asOf: AS_OF }, "death");
+    expect(r.amounts).toEqual({
+      needLow: direct.self.range.low,
+      needHigh: direct.self.range.high,
+      currentCoverage: g.input.coverageSelf,
+    });
+  });
+
+  it("既存エンジンが記録した推定を、前提として引き継ぐ", () => {
+    // 団信が分からない世帯は assumptions が付く
+    const g = GOLDEN.find((x) => x.input.housing.danshin === undefined) ?? GOLDEN[0];
+    const direct = diagnose(P, g.input, AS_OF);
+    const r = simulate(P, { answers: g.input, asOf: AS_OF }, "death");
+    expect(r.assumptions).toEqual(direct.self.assumptions.map((a) => a.note));
+  });
+
+  it("status は ok、精度は calculated", () => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "death");
+    expect(r.status).toBe("ok");
+    expect(r.precision).toBe("calculated");
+    expect(r.notSupported).toBeNull();
+  });
+
+  it("前提の目盛りを渡しても、いまは結果を変えない（受け取るだけ）", () => {
+    const base = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "death");
+    const roomy = simulate(
+      P,
+      { answers: GOLDEN[0].input, asOf: AS_OF, assumptions: { livingLevel: "roomy" } },
+      "death",
+    );
+    expect(roomy.death).toEqual(base.death);
+  });
+});
+
+describe("未実装シナリオ：計算未対応は正規の診断結果", () => {
+  const pending: Scenario[] = ["sick_short", "sick_long", "disability", "unemployment"];
+
+  it.each(pending)("%s ─ 例外を投げずに not_supported を返す", (s) => {
+    expect(() => simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s)).not.toThrow();
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+    expect(r.status).toBe("not_supported");
+    expect(r.precision).toBe("not_supported");
+  });
+
+  it.each(pending)("%s ─ **金額は 0 ではなく null**（0円で足りる、と読ませない）", (s) => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+    expect(r.amounts).toBeNull();
+    expect(r.yearly).toBeNull();
+  });
+
+  it.each(pending)("%s ─ 画面にそのまま出せる理由文を持つ", (s) => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, s);
+    expect(r.notSupported?.reason).toBe("not_implemented");
+    expect(r.notSupported?.detail.length ?? 0).toBeGreaterThan(10);
+  });
+
+  it("失業は「まだ計算していない」ではなく「保険で備える領域ではない」と言う", () => {
+    const r = simulate(P, { answers: GOLDEN[0].input, asOf: AS_OF }, "unemployment");
+    expect(r.notSupported?.detail).toContain("保険で備える領域ではない");
+  });
+});
+
+describe("simulateAll：診断表の5行", () => {
+  it("5行を返し、いま計算できるのは death だけ", () => {
+    const rows = simulateAll(P, { answers: GOLDEN[0].input, asOf: AS_OF });
+    expect(rows.map((r) => r.scenario)).toEqual([
+      "death",
+      "sick_short",
+      "sick_long",
+      "disability",
+      "unemployment",
+    ]);
+    expect(rows.filter((r) => r.status === "ok")).toHaveLength(1);
+    expect(rows.filter((r) => r.precision === "not_supported")).toHaveLength(4);
+  });
+});
+
+/**
+ * モック（`docs/design-mock/result.html`）の段差とつき合わせる（仕様 §6 のサンプル世帯）。
+ *
+ * **金額は突き合わせない。** 仕様が「モック内の金額はすべてサンプル値」と明記しているため、
+ * ここで固定すると、実装ではなくモックの飾りをテストすることになる。
+ * 固定するのは**段差が起きる年・そのときの配偶者の年齢・何が起きたか**＝図の骨格。
+ */
+describe("段差チャートの骨格：モックのサンプル世帯と突き合わせる", () => {
+  // 仕様 §6：40歳会社員／配偶者38歳パート／子8歳・5歳／持ち家ローン団信あり
+  const ANSWERS = {
+    self: { age: 40, income: 6_000_000, employment: "employee" as const },
+    spouse: { age: 38, income: 1_000_000, employment: "employee" as const },
+    children: [8, 5],
+    housing: { type: "own" as const, loan: 25_000_000, danshin: true },
+    assets: 7_500_000,
+    monthlyLiving: 280_000,
+    educationPlan: "public" as const,
+    coverageSelf: 30_000_000,
+    coverageSpouse: null,
+  };
+  const r = simulate(P, { answers: ANSWERS, asOf: AS_OF }, "death");
+  const rows = r.yearly ?? [];
+  /** 公的年金の月額（円） */
+  const publicMonthly = (y: number) => {
+    const row = rows.find((x) => x.year === y);
+    if (!row) throw new Error(`${y}年の行が無い`);
+    return (row.income.pensionBasic + row.income.pensionKosei + row.income.chukoreiKafu) / 12;
+  };
+
+  it("段差①は 2036年・配偶者48歳（モックと一致）", () => {
+    expect(rows.find((x) => x.year === 2036)?.ages.survivor).toBe(48);
+    expect(publicMonthly(2036)).toBeLessThan(publicMonthly(2035));
+  });
+
+  it("段差②は 2039年・配偶者51歳で、最大の崖（モックと一致）", () => {
+    expect(rows.find((x) => x.year === 2039)?.ages.survivor).toBe(51);
+    const drop1 = publicMonthly(2035) - publicMonthly(2036);
+    const drop2 = publicMonthly(2038) - publicMonthly(2039);
+    expect(drop2).toBeGreaterThan(drop1); // ②のほうが大きく落ちる＝「最大の崖」
+  });
+
+  it("2039年に『遺族基礎年金が終わる』と『中高齢寡婦加算が始まる』が同時に立つ", () => {
+    const e = r.events?.find((x) => x.year === 2039);
+    expect(e?.events).toContain("遺族基礎年金が終わる");
+    expect(e?.events).toContain("中高齢寡婦加算が始まる");
+  });
+
+  it("公的年金の月額は段差ごとに下がり、途中で増えない", () => {
+    for (let y = 2027; y <= 2039; y++) {
+      expect(publicMonthly(y)).toBeLessThanOrEqual(publicMonthly(y - 1) + 1);
+    }
+  });
+
+  it("大学費用と重なる帯が取れる（2039〜2043に教育費が残っている）", () => {
+    const band = rows.filter((x) => x.year >= 2039 && x.year <= 2043);
+    expect(band.some((x) => x.expense.education > 0)).toBe(true);
+  });
+
+  /**
+   * **フェンスポストは矛盾ではない。**
+   * データ行の終端 2052（64歳）＝最後に受け取る年。
+   * チャートの軸ラベルやロードマップの 2053（65歳）＝境界。**両方正しい。**
+   * だから終端の注記は「前年」と言わず、算定の終端として語りつつ65歳の節目も落とさない。
+   */
+  it("終端の注記が、64歳の行に並んでも嘘にならない", () => {
+    const e = r.events?.find((x) => x.events.some((t) => t.startsWith("算定はここまで")));
+    expect(e?.year).toBe(2052);
+    const row = rows.find((x) => x.year === 2052);
+    expect(row?.ages.survivor).toBe(64);
+    const text = e?.events.find((t) => t.startsWith("算定はここまで")) ?? "";
+    expect(text).toContain("配偶者64歳"); // その行の年齢と一致している
+    expect(text).toContain("翌2053年"); // 65歳の節目も落としていない
+    expect(text).toContain("老齢年金");
+    expect(text).not.toContain("前年"); // 読者に1年足させない
+  });
+});

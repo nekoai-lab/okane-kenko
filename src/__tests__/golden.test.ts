@@ -20,22 +20,32 @@ describe("ゴールデンテスト：10世帯・19の死亡ケース", () => {
     describe(`${c.id} ${c.label}`, () => {
       const r = diagnose(P, c.input, AS_OF);
 
-      it("本人が亡くなるケースの結論・レンジ・過不足が一致する", () => {
-        expect(r.self.verdict).toBe(c.expect.self.verdict);
+      // 金額系と判定系を同じ it に混ぜない。混ぜると、判定の仕様を変えたときに
+      // 金額のアサーションまで巻き添えで落ち、「落ちたら本物のバグ」の切り分けが効かなくなる。
+      // **期待値は1つも変えていない。アサーションを2つの it に割っただけ。**
+      it("本人が亡くなるケースの金額（レンジ・過不足額）が一致する", () => {
         expect(man(r.self.range.low)).toBe(c.expect.self.low);
         expect(man(r.self.range.high)).toBe(c.expect.self.high);
-        expect(r.self.gap.kind).toBe(c.expect.self.gap);
         expect(man(r.self.gap.amount)).toBe(c.expect.self.gapAmount);
       });
 
+      it("本人が亡くなるケースの判定（verdict・過不足の種類）が一致する", () => {
+        expect(r.self.verdict).toBe(c.expect.self.verdict);
+        expect(r.self.gap.kind).toBe(c.expect.self.gap);
+      });
+
       if (c.expect.spouse) {
-        it("配偶者が亡くなるケースの結論・レンジ・過不足が一致する", () => {
+        it("配偶者が亡くなるケースの金額（レンジ・過不足額）が一致する", () => {
           expect(r.spouse).not.toBeNull();
-          expect(r.spouse!.verdict).toBe(c.expect.spouse!.verdict);
           expect(man(r.spouse!.range.low)).toBe(c.expect.spouse!.low);
           expect(man(r.spouse!.range.high)).toBe(c.expect.spouse!.high);
-          expect(r.spouse!.gap.kind).toBe(c.expect.spouse!.gap);
           expect(man(r.spouse!.gap.amount)).toBe(c.expect.spouse!.gapAmount);
+        });
+
+        it("配偶者が亡くなるケースの判定（verdict・過不足の種類）が一致する", () => {
+          expect(r.spouse).not.toBeNull();
+          expect(r.spouse!.verdict).toBe(c.expect.spouse!.verdict);
+          expect(r.spouse!.gap.kind).toBe(c.expect.spouse!.gap);
         });
       }
 
