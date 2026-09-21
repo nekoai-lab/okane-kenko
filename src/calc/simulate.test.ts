@@ -167,16 +167,20 @@ describe("段差チャートの骨格：モックのサンプル世帯と突き�
   });
 
   /**
-   * ⚠️ **モックと1年ずれている（未解決）。**
-   * モックは「2053年(妻65歳)」。エンジンは算定期間の最終行（2052年・配偶者64歳）で
-   * 「配偶者が65歳」を立てる（`projection.ts` の `t === yTotal - 1`）。
-   * **その行の `ages.survivor` は 64** なので、年次表では年齢と注記が食い違って見える。
-   * ここでは年を固定せず、イベントが存在することだけを見る（直し方は人の判断待ち）。
+   * **フェンスポストは矛盾ではない。**
+   * データ行の終端 2052（64歳）＝最後に受け取る年。
+   * チャートの軸ラベルやロードマップの 2053（65歳）＝境界。**両方正しい。**
+   * だから終端の注記は「前年」と言わず、算定の終端として語りつつ65歳の節目も落とさない。
    */
-  it("『配偶者が65歳』のイベント自体は立つ（年はモックと1年ずれ・要判断）", () => {
-    const e = r.events?.find((x) => x.events.includes("配偶者が65歳"));
-    expect(e).toBeDefined();
-    const row = rows.find((x) => x.year === e?.year);
-    expect(row?.ages.survivor).toBe(64); // ← 65 ではない。これが食い違いの正体
+  it("終端の注記が、64歳の行に並んでも嘘にならない", () => {
+    const e = r.events?.find((x) => x.events.some((t) => t.startsWith("算定はここまで")));
+    expect(e?.year).toBe(2052);
+    const row = rows.find((x) => x.year === 2052);
+    expect(row?.ages.survivor).toBe(64);
+    const text = e?.events.find((t) => t.startsWith("算定はここまで")) ?? "";
+    expect(text).toContain("配偶者64歳"); // その行の年齢と一致している
+    expect(text).toContain("翌2053年"); // 65歳の節目も落としていない
+    expect(text).toContain("老齢年金");
+    expect(text).not.toContain("前年"); // 読者に1年足させない
   });
 });

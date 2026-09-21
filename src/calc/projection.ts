@@ -199,7 +199,26 @@ export function projectDeath(
       }
     }
     if (t === yDep && yDep > 0 && yAlone > 0) row.events.push("末子が独立（生活費が下がる）");
-    if (t === yTotal - 1 && yTotal > 0) row.events.push("配偶者が65歳");
+    /**
+     * 算定期間の終端。
+     *
+     * **フェンスポストの整理（将来ここを「直す」人へ）**
+     * - データ行の終端は `2052（64歳）` ＝ **最後に受け取る年**を指している。正しい
+     * - チャートの終端軸ラベルやロードマップの `2053（65歳）` は **境界**を指している。これも正しい
+     * - **両方正しく、矛盾ではない。** 軸ラベルを 2052 に「修正」しないこと
+     *
+     * 文面で「前年」と書かない。読者に頭の中で1年足させる注記は、注記としての失敗である。
+     * 最終行を「前年」としてではなく**算定の終端**として語り、65歳という制度の節目も落とさない。
+     */
+    if (t === yTotal - 1 && yTotal > 0 && survivor) {
+      const ageHere = survivor.age + t;
+      const hadKafu = income.chukoreiKafu > 0;
+      row.events.push(
+        hadKafu
+          ? `算定はここまで（配偶者${ageHere}歳）。翌${row.year + 1}年、${ageHere + 1}歳で中高齢寡婦加算が終わり、ご自身の老齢年金に切り替わります`
+          : `算定はここまで（配偶者${ageHere}歳）。翌${row.year + 1}年、${ageHere + 1}歳からご自身の老齢年金に切り替わります`,
+      );
+    }
 
     rows.push(row);
     prev = row;
