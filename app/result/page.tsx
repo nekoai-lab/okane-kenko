@@ -6,6 +6,7 @@
  * 芯：概算・要精査／前提／出典を必ず添える。減らせる箇所は無ければ「見つかりませんでした」と明示する。
  */
 import Link from "next/link";
+import type { DiagnoseInput } from "../../src/calc/index.js";
 import { diagnose, toHousehold } from "../../src/calc/index.js";
 import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import type { Projection } from "../../src/calc/projection.js";
@@ -20,6 +21,7 @@ import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
 import { Hero } from "./Hero.js";
 import { LivingDial } from "./LivingDial.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
+import { Step1, type AnswerChip } from "./Step1.js";
 import { Step2 } from "./Step2.js";
 import { CoverageCurve } from "./CoverageCurve.js";
 import { NumberLine } from "./NumberLine.js";
@@ -31,6 +33,7 @@ import { Vitals } from "./Vitals.js";
 import { loadParams, v } from "../../src/params/index.js";
 import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
+import type { Estimation } from "../../src/wizard/types.js";
 import { normalize } from "../../src/wizard/normalize.js";
 import {
   LIVING_LEVELS,
@@ -139,6 +142,68 @@ function money(yen: number): string {
   return formatMan(yen);
 }
 
+/** 就業形態の呼び名。**回答をそのまま読み返す**ので、算定側の語ではなく設問の語に揃える */
+const EMPLOYMENT = {
+  employee: "会社員",
+  self: "自営・フリーランス",
+  none: "無職",
+} as const;
+
+const EDU_PLAN_LABEL: Record<EducationPlan, string> = {
+  public: "公立中心",
+  mixed: "私立混在",
+  private: "私立中心",
+};
+
+/**
+ * STEP1 の回答チップ（照合表 #5）。**10問の回答を、そのまま並べ直すだけ。**
+ *
+ * ここに出る金額は**入力値**であって算定結果ではない（万円に丸めるだけで、式を通さない）。
+ * エンジンの導出値を1つでも混ぜると「答えたこと」と「計算されたこと」の境目が消え、
+ * 読み手は自分の回答を検算できなくなる。
+ *
+ * 旧「この診断が前提にした、いまの家計」（`household` の4項目）の役割をここが引き取る。
+ * あちらは4項目に畳んでいたが、**畳むと畳んだ側の判断が入る**（世帯年収は本人＋配偶者の合算だった）。
+ * チップは合算せず、答えた単位のまま出す。
+ */
+function answerChips(input: DiagnoseInput, coverage: number | null): AnswerChip[] {
+  const man = (yen: number) => `約${Math.round(yen / 10000).toLocaleString("ja-JP")}万円`;
+  /** `field` はウィザードの項目名。**推定の記録（`normalize`）と同じ綴り**にする */
+  return [
+    { field: null, text: `ご本人 ${input.self.age}歳・${EMPLOYMENT[input.self.employment]}` },
+    { field: "selfIncome", text: `ご本人の年収 ${man(input.self.income)}` },
+    {
+      field: null,
+      text: input.spouse
+        ? `配偶者 ${input.spouse.age}歳・${EMPLOYMENT[input.spouse.employment]}`
+        : "配偶者なし",
+    },
+    ...(input.spouse
+      ? [{ field: "spouseIncome", text: `配偶者の年収 ${man(input.spouse.income)}` }]
+      : []),
+    {
+      field: null,
+      text:
+        input.children.length > 0
+          ? `お子さん ${input.children.length}人（${input.children.map((a) => `${a}歳`).join("・")}）`
+          : "お子さんなし",
+    },
+    { field: "educationPlan", text: `お子さんの進路 ${EDU_PLAN_LABEL[input.educationPlan]}` },
+    { field: "monthlyLiving", text: `毎月の生活費 ${man(input.monthlyLiving)}` },
+    { field: "assets", text: `金融資産 ${man(input.assets)}` },
+    {
+      field: "loan",
+      text:
+        input.housing.type === "rent"
+          ? "住まい 賃貸（住居費は生活費に含む）"
+          : (input.housing.loan ?? 0) > 0
+            ? `住まい 持ち家・ローン残り${man(input.housing.loan ?? 0)}・団信${input.housing.danshin === false ? "なし" : input.housing.danshin === undefined ? "は分からない" : "あり"}`
+            : "住まい 持ち家（ローンなし）",
+    },
+    { field: null, text: coverage === null ? "いまの保障 未入力" : `いまの保障 ${man(coverage)}` },
+  ];
+}
+
 function CaseCard({
   title,
   r,
@@ -152,6 +217,10 @@ function CaseCard({
   reform2028Reason,
   loan,
   livingBand,
+  chips,
+  estimations,
+  terms,
+  editHref,
 }: {
   title: string;
   r: DeathResult;
@@ -170,6 +239,14 @@ function CaseCard({
   loan: number | null;
   /** 生活費の幅（円/月・率と目盛りを掛けたあと）。帯が無い区分では null */
   livingBand: { low: number; high: number } | null;
+  /** STEP1 の回答チップ（`answerChips` が作る）。**このケースの保障額を含む** */
+  chips: AnswerChip[];
+  /** STEP1 の推定ボックス（ウィザードの未回答の記録）。ケースによらず同じ */
+  estimations: Estimation[];
+  /** チップに出た専門用語の1行注釈 */
+  terms: string[];
+  /** 入力に戻るリンク */
+  editHref: string;
 }) {
   /**
    * STEP4 の判定カード。**過不足軸**（`Verdict3`）を使う ── バッジと同じ軸。
@@ -207,6 +284,17 @@ function CaseCard({
   return (
     <div className={s.caseCard}>
       <h2 className={s.h2}>{title}</h2>
+
+      {/*
+        STEP1（照合表 #5）。**移植元は result.html の STEP 1。**
+        ここで旧 h2「この診断が前提にした、いまの家計」（`Vitals` の4項目）と
+        旧 h3「推定で補った前提」を**まとめて置き換えた**（CLAUDE.md「置換であって共存ではない」）。
+
+        **ケースの中に置く。** 推定で補った項目はケースごとに違う
+        （本人死亡と配偶者死亡では、遺される側が入れ替わるので前提も入れ替わる）ため、
+        ページ直下に1つ置くと、どちらのケースの前提なのか言えなくなる。
+      */}
+      <Step1 chips={chips} editHref={editHref} estimations={estimations} terms={terms} />
 
 
       {/* **数字の意味は verdict で入れ替わる。** 不足のときは「足りない額」だが、
@@ -398,17 +486,6 @@ function CaseCard({
           </div>
         </div>
 
-        {/* 推定で補った前提 */}
-        {r.assumptions.length > 0 && (
-          <>
-            <h3 className={s.h3}>推定で補った前提</h3>
-            <ul className={s.assumptions}>
-              {r.assumptions.map((a) => (
-                <li key={a.field}>{a.note}</li>
-              ))}
-            </ul>
-          </>
-        )}
       </details>
     </div>
   );
@@ -446,7 +523,7 @@ export default async function ResultPage({
    */
   const livingLevel = decodeLivingLevel(q);
   const dial = dialFor(params, livingLevel);
-  const { input: rawInput } = normalize(params, complete, new Date());
+  const { input: rawInput, estimations } = normalize(params, complete, new Date());
   const input = { ...rawInput, lifestyleDial: dial };
   const result = diagnose(params, input);
 
@@ -544,41 +621,6 @@ export default async function ResultPage({
   const cov = input.coverageSelf;
   const coveredFrom = cov === null ? null : (selfCurve.find((pt) => pt.need <= cov) ?? null);
   const tightest = selfProjection.tightest;
-  /**
-   * この診断が前提にした「いまの家計」。
-   *
-   * **新しい算定はしていない。入力を読み返しているだけ。**
-   * FPの実務資料が例外なく「まずは現状把握が大切です」から始めるのは、
-   * 前提が違えば結論も違うから。ここに出しておけば、入力の取り違えに本人が気づける。
-   */
-  const household: Vital[] = [
-    {
-      label: "世帯の年収（額面）",
-      value: `約${money(input.self.income + (input.spouse?.income ?? 0))}`,
-      note: input.spouse ? "ご本人＋配偶者" : "ご本人のみ",
-    },
-    {
-      label: "毎月の生活費",
-      value: `約${Math.round(input.monthlyLiving / 10000)}万円`,
-      note: "ご申告または年収からの推定",
-    },
-    { label: "金融資産", value: `約${money(input.assets)}`, note: "貯蓄・運用の合計" },
-    {
-      label: "住まい",
-      value:
-        input.housing.type === "rent"
-          ? "賃貸"
-          : (input.housing.loan ?? 0) > 0
-            ? "持ち家（ローンあり）"
-            : "持ち家（ローンなし）",
-      note:
-        input.housing.type === "own" && (input.housing.loan ?? 0) > 0
-          ? // 団信は初出で1行注釈を付ける（CLAUDE.md）。ここが結果画面での初出になる
-            `残り約${money(input.housing.loan ?? 0)}／団信（亡くなるとローンが消える保険）${input.housing.danshin === false ? "なし" : "あり"}`
-          : "住居費は生活費に含めています",
-    },
-  ];
-
   /**
    * 世帯の過不足を1枚で出す。**足りない側と減らせる側が同時にあるなら、両方を名指しする。**
    *
@@ -928,6 +970,17 @@ export default async function ResultPage({
         })
       : [];
 
+  /**
+   * チップに出た専門用語の1行注釈（CLAUDE.md「専門用語は初出で1行注釈」）。
+   * **旧「いまの家計」の住まいの欄が負っていた責務**をここへ移した。
+   * これを落とすと、以降の「回答: 団信あり」や滝の脚注が無注釈の初出になる。
+   */
+  const terms =
+    input.housing.type === "own" && (input.housing.loan ?? 0) > 0
+      ? ["団信＝亡くなると住宅ローンが消える保険です。"]
+      : [];
+  const editHref = `/wizard?${q.toString()}`;
+
   const caption = `${input.self.age}歳・${input.self.employment === "employee" ? "会社員" : input.self.employment === "self" ? "自営・フリーランス" : "無職"}${input.spouse ? `・配偶者${input.spouse.age}歳` : "・配偶者なし"}${input.children.length > 0 ? `・子${input.children.length}人` : "・子なし"}`;
 
   /**
@@ -989,22 +1042,6 @@ export default async function ResultPage({
         values={placeholderValues(result)}
       />
 
-      {/* この診断が前提にした「いまの家計」。前提が違えば結論も違うので、
-          本人が取り違えに気づけるようにしておく（FPの「まず現状把握」にあたる） */}
-      <div className={`${s.section} ${s.sectionMajor}`}>
-        <h2 className={s.h2}>この診断が前提にした、いまの家計</h2>
-        {/* こちらは文章の列に収まる位置なので2×2にする。720px幅で4列にすると
-            「世帯の年収（額面）」のようなラベルが潰れる */}
-        <Vitals items={household} twoColumns />
-        <p className={s.basis}>
-          違っていたら{" "}
-          <Link className={s.link} href={`/wizard?${q.toString()}`}>
-            入力をやり直せます
-          </Link>
-          。前提が変われば結論も変わります。
-        </p>
-      </div>
-
       {/* この診断で分かること／分からないこと（先に線を引く・T-06） */}
       <div className={s.section}>
         <div className={s.scope}>
@@ -1045,8 +1082,12 @@ export default async function ResultPage({
       <div className={`${s.section} ${s.sectionMajor}`} id="death-detail">
         <CaseCard
           childCount={input.children.length}
+          chips={answerChips(input, input.coverageSelf)}
           coverage={input.coverageSelf}
           danshinCovered={danshinCovered}
+          editHref={editHref}
+          estimations={estimations}
+          terms={terms}
           koseiFrom={input.self.employment === "employee" ? "会社員" : null}
           pj={selfProjection}
           r={result.self}
@@ -1080,8 +1121,12 @@ export default async function ResultPage({
             </summary>
             <CaseCard
               childCount={input.children.length}
+              chips={answerChips(input, input.coverageSpouse ?? null)}
               coverage={input.coverageSpouse ?? null}
               danshinCovered={danshinCovered}
+              editHref={editHref}
+              estimations={estimations}
+              terms={terms}
               koseiFrom={input.spouse?.employment === "employee" ? "配偶者は会社員" : null}
               pj={spouseProjection}
               r={result.spouse}

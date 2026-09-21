@@ -41,6 +41,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
   if (sel.selfIncome === "prefer_not") {
     estimations.push({
       field: "selfIncome",
+      label: "ご本人の年収",
       reason: "prefer_not",
       note: "本人の年収は「答えたくない」を選ばれたため、区分エ相当で仮置きしました。",
     });
@@ -59,6 +60,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
     if (code === "prefer_not") {
       estimations.push({
         field: "spouseIncome",
+        label: "配偶者の年収",
         reason: "prefer_not",
         note: "配偶者の年収は「答えたくない」を選ばれたため、区分エ相当で仮置きしました。",
       });
@@ -78,6 +80,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
   if (sel.assets === "unknown") {
     estimations.push({
       field: "assets",
+      label: "金融資産",
       reason: "unknown",
       note: "金融資産は「分からない」を選ばれたため、300万円で仮置きしました。",
     });
@@ -92,6 +95,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
     monthlyLiving = Math.round((net * v(p, "livingCostFromIncome")) / 12);
     estimations.push({
       field: "monthlyLiving",
+      label: "毎月の生活費",
       reason: "estimated_from_income",
       note: "毎月の生活費は年収から推定しました（世帯手取りの75%・当社基準）。",
     });
@@ -112,6 +116,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
     if (loanCode === "unknown") {
       estimations.push({
         field: "loan",
+        label: "住宅ローン残高",
         reason: "unknown",
         note: "住宅ローン残高は「分からない」を選ばれたため、仮置きしました。",
       });
@@ -144,6 +149,7 @@ export function normalize(p: ParamSet, sel: WizardSelections, asOf: Date): Norma
   ) {
     estimations.push({
       field: "educationPlan",
+      label: "お子さんの進路",
       reason: "undecided",
       note: "進路が未定のため公立中心で仮置きしました。私立にすると教育費が増えます。",
     });
