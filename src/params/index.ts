@@ -85,6 +85,28 @@ export interface ParamSet {
     brackets: KogakuBracket[];
     source: string;
     verified: boolean;
+    /** 多数回該当の上限（区分名 → 円）。区分オは現行テーブルに無く到達しない */
+    multipleOccurrence: Record<string, number>;
+    /** 何か月目から減額上限に切り替わるか（＝4） */
+    multipleOccurrenceFromMonth: number;
+    multipleOccurrenceSource: string;
+    multipleOccurrenceVerified: boolean;
+  };
+  /** 健康保険 傷病手当金 */
+  shobyoTeate: {
+    rate: number;
+    waitingDays: number;
+    maxMonths: number;
+    source: string;
+    verified: boolean;
+  };
+  /** 雇用保険 基本手当 */
+  kihonTeate: {
+    benefitRate: number;
+    dailyCapByAge: { fromAge: number; cap: number }[];
+    daysGeneral: { insuredYearsFrom: number; days: number }[];
+    source: string;
+    verified: boolean;
   };
   ownStandard: Record<string, ParamEntry>;
   toBeSourced: Record<string, ParamEntry>;
