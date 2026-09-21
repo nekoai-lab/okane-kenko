@@ -178,6 +178,11 @@ describe("判定を支えている前提を黙って置かない（ample系の�
     expect(flat!.label).toBeTruthy();
     expect(flat!.note).toContain("扱いです");
     expect(flat!.note).toContain("必要額は増えます");
+    // **額面と手取りの役割を書き分ける。** 混ぜると掛け算の合わない文になる
+    expect(flat!.note).toContain("手取りに換算して計算");
+
+    const floor = r.self.assumptions.find((a) => a.field === "survivor.income.floor");
+    expect(floor!.note).toContain("手取り 年");
 
     const childcare = r.self.assumptions.find((a) => a.field === "childcare.extra");
     expect(childcare!.note).toContain("必要額はその分増えます");

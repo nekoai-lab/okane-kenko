@@ -12,7 +12,8 @@ import type { Projection } from "../../src/calc/projection.js";
 import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstYear } from "../../src/time/jstYear.js";
-import { simulate, simulateAll } from "../../src/calc/simulate.js";
+import { simulateAll } from "../../src/calc/simulate.js";
+import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
 import { householdSummary, verdict3 } from "../../src/calc/verdict3.js";
 import { Hero } from "./Hero.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
@@ -451,62 +452,51 @@ export default async function ResultPage({
   /**
    * 感度文（仕様 §5.3 T-E・2026-09-21 オーナー承認の文型）。
    *
-   * **露出部は帯の直下にこの1文だけ。** 残りの前提は折りたたみに入る。
-   * 就労収入を `現状 / その半額 / ゼロ` の3前提で `simulate` を回し、**判定の遷移で3分岐**する。
+   * **露出部は帯の直下にこの1文だけ。** 分岐と数値は `survivorIncomeSensitivity`（src/calc）が出す。
+   * ここがやるのは、返ってきた値を文に差し込むことだけ。
    *
    * 文型ルール：
-   * - **否定で終わらせない。** 「見ていません」ではなく、外れたら結果がどちらへ動くかまで言う
-   * - **判定ラベルはバッジと同じ enum（`DEATH_LABEL`）をバインドする。** 手打ちで再入力しない
-   * - **金額・年数・判定遷移はすべて `simulate` の出力から。** テンプレートに数値を直書きしない
-   * - 分岐はここで決める。**AI の作文を挟まない**
+   * - 判定ラベルは**バッジと同じ `DEATH_LABEL`** をバインドする。手打ちで再入力しない
+   * - **括弧の中は手取りで書く。** 額面と手取りを混ぜると掛け算が合わなくなる
+   *   （`年700万円×25年＝約1億4,000万円` は合わない。手取り560万×25年なら合う）
+   * - 否定で終わらせない。**判定が動かない場合でも、必要額がどれだけ動くかを書く**
    */
   const sensitivityFor = (who: "self" | "spouse"): { text: string } | null => {
-    // 遺されるのは相手のほう。本人が亡くなるケースでは配偶者が遺族になる
-    const survivor = who === "self" ? input.spouse : input.self;
-    const base = who === "self" ? result.self : result.spouse;
-    const cov = who === "self" ? input.coverageSelf : input.coverageSpouse;
-    // 収入が元から0なら動かす余地が無い（反実仮想が作れない）
-    if (!survivor || survivor.income <= 0 || !base) return null;
-
-    /** 遺族の就労収入を `income` に置き換えて回し直し、そのケースの判定を取る */
-    const verdictWith = (income: number) => {
-      const answers =
-        who === "self"
-          ? { ...input, spouse: { ...input.spouse!, income } }
-          : { ...input, self: { ...input.self, income } };
-      const alt = simulate(params, { answers, asOf: asOfDate }, "death").death;
-      const c = who === "self" ? alt?.self : alt?.spouse;
-      return c ? verdict3(cov, c.range.low, c.range.high) : null;
-    };
-
-    const now = verdict3(cov, base.range.low, base.range.high);
-    const halfIncome = Math.round(survivor.income / 2);
-    const atHalf = verdictWith(halfIncome);
-    const atZero = verdictWith(0);
-    if (!atHalf || !atZero) return null;
+    const sv = survivorIncomeSensitivity(params, input, who, asOfDate);
+    if (!sv) return null;
 
     const label = who === "self" ? "遺されたご家族" : "あなた";
-    const total = `約${money(base.income.survivorWork)}`;
-    const annual = money(survivor.income).replace("万円", "");
-    const half = money(halfIncome).replace("万円", "");
-    const years = base.years.total;
-    const lead = `この判定を支えているのは、${label}の就労収入 ${total}（年${annual}万円×${years}年）です。`;
+    const total = `約${money(sv.workTotal)}`;
+    const bare = (yen: number) => money(yen).replace("万円", "");
+    /**
+     * **括弧の掛け算が読者の手元で合うようにする。**
+     * 末子独立後に下限（年100万円）が効く世帯は単純な掛け算にならないので、2本立てで書く。
+     */
+    const breakdown =
+      sv.annualNet === sv.netAfter
+        ? `手取り 年${bare(sv.annualNet)}万円×${sv.yearsTotal}年`
+        : `手取り 年${bare(sv.annualNet)}万円×${sv.yearsDependent}年＋年${bare(sv.netAfter)}万円×${sv.yearsAlone}年`;
+    const lead = `この判定を支えているのは、${label}の就労収入 ${total}（${breakdown}）です。`;
+    const halfMan = bare(sv.annualGross / 2);
 
-    // どちらでも判定が変わらない
-    if (atHalf === now && atZero === now) {
+    /**
+     * **判定が動かなくても「影響が無い」ではない。**
+     * この世帯では必要額が 約200万円 → 約800〜1,200万円 と4〜6倍に動くのに、
+     * 承認された文型だと「変わりません」だけで数字が消える。
+     * 数字の検算が通らない開示は無いより悪いので、必要額の移動を必ず添える（2026-09-21）。
+     */
+    if (sv.branch === "no_verdict_change") {
       return {
-        text: `${label}の就労収入 ${total}を見込んでいますが、収入がなくても判定は変わりません。`,
+        text: `${lead}収入がなくなると必要額は${formatRange(sv.needNow.low, sv.needNow.high)}から${formatRange(sv.needAtZero.low, sv.needAtZero.high)}に増えますが、いまの保障が上回るため判定は変わりません。`,
       };
     }
-    // 半額では変わらず、ゼロで変わる
-    if (atHalf === now) {
+    if (sv.branch === "zero_only") {
       return {
-        text: `${lead}年${half}万円でも判定は変わりませんが、働けない場合は「${DEATH_LABEL[atZero]}」に変わります。`,
+        text: `${lead}年${halfMan}万円でも判定は変わりませんが、働けない場合は「${DEATH_LABEL[sv.verdictAtZero]}」に変わります。`,
       };
     }
-    // 両方で変わる
     return {
-      text: `${lead}年${half}万円なら「${DEATH_LABEL[atHalf]}」、働けない場合は「${DEATH_LABEL[atZero]}」に変わります。`,
+      text: `${lead}年${halfMan}万円なら「${DEATH_LABEL[sv.verdictAtHalf]}」、働けない場合は「${DEATH_LABEL[sv.verdictAtZero]}」に変わります。`,
     };
   };
 

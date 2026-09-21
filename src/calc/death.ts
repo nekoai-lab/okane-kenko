@@ -51,7 +51,8 @@ function buildSurvivorAssumptions(x: {
       label: `${x.yTotal}年間ずっと働き続ける`,
       value: x.survivorIncome,
       reason: "estimated",
-      note: `年収${man(x.survivorIncome)}万円が65歳まで途切れない扱いです。下がれば必要額は増えます。`,
+      // **額面と手取りの役割を書き分ける。** 額面はユーザーが答えた値、手取りは計算に使う値
+      note: `年収${man(x.survivorIncome)}万円（手取りに換算して計算）が65歳まで途切れない扱いです。下がれば必要額は増えます。`,
     });
   }
   if (x.hasSurvivor && x.yAlone > 0) {
@@ -60,7 +61,7 @@ function buildSurvivorAssumptions(x: {
       label: "独立後も収入は下がらない",
       value: x.netAfter,
       reason: "estimated",
-      note: `お子さんの独立後も年${man(x.netAfter)}万円を下回らない扱いです。`,
+      note: `手取り 年${man(x.netAfter)}万円を下回らない扱いです。`,
     });
   }
   if (x.hasSurvivor) {
