@@ -393,12 +393,6 @@
   background: var(--amber);
 }
 
-.weightNote {
-  font-size: 12px;
-  line-height: 1.7;
-  color: #6b5a38;
-  margin: 5px 0 0;
-}
 
 /*
   感度文（T-E）。**初期表示に出す2つのうちの1つ。**
@@ -433,4 +427,15 @@
 
 .premisesMore .premisesList {
   margin-top: var(--space-3);
+}
+
+/* 開閉で文言を差し替える。JS の状態を持たせず :open だけで出し分ける */
+.premisesMore .moreOpen {
+  display: none;
+}
+.premisesMore[open] .moreClosed {
+  display: none;
+}
+.premisesMore[open] .moreOpen {
+  display: inline;
 }

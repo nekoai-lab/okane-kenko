@@ -22,6 +22,8 @@ export interface PremiseWeight {
   share: number;
   totalText: string;
   onPremiseText: string;
+  /** 遺族の呼び名。本人死亡カードなら「遺されたご家族」、配偶者死亡カードなら「あなた」 */
+  survivorLabel: string;
 }
 
 /** 前提が外れたときに判定と金額がどう動くか（T-E）。文は組み立て済みで渡す */
@@ -32,7 +34,10 @@ export interface PremiseSensitivity {
 export interface PremiseDisclosureProps {
   weight: PremiseWeight | null;
   sensitivity: PremiseSensitivity | null;
-  /** 畳む側の項目。見出し語＋1行 */
+  /**
+   * 折りたたみの中身。**完全な記録として全項目を置く**（露出した就労前提も含める）。
+   * 件数は `assumptions[]` の実数をそのまま出す。
+   */
   items: { label: string; note: string }[];
 }
 
@@ -46,28 +51,24 @@ export function PremiseDisclosure({ weight, sensitivity, items }: PremiseDisclos
           <div
             className={s.weightBar}
             role="img"
-            aria-label={`見込んだ収入 ${weight.totalText} のうち ${weight.onPremiseText} が、遺されたご家族の就労収入です。`}
+            aria-label={`見込んだ収入 ${weight.totalText} のうち ${weight.onPremiseText} が、${weight.survivorLabel}の就労収入です。`}
           >
             <span style={{ width: `${Math.round(weight.share * 100)}%` }} />
           </div>
-          <p className={s.weightNote}>
-            見込んだ収入 {weight.totalText} のうち <b>{weight.onPremiseText}</b>{" "}
-            が、遺されたご家族の就労収入です
-          </p>
         </div>
       )}
 
-      {sensitivity && (
-        <>
-          <p className={s.premisesHead}>判定を支えている前提</p>
-          <p className={s.sensitivity}>{sensitivity.text}</p>
-        </>
-      )}
+      {/* **露出部は帯の直下にこの1文だけ。** 帯の内訳は、この文が金額ごと持っている */}
+      {sensitivity && <p className={s.sensitivity}>{sensitivity.text}</p>}
 
       {items.length > 0 && (
         // **件数を出す。** 「すべて見る」だけだと、何件隠れているのか分からない
         <details className={s.premisesMore}>
-          <summary>計算の前提をすべて見る（{items.length}項目）</summary>
+          {/* 開いたら「閉じる」に変わる。CSS の :open で出し分ける（状態を持たせない） */}
+          <summary>
+            <span className={s.moreClosed}>計算の前提をすべて見る（{items.length}項目）</span>
+            <span className={s.moreOpen}>前提を閉じる</span>
+          </summary>
           <ul className={s.premisesList}>
             {items.map((a) => (
               <li key={a.label}>

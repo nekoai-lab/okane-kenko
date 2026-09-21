@@ -33,20 +33,18 @@ function roundToUnit(x: number, unit: number): number {
 function buildSurvivorAssumptions(
   p: ParamSet,
   x: {
-    /** 配偶者がいない世帯では、配偶者にまつわる前提は語らない（無い前提を語らない） */
+    /** 配偶者がいない世帯では、遺族にまつわる前提は語らない（無い前提を語らない） */
     hasSurvivor: boolean;
+    /** 遺族の呼び名。本人死亡なら「遺されたご家族」、配偶者死亡なら「あなた」 */
+    survivorLabel: string;
     survivorIncome: number;
-    survivorWork: number;
+    /** 末子独立後に使っている年額（手取り）。`max(netNow, postIndepMinIncome)` の結果 */
+    netAfter: number;
     yTotal: number;
     yAlone: number;
     hasChildren: boolean;
   },
 ): Assumption[] {
-  /**
-   * **「配偶者」と書かない。** `calcDeath` は本人死亡と配偶者死亡の両方で呼ばれ、
-   * 後者では遺されるのは**本人**なので、「配偶者が働き続ける」は事実と逆になる。
-   * この層は誰が遺されるかを知らないので、どちらでも正しい「遺されたご家族」で書く。
-   */
   const man = (yen: number) => Math.round(yen / 10000).toLocaleString("ja-JP");
   const out: Assumption[] = [];
 
@@ -56,35 +54,34 @@ function buildSurvivorAssumptions(
       label: `${x.yTotal}年間ずっと働き続ける`,
       value: x.survivorIncome,
       reason: "estimated",
-      note: `年収${man(x.survivorIncome)}万円が65歳まで途切れない前提で、合計 約${man(x.survivorWork)}万円を収入に見込みました。`,
+      note: `年収${man(x.survivorIncome)}万円が65歳まで途切れない扱いです。下がれば必要額は増えます。`,
     });
   }
   if (x.hasSurvivor && x.yAlone > 0) {
     out.push({
       field: "survivor.income.floor",
       label: "独立後も収入は下がらない",
-      value: v(p, "postIndepMinIncome"),
+      value: x.netAfter,
       reason: "estimated",
-      note: `お子さんが独立したあとも同じ収入が続く前提です（下限は年${man(v(p, "postIndepMinIncome"))}万円）。`,
+      note: `お子さんの独立後も年${man(x.netAfter)}万円を下回らない扱いです。`,
     });
   }
   if (x.hasSurvivor) {
     out.push({
-        field: "survivor.disability",
-      label: "遺族が働けなくなることは起きない",
-      value: "起きない",
+      field: "survivor.disability",
+      label: "遺族自身の病気・就業不能は範囲外",
+      value: "範囲外",
       reason: "default",
-      // 同じページの「就業不能・障害」の行で診ているリスクを、この計算では起きないものとして扱っている
-      note: "そのリスクは上の「就業不能・障害」の行で別に診ていて、この計算には含めていません。",
+      note: "この計算では起きない扱いです（そのリスクは「就業不能・障害」の行で診ます）。",
     });
   }
   if (x.hasChildren) {
     out.push({
       field: "childcare.extra",
-      label: "追加の保育費・学童費用は未計上",
+      label: "就労にともなう保育・学童費用",
       value: 0,
       reason: "default",
-      note: "就労を増やす場合にかかる分を支出に入れていません。実際にかかるなら必要額は増えます。",
+      note: "支出に入れない扱いです。実際にかかる場合、必要額はその分増えます。",
     });
   }
   out.push({
@@ -92,17 +89,24 @@ function buildSurvivorAssumptions(
     label: "新しい貯蓄はゼロ",
     value: 0,
     reason: "default",
-    note: "算定期間中に貯蓄が増える分は見ていません（金融資産はいまの額のまま）。",
+    note: "算定期間中に貯蓄は増えない扱いです（金融資産はいまの額のまま）。",
   });
   if (x.hasSurvivor) {
     out.push({
       field: "period.end",
-      label: "65歳以降は対象外",
+      label: "対象は65歳まで",
       value: 65,
       reason: "default",
-      note: `見ているのは65歳になるまでの${x.yTotal}年だけです（以降は老齢年金に切り替わるため）。`,
+      note: `見ているのは${x.survivorLabel}が65歳になるまでの${x.yTotal}年間です（以降は老齢年金の領域）。`,
     });
   }
+  out.push({
+    field: "params.vintage",
+    label: "2026年度の制度で計算",
+    value: 2026,
+    reason: "default",
+    note: "2028年4月施行の遺族年金改正（子のいない配偶者の5年有期化・中高齢寡婦加算の段階的廃止）は反映していません。",
+  });
   return out;
 }
 
@@ -179,7 +183,8 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
   let pensionKosei = 0;
   let chukoreiKafu = 0;
   let survivorWork = 0;
-  /** 判定を支える前提（開示6点）。**`ample` 系に落ちたときだけ結果に載せる** */
+  let netAfter = 0;
+  /** 判定を支える前提。**`ample` 系に落ちたときだけ結果に載せる** */
   let survivorAssumptions: Assumption[];
 
   if (survivor) {
@@ -189,7 +194,7 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
 
     // 就労収入の連続推定（ADR-008）：崖をつくらない
     const netNow = survivor.income * v(p, "netIncomeRatio");
-    const netAfter = Math.max(netNow, v(p, "postIndepMinIncome"));
+    netAfter = Math.max(netNow, v(p, "postIndepMinIncome"));
     survivorWork = netNow * yDep + netAfter * yAlone;
 
     if (survivor.income === 0) {
@@ -206,8 +211,9 @@ export function calcDeath(p: ParamSet, h: Household): DeathResult {
 
   survivorAssumptions = buildSurvivorAssumptions(p, {
     hasSurvivor: survivor !== null && survivor !== undefined,
+    survivorLabel: h.survivorLabel ?? "遺されたご家族",
     survivorIncome: survivor?.income ?? 0,
-    survivorWork,
+    netAfter,
     yTotal,
     yAlone,
     hasChildren: children.length > 0,

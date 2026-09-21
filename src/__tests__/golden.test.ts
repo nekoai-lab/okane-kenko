@@ -148,7 +148,7 @@ describe("世帯単位で見ないと分からないこと（ADR-007）", () => 
  * ここが守るのは金額ではなく**開示そのもの**なので、5点それぞれを field で固定する。
  * 文面を変えるのは自由だが、項目を落としたらこのテストが落ちる。
  */
-describe("判定を支えている前提を黙って置かない（ample系の開示6点）", () => {
+describe("判定を支えている前提を黙って置かない（ample系の開示）", () => {
   const FIELDS = [
     "survivor.income.flat", // ① 65歳まで定額で積んでいる
     "survivor.income.floor", // ② 子の独立後も下がらない床
@@ -156,23 +156,47 @@ describe("判定を支えている前提を黙って置かない（ample系の�
     "childcare.extra", // ④ 追加の保育費・学童費用は見ていない
     "assets.growth", // ⑤ 期間中の新規貯蓄はゼロ
     "period.end", // ⑥ 配偶者65歳以降は対象外
+    "params.vintage", // ⑦ 2028年4月施行の改正は未反映
   ];
 
-  it("配偶者と子のいる `ample` 世帯では6点すべてを assumptions に出す", () => {
+  it("配偶者と子のいる `ample` 世帯では全項目を assumptions に出す", () => {
     const r = diagnose(P, GOLDEN[0].input, AS_OF);
     for (const f of FIELDS) {
       expect(r.self.assumptions.map((a) => a.field)).toContain(f);
     }
   });
 
-  it("**判定を決めている額そのものを文面に出す**（前提と金額を離さない）", () => {
+  /**
+   * 文型ルール（仕様 §5.3・2026-09-21 オーナー承認）：
+   * **否定の事実を書くときは、外れた場合に結果がどちらへ動くかまで同じ文で言う。**
+   * 「見ていません」で終わる文は、読み手に「で、どうなるの」を残したまま閉じてしまう。
+   */
+  it("否定で終わる前提には、外れた場合の向きを必ず添える", () => {
     const r = diagnose(P, GOLDEN[0].input, AS_OF);
     const flat = r.self.assumptions.find((a) => a.field === "survivor.income.flat");
     // 見出し語で拾い読みできること（全部読まないと分からない壁にしない）
     expect(flat!.label).toBeTruthy();
-    expect(flat!.note).toContain("途切れない前提");
-    // **判定を決めている額そのものを出す。** 前提と金額を離すと、重みが伝わらない
-    expect(flat!.note).toContain("合計");
+    expect(flat!.note).toContain("扱いです");
+    expect(flat!.note).toContain("必要額は増えます");
+
+    const childcare = r.self.assumptions.find((a) => a.field === "childcare.extra");
+    expect(childcare!.note).toContain("必要額はその分増えます");
+  });
+
+  it("見出し語は体言止め、本文は です・ます（文型をそろえる）", () => {
+    const r = diagnose(P, GOLDEN[0].input, AS_OF);
+    for (const a of r.self.assumptions) {
+      if (!a.label) continue;
+      expect(a.label.endsWith("。")).toBe(false);
+      expect(a.note.endsWith("。")).toBe(true);
+    }
+  });
+
+  it("2028年改正を反映していないことを、前提として必ず残す", () => {
+    const r = diagnose(P, GOLDEN[0].input, AS_OF);
+    const vintage = r.self.assumptions.find((a) => a.field === "params.vintage");
+    expect(vintage).toBeDefined();
+    expect(vintage!.note).toContain("2028年4月");
   });
 
   it("**遺されるのが誰かで文言が逆にならない**（配偶者死亡のケースでも成り立つ書き方にする）", () => {
@@ -184,6 +208,9 @@ describe("判定を支えている前提を黙って置かない（ample系の�
     // 配偶者が亡くなるケースでは遺されるのは本人なので、「配偶者が働き続ける」は事実と逆になる
     expect(notes.some((t) => t.includes("配偶者が働き続ける"))).toBe(false);
     expect(notes.some((t) => t.startsWith("配偶者が"))).toBe(false);
+    // 配偶者が亡くなるケースでは遺されるのは本人なので「あなた」と呼ぶ
+    const spouseCase = (r.spouse?.assumptions ?? []).find((a) => a.field === "period.end");
+    expect(spouseCase!.note).toContain("あなたが65歳になるまで");
   });
 
   it("配偶者がいない世帯では、配偶者にまつわる前提を語らない", () => {

@@ -14,6 +14,13 @@ export interface Household {
   deceased: Person;
   /** 遺される側。独身なら null */
   survivor: Person | null;
+  /**
+   * 前提の文面で遺族をどう呼ぶか。**本人が亡くなるケースなら「遺されたご家族」、
+   * 配偶者が亡くなるケースなら「あなた」。**
+   * `calcDeath` はどちらのケースで呼ばれたかを知らないので、呼び出し側が渡す
+   * （ここを固定文にすると、配偶者死亡のカードで「配偶者が働き続ける」と事実が逆になる）。
+   */
+  survivorLabel?: string;
   /** 子の現在年齢 */
   children: number[];
   housing: Housing;

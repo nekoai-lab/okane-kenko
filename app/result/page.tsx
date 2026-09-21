@@ -449,45 +449,64 @@ export default async function ResultPage({
   } as const;
 
   /**
-   * 感度文（仕様 §5.3 T-E）。**判定を支えている前提が外れたら何が起きるかを1文で出す。**
+   * 感度文（仕様 §5.3 T-E・2026-09-21 オーナー承認の文型）。
    *
-   * 死亡の判定はこの1項目で反転しうる（遺族の就労収入を0にすると `ample` → `shortage`）。
-   * 重みを帯で見せるだけでは「外れたらどうなるか」が分からないので、反実仮想を1本回して
-   * **判定の遷移と金額をエンジンから取る**。
+   * **露出部は帯の直下にこの1文だけ。** 残りの前提は折りたたみに入る。
+   * 就労収入を `現状 / その半額 / ゼロ` の3前提で `simulate` を回し、**判定の遷移で3分岐**する。
    *
-   * **金額も判定ラベルもここで作らない。** `simulate` を同じ params・同じ asOf で
-   * 収入だけ 0 にして呼び直し、返ってきた値を文に差し込む（ハードコード禁止）。
+   * 文型ルール：
+   * - **否定で終わらせない。** 「見ていません」ではなく、外れたら結果がどちらへ動くかまで言う
+   * - **判定ラベルはバッジと同じ enum（`DEATH_LABEL`）をバインドする。** 手打ちで再入力しない
+   * - **金額・年数・判定遷移はすべて `simulate` の出力から。** テンプレートに数値を直書きしない
+   * - 分岐はここで決める。**AI の作文を挟まない**
    */
   const sensitivityFor = (who: "self" | "spouse"): { text: string } | null => {
     // 遺されるのは相手のほう。本人が亡くなるケースでは配偶者が遺族になる
     const survivor = who === "self" ? input.spouse : input.self;
-    if (!survivor || survivor.income <= 0) return null;
-
-    const answers =
-      who === "self"
-        ? { ...input, spouse: { ...input.spouse!, income: 0 } }
-        : { ...input, self: { ...input.self, income: 0 } };
-    const alt = simulate(params, { answers, asOf: asOfDate }, "death").death;
-    if (!alt) return null;
-
     const base = who === "self" ? result.self : result.spouse;
-    const altCase = who === "self" ? alt.self : alt.spouse;
     const cov = who === "self" ? input.coverageSelf : input.coverageSpouse;
-    if (!base || !altCase) return null;
+    // 収入が元から0なら動かす余地が無い（反実仮想が作れない）
+    if (!survivor || survivor.income <= 0 || !base) return null;
 
-    const from = verdict3(cov, base.range.low, base.range.high);
-    const to = verdict3(cov, altCase.range.low, altCase.range.high);
-    const needFrom = formatRange(base.range.low, base.range.high);
-    const needTo = formatRange(altCase.range.low, altCase.range.high);
+    /** 遺族の就労収入を `income` に置き換えて回し直し、そのケースの判定を取る */
+    const verdictWith = (income: number) => {
+      const answers =
+        who === "self"
+          ? { ...input, spouse: { ...input.spouse!, income } }
+          : { ...input, self: { ...input.self, income } };
+      const alt = simulate(params, { answers, asOf: asOfDate }, "death").death;
+      const c = who === "self" ? alt?.self : alt?.spouse;
+      return c ? verdict3(cov, c.range.low, c.range.high) : null;
+    };
 
-    // **変わらないときは「変わらない」と書く。** 沈黙で誤解させない
-    if (from === to) {
+    const now = verdict3(cov, base.range.low, base.range.high);
+    const halfIncome = Math.round(survivor.income / 2);
+    const atHalf = verdictWith(halfIncome);
+    const atZero = verdictWith(0);
+    if (!atHalf || !atZero) return null;
+
+    const label = who === "self" ? "遺されたご家族" : "あなた";
+    const total = `約${money(base.income.survivorWork)}`;
+    const annual = money(survivor.income).replace("万円", "");
+    const half = money(halfIncome).replace("万円", "");
+    const years = base.years.total;
+    const lead = `この判定を支えているのは、${label}の就労収入 ${total}（年${annual}万円×${years}年）です。`;
+
+    // どちらでも判定が変わらない
+    if (atHalf === now && atZero === now) {
       return {
-        text: `遺されたご家族の就労収入がゼロになっても、判定は「${DEATH_LABEL[from]}」のままです（必要額は${needFrom}から${needTo}になります）。`,
+        text: `${label}の就労収入 ${total}を見込んでいますが、収入がなくても判定は変わりません。`,
       };
     }
+    // 半額では変わらず、ゼロで変わる
+    if (atHalf === now) {
+      return {
+        text: `${lead}年${half}万円でも判定は変わりませんが、働けない場合は「${DEATH_LABEL[atZero]}」に変わります。`,
+      };
+    }
+    // 両方で変わる
     return {
-      text: `遺されたご家族の就労収入がゼロになると、判定は「${DEATH_LABEL[from]}」から「${DEATH_LABEL[to]}」に変わり、必要額は${needFrom}から${needTo}になります。`,
+      text: `${lead}年${half}万円なら「${DEATH_LABEL[atHalf]}」、働けない場合は「${DEATH_LABEL[atZero]}」に変わります。`,
     };
   };
 
@@ -559,6 +578,7 @@ export default async function ResultPage({
               share: dr.income.survivorWork / dr.income.total,
               totalText: `約${money(dr.income.total)}`,
               onPremiseText: `約${money(dr.income.survivorWork)}`,
+              survivorLabel: who === "本人" ? "遺されたご家族" : "あなた",
             }
           : null,
       premiseSensitivity: dr.assumptions.length > 0 ? sensitivityFor(who === "本人" ? "self" : "spouse") : null,

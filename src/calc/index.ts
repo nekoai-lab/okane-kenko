@@ -63,6 +63,8 @@ export function diagnose(
       ...base,
       deceased: input.spouse,
       survivor: input.self,
+      // 配偶者が亡くなるケースで遺されるのは**本人**
+      survivorLabel: "あなた",
       currentCoverage: input.coverageSpouse,
     });
   }
