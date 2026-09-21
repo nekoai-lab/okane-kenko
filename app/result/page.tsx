@@ -20,7 +20,7 @@ import { Hero } from "./Hero.js";
 import { RiskTable, type RiskRow } from "./RiskTable.js";
 import { Step2 } from "./Step2.js";
 import { CoverageCurve } from "./CoverageCurve.js";
-import { GapWaterfall } from "./GapWaterfall.js";
+import { Waterfall } from "./Waterfall.js";
 import { LivingCostSlider } from "./LivingCostSlider.js";
 import { Narration } from "./Narration.js";
 import type { Vital } from "./Vitals.js";
@@ -43,6 +43,33 @@ const AMOUNT_LABEL: Record<string, string> = {
   sufficient: "万一の直後に要る当座資金の目安",
   ample: "葬儀・予備費の目安",
   not_needed: "葬儀・予備費の目安",
+};
+
+/**
+ * 滝グラフの最終行に添える1文。
+ *
+ * **`ample` の「葬儀・予備費だけは残す」に、時期の根拠は仕様に無い。**
+ * `機能仕様書_MVP.md` §4.2.7 の `ample` 分岐は `提示レンジ = [round100(E4), round100(E4)]` の
+ * 床ルールで、ADR にも `当座` `直後` `流動性` の記載が1件も無い（2026-09-21 に全文確認）。
+ * だから「受け取りは長い年月をかけて入るから」とは書かない ──
+ * **もっともらしい理由を後付けしない。当社基準だと正直に書く。**
+ */
+/** 最終行の括弧。額の性質が verdict で入れ替わるので、名前だけでは足りない */
+const RESULT_QUALIFIER: Record<string, string> = {
+  shortage: "",
+  sufficient: "（葬儀・予備費と当座の生活費）",
+  ample: "（葬儀・予備費のみ）",
+  not_needed: "（葬儀・予備費のみ）",
+};
+
+const RESULT_NOTE: Record<string, string> = {
+  shortage: "見込みの支出から、受け取れる収入・資産を差し引いた残りです。",
+  sufficient:
+    "収入・資産で支出はまかなえる見込みです。これは不足額ではなく、手続きや当面の暮らしのために手元に置いておく目安（葬儀・予備費と生活費1〜2年分）です。",
+  ample:
+    "公的な年金と資産が総額を上回るため、生活費のための上乗せは0円です。それでも葬儀・予備費を残しているのは、余剰があってもこの分だけは別に備えるという当社基準で、時期の根拠は置いていません。",
+  not_needed:
+    "扶養するご家族がいないため、上乗せの保障は要りません。残るのは葬儀・予備費だけです。",
 };
 
 const AMOUNT_NOTE: Record<string, string> = {
@@ -197,14 +224,51 @@ function CaseCard({
       {/* 必要保障額の推移。点（今日いくら）ではなく線（いつまでいくら）で見せる */}
       <CoverageCurve coverage={coverage} points={coverageCurve(pj, r.income.assets)} />
 
-      {/* 主グラフ：支出の合計から受け取れるものを順に引き、残りを見せる。
-          「なぜこの金額か」を文章ではなく手続きで答える（2026-08-30 の方針変更）。
-          引く項目は下の内訳表と1対1で、色の印も対応させている */}
-      <GapWaterfall
-        caption={`支出から、受け取れるものを引く（${title}・万円）`}
-        expenseTotal={r.expense.total}
-        income={incomeItems}
-        verdict={r.verdict}
+      {/*
+        STEP3 滝グラフ（照合表 #7）。**移植元は result.html の #wfRows。**
+        ここで旧 `GapWaterfall` を撤去した ── 同じ引き算を別の形で出していた。
+
+        **モックの滝は不足世帯のサンプルで描かれている。** 余剰が出る世帯では
+        棒がマイナスに突き抜けるので、控除は0で止め、超過分は「余る分」の行に回す。
+      */}
+      <Waterfall
+        deductions={[
+          {
+            label: "遺族年金でカバー",
+            from: `←「${r.income.pensionKosei > 0 ? "会社員（厚生年金）" : "自営・フリーランス"}」${childCount > 0 ? `・「子${childCount}人」` : ""}の回答から`,
+            source: "日本年金機構",
+            amount: r.income.pensionBasic + r.income.pensionKosei + r.income.chukoreiKafu,
+          },
+          {
+            label: `${survivorLabel}の就労収入`,
+            from: "←「配偶者の年収」の回答から（手取りに換算し、算定期間ぶん積んだもの）",
+            source: null,
+            amount: r.income.survivorWork,
+          },
+          {
+            label: "貯蓄・資産",
+            from: "←「世帯の金融資産」の回答から",
+            source: null,
+            amount: r.income.assets,
+          },
+        ].filter((d) => d.amount > 0)}
+        fmt={(yen) => `約${money(yen)}`}
+        footnote={
+          danshinCovered
+            ? "住居費 0円 ─「団信あり」の回答から、万一のとき住宅ローンは保険で完済されるため、住居費を総額に含めていません。"
+            : null
+        }
+        result={{
+          low: r.range.low,
+          high: r.range.high,
+          // モックの言い方（「＝ 民間保険で備える額」）に揃え、中身の性質を括弧で添える
+          label: `民間保険で備える額${RESULT_QUALIFIER[r.verdict] ?? ""}`,
+          note: RESULT_NOTE[r.verdict] ?? RESULT_NOTE.sufficient,
+        }}
+        surplusNote={`この余りは、${survivorLabel}の就労収入（約${money(r.income.survivorWork)}）の前提の上にあります。`}
+        total={r.expense.total}
+        totalFrom="←STEP 2 の毎月の収支を通算し、大学の山と一度きりの支出まで足したもの"
+        totalLabel="遺されたご家族に必要な総額"
       />
 
       {/* 因数分解の2表は**畳む**（第3層）。結論と根拠の図までで足りる人が大半で、
