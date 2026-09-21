@@ -36,6 +36,10 @@ HouseholdWatcher（世帯巡回）／通知文面／証券マルチモーダル�
   （値に加えて、`expires`・`pendingChange` の除去と note の更新まで）。値だけ変えて温存の期限と改正予定が残った yaml は、
   「温存が続いている」と自分で主張する矛盾ファイルになる。**コードの変更（test.todo の解消・失業カードの自白行）は提案に含めず、
   承認後の適用コミットで Claude Code が同時に行う**
+- **一時状態（温存・保留・期限つき警告）は YAML コメントに書かない**（2026-09-22 裁定）。
+  `pendingChange` / `expires` / `note` の構造化フィールドに置く。**コメントは恒久的な説明専用。**
+  コメントは機械が管理できない場所なので、そこに状態を書くと差分が消し忘れる事故が構造的に再発する。
+  `params/watch-sources.yaml` はテストで固定（`src/paramwatch/sources.test.ts`）
 - **エージェントの判断基準は既にあるものを使う**：params の sources（`effectiveFrom`・`expires`・`pendingChange`・`revisionCycle`）が「何を疑うべきか」の台帳。新しい判断ルールを発明しない
 
 ## 4. 日割り（隙間だけ）

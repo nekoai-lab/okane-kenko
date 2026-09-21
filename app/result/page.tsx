@@ -12,7 +12,7 @@ import type { DeathResult, EducationPlan } from "../../src/calc/types.js";
 import type { Projection } from "../../src/calc/projection.js";
 import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
-import { jstYear } from "../../src/time/jstYear.js";
+import { jstDate, jstYear } from "../../src/time/jstYear.js";
 import { dialFor, simulateAll } from "../../src/calc/simulate.js";
 import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
 import { decisionPoints } from "../../src/calc/decisionPoints.js";
@@ -1104,8 +1104,9 @@ export default async function ResultPage({
       */}
       <p className={s.meta}>
         これは<strong>概算・要精査</strong>です ／ 算定基準日{" "}
-        <span className={s.metaValue}>{new Date().toISOString().slice(0, 10)}</span> ／
-        使用パラメータ版 <span className={s.metaValue}>{result.paramVersion}</span>
+        {/* 日本時間の日付（UTC で切ると Cloud Run では JST 0〜9時に前日になる・2026-09-22） */}
+        <span className={s.metaValue}>{jstDate(new Date())}</span> ／ 使用パラメータ版{" "}
+        <span className={s.metaValue}>{result.paramVersion}</span>
       </p>
 
       {/* やさしい説明（T-07）。数値はAIに書かせず算定結果を差し込む。
