@@ -1,0 +1,550 @@
+# ============================================================================
+# **テスト専用の凍結コピー（2026-09-23）。アプリはこのファイルを読まない。**
+#
+# T-G（自己都合退職の給付制限 2→1 か月）を本物の params に適用したことで、
+# 「改正を見つけて提案する」ことを確かめる検査が、**前提ごと消えた**
+# （現行 params には改正前の値も pendingChange も expires も無い）。
+#
+# そこで **適用直前の params 全文をここに凍結する**。
+# 制度監視のテストは、この「改正前の世界」を相手に回り続ける。
+#
+# - 出どころ：`params/2026-08.yaml`（commit dedc89a 時点＝T-G 適用の直前）
+# - 使う側：`run.test.ts` / `judge.test.ts` / `yamlPatch.test.ts`
+# - **ここの値を制度の正本として読まない。** 制度の正本は `params/` だけ
+# ============================================================================
+# 制度パラメータ（ADR-004 / PR-01〜PR-08）
+# 値・出典・有効期限・確認済みフラグを必ずセットで持つ。
+# verified: false のまま本番に出さないこと。期限切れの中核パラメータでは診断を停止する。
+version: "2026.08"
+effectiveFrom: "2026-08-01"
+effectiveTo: "2027-03-31" # 年金額は年度改定。超過したら警告し、中核パラメータなら診断停止
+
+# ============ 公的制度 ============
+public:
+  izokuKisoBase:
+    value: 847500
+    unit: JPY/year
+    label: 遺族基礎年金 基本額
+    source: 日本年金機構 令和8年度年金額
+    verified: false # ★報道値ベース。年金額改定通知で確定させること（OI-02）
+    core: true
+  childAdd1_2:
+    value: 243900
+    unit: JPY/year
+    label: 子の加算 第1・2子
+    source: 同上
+    verified: false
+    core: true
+  childAdd3plus:
+    value: 81300
+    unit: JPY/year
+    label: 子の加算 第3子以降
+    source: 同上
+    verified: false
+    core: true
+  chukoreiKafuAdd:
+    value: 635700
+    unit: JPY/year
+    label: 中高齢寡婦加算
+    source: 老齢基礎年金満額の3/4相当
+    verified: false
+    core: true
+  hoshuHireiCoef:
+    value: 0.005481
+    unit: ratio
+    label: 報酬比例部分の乗率（5.481/1000）
+    source: 厚生年金保険法
+    verified: true
+    core: true
+  izokuKoseiRatio:
+    value: 0.75
+    unit: ratio
+    label: 報酬比例部分の3/4
+    source: 厚生年金保険法
+    verified: true
+    core: true
+  minimumInsuredMonths:
+    value: 300
+    unit: months
+    label: 短期要件のみなし300月
+    source: 厚生年金保険法
+    verified: true
+    core: true
+  reform2028Years:
+    value: 5
+    unit: years
+    label: 2028年4月〜 子のない配偶者の遺族厚生年金（原則5年）
+    source: 2025年改正
+    verified: false # 細目の確定待ち（OI-04）
+    core: true
+  chukoreiKafuMinAge:
+    value: 40
+    unit: age
+    label: 中高齢寡婦加算の年齢要件
+    source: 厚生年金保険法
+    verified: false
+    core: true
+
+# 高額療養費（70歳未満・2026年8月〜 第1段階）
+# 2027年8月に13区分へ細分化予定（OI-03）
+kogaku:
+  assumedMonthlyMedicalCost: 1000000 # 判定に用いる月あたり医療費（総額）
+  brackets:
+    - name: 区分ア
+      minIncome: 11600000
+      base: 270300
+      threshold: 901000
+      rate: 0.01
+    - name: 区分イ
+      minIncome: 7700000
+      base: 179100
+      threshold: 597000
+      rate: 0.01
+    - name: 区分ウ
+      minIncome: 3700000
+      base: 85800
+      threshold: 286000
+      rate: 0.01
+    - name: 区分エ
+      minIncome: 0
+      base: 61500
+      threshold: 0
+      rate: 0
+  source: 2026年8月1日施行（第1段階）
+  verified: false
+  # 多数回該当：直近12か月に3回以上上限に達した月があると、4か月目から上限が下がる。
+  # **v1 は「連続して該当する」前提の簡約**（4か月目から減額上限に切り替える）。
+  # 実際は「直近12か月に3回」であって連続である必要はないが、
+  # 長期療養を想定する当製品では連続該当が典型なので、この簡約で安全側に倒す。
+  # ⚠️ **下の5値は従来区分（ア〜オ）の値であり、改定前のプレースホルダとして扱う。**
+  #    上の brackets は「2026年8月1日施行（第1段階）」なので、**ア〜エの多数回該当が
+  #    第1段階改定で変わっているかは未確認**。一次情報で確認するまで verified: false のまま。
+  # ⚠️ 区分オ（住民税非課税）は上の brackets（2026-08 の4区分）に存在しないため、
+  #    いまのテーブルからは到達しない。テーブル改定時に併せて見直すこと。
+  multipleOccurrence:
+    区分ア: 140100
+    区分イ: 93000
+    区分ウ: 44400
+    区分エ: 44400
+    区分オ: 24600
+  multipleOccurrenceFromMonth: 4 # 何か月目から減額上限に切り替わるか
+  # 世帯合算の足切り（70歳未満は1医療機関ごとに自己負担がこの額以上のものだけ合算できる）。
+  # **計算には使わない（displayOnly）。** v1 は世帯合算を見込まないが、見込んでいないことを
+  # 説明する文にこの額が出るので、文中の制度値として置く（陳腐化を監視するため・2026-09-22）
+  householdAggregationMin: 21000
+  multipleOccurrenceSource: 協会けんぽ「高額療養費」多数回該当
+  multipleOccurrenceVerified: false
+  # ---- 制度式パラメータ表（2026-09-21 新設）：値・一次情報URL・施行日・verified ----
+  # source の文字列だけでは「いつの制度か」「どこで確かめられるか」が分からない。
+  sources:
+    brackets:
+      label: 厚生労働省「高額療養費制度」自己負担限度額
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryouhoken/juuyou/kougakuiryou/index.html
+      effectiveFrom: "2026-08-01"
+      verified: false
+    multipleOccurrence:
+      label: 全国健康保険協会「高額療養費」多数回該当
+      # 2026-09-22：旧URL（/g3/cat320/sb3030/r07/）が 404。サイト構成替えによる移転先に更新し、
+      # 移転先に多数回該当の表が載っていることを確認した（verified の昇格は承認キューを通すので、ここでは変えない）
+      url: https://www.kyoukaikenpo.or.jp/benefit/high_cost_medical_expenses/002/index.html
+      effectiveFrom: "2015-01-01"
+      verified: false
+      pendingChange: >-
+        5値は従来区分（ア〜オ）の値。2026-08-01 の第1段階改定でア〜エの多数回該当が
+        変わっているかは未確認。区分オは現行テーブルに存在せず到達しない。
+    householdAggregationMin:
+      label: 全国健康保険協会「高額療養費」世帯合算（70歳未満は自己負担21,000円以上のみ合算）
+      url: https://www.kyoukaikenpo.or.jp/benefit/high_cost_medical_expenses/002/index.html
+      # **無い日付を台帳に作らない。** 一次情報に施行日の記載が無いので null
+      effectiveFrom: null
+      verified: true
+      displayOnly: true
+      note: >-
+        一次情報に施行日の記載なし（2026-09-22確認）。額は同日に一次情報のHTMLで確認。
+        計算には使わず、説明文にだけ出す
+  # v1 対象外（安全側の簡略化）：世帯合算・21,000円ルール・月をまたぐ入院の按分。
+  # いずれも自己負担を下げる方向に効くので、入れないほうが必要額は多めに出る。
+
+# ============ 健康保険 傷病手当金（健康保険法第99条） ============
+shobyoTeate:
+  rate: 0.6667 # 標準報酬日額の3分の2
+  waitingDays: 3 # 待期（連続3日）。支給は4日目から
+  maxMonths: 18 # 通算1年6か月
+  source: 健康保険法第99条／協会けんぽ「傷病手当金」
+  verified: false
+  sources:
+    rate:
+      label: 全国健康保険協会「傷病手当金」支給額（標準報酬日額の3分の2）
+      url: https://www.kyoukaikenpo.or.jp/g3/cat310/sb3040/r150/
+      effectiveFrom: "2016-04-01"
+      verified: false
+    maxMonths:
+      label: 全国健康保険協会「傷病手当金」支給期間（通算1年6か月）
+      url: https://www.kyoukaikenpo.or.jp/g3/cat310/sb3040/r150/
+      effectiveFrom: "2022-01-01"
+      verified: false
+
+# ============ 雇用保険 基本手当（雇用保険法） ============
+kihonTeate:
+  # 基本手当日額 ＝ 賃金日額 × 給付率。給付率は賃金日額に応じて 50〜80%。
+  # **45〜80% は60〜64歳の区分だけ**（令和8年8月1日の計算式で確認。他の年齢は下限が 0.5w）。
+  # **v1 は中位の 0.6 で概算**し、年齢別の日額上限で頭打ちにする。
+  benefitRate: 0.6
+  # 給付率の帯（実際の値の範囲）。**計算には使わない（displayOnly）。** 計算は上の 0.6 の1点で、
+  # 「実際は50〜80%」と説明する文にだけ出る（2026-09-22）。一次情報は PDF のみで巡回しない
+  benefitRateBandLow: 0.5
+  benefitRateBandHigh: 0.8
+  benefitRateBandLow60to64: 0.45
+  # 年齢階層別の基本手当日額の上限。**毎年8月1日に改定される**ので、版を上げるたびに確認する。
+  # 2026-09-21：令和5年度の値（6,945 / 7,715 / 8,490 / 7,294）が残っており、
+  # 令和6・7・8年度の**3改定ぶん遅れていた**。官報準拠の令和8年8月1日値に更新した。
+  dailyCapByAge:
+    - fromAge: 60 # 60歳以上65歳未満
+      cap: 7830
+    - fromAge: 45 # 45歳以上60歳未満
+      cap: 9110
+    - fromAge: 30 # 30歳以上45歳未満
+      cap: 8270
+    - fromAge: 0 # 30歳未満
+      cap: 7450
+  # 所定給付日数。v1 は**自己都合など一般の受給資格者**の表を使う（年齢に依らない）。
+  # 会社都合（特定受給資格者）は年齢×加入期間で最大330日まで伸びるが、
+  # 短いほうを使うと公的な支えを少なめに見積もることになり、必要額は安全側（多め）に出る。
+  daysGeneral:
+    - insuredYearsFrom: 20
+      days: 150
+    - insuredYearsFrom: 10
+      days: 120
+    - insuredYearsFrom: 1
+      days: 90
+  # 自己都合の給付制限。この間は基本手当が出ないので、生活費を貯蓄で受けることになる。
+  # 会社都合（特定受給資格者）には給付制限が無い。**未指定なら両方を幅の両端として使う。**
+  restrictionMonthsVoluntary: 2
+  source: 雇用保険法／厚生労働省「基本手当の所定給付日数」
+  verified: false
+  sources:
+    daysGeneral:
+      label: 厚生労働省「基本手当の所定給付日数」一般の受給資格者
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufu/pdf/pamphlet01.pdf
+      effectiveFrom: "2017-04-01"
+      verified: false
+    dailyCapByAge:
+      label: 厚生労働省「令和８年８月１日からの基本手当日額等の適用について」参考１
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000160564_00050.html
+      effectiveFrom: "2026-08-01"
+      verified: true
+      # **毎年8月1日に改定される。** 改定サイクルを書いておかないと「一度入れた値」で止まる
+      revisionCycle: 毎年8月1日
+      expires: "2027-08-01"
+      note: >-
+        令和8年8月1日値（30歳未満 7,450／30〜44歳 8,270／45〜59歳 9,110／60〜64歳 7,830）。
+        2026-09-21 に官報準拠の厚労省資料（https://www.mhlw.go.jp/content/001726936.pdf ）で確認。
+        次の改定は2027年8月1日。
+    benefitRateBand:
+      label: 厚生労働省「令和８年８月１日からの基本手当日額等の適用について」参考１（給付率 50〜80%、60〜64歳は45〜80%）
+      url: https://www.mhlw.go.jp/content/001726936.pdf
+      effectiveFrom: "2026-08-01"
+      verified: true
+      displayOnly: true
+      note: >-
+        2026-09-21 に同じ PDF で日額上限とあわせて確認。計算には使わず、説明文にだけ出す。
+        一次情報が PDF のため制度監視の巡回対象外（watch-sources.yaml の unwatched に理由を記録）
+    restrictionMonthsVoluntary:
+      label: 厚生労働省「Q＆A〜労働者の皆様へ（基本手当、再就職手当）〜」給付制限期間
+      url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000139508.html
+      # いま入っている 2 が施行されていた期間の開始日（改正前の値）
+      effectiveFrom: "2020-10-01"
+      verified: true
+      pendingChange: >-
+        2025-04-01 施行の改正で、正当な理由のない自己都合退職の給付制限は
+        原則2か月 → 原則1か月に短縮された（2026-09-21 に一次情報で確認）。
+        5年以内に2回以上の自己都合離職は3か月、重責解雇も3か月で据え置き。
+        **いまの値 2 は改正前のもの。** 期待値が動くため、更新は T-G として別建てにする。
+        値の行（kihonTeate.restrictionMonthsVoluntary）はこの改正を反映していない
+        （2026-09-22、値の行の直前の警告コメントからここへ移設。一時状態は台帳にだけ書く）。
+      # **旧値 2 をわざと残している。** 制度監視ウォッチャーが「改正を見つけて提案する」
+      # デモ素材として温存する判断（2026-09-21 オーナー決定）。
+      # 期限を切らない温存は理由ごと消えて恒久化するので、必ず日付を持たせる。
+      expires: "2026-10-05"
+      note: >-
+        デモ素材として旧値（2か月）を温存中。2026-10-05 までにウォッチャーの承認フローで
+        1か月へ更新するか、温存をやめて即時更新するかを決める。期限を過ぎた温存は禁止。
+
+# ============ 当社基準（公的出典が存在しない） ============
+# ADR-014：結果画面で「当社基準」と明示し、本人が動かせるようにする
+ownStandard:
+  # **この率は「人数」の率であって「暮らし方」の率ではない**（2026-09-21 定義確定・ADR-022）。
+  # 暮らし方の選好は lifestyleDialMultipliers が担う。ここに混ぜない。
+  survivorLivingRatioChild:
+    value: 0.70
+    unit: ratio
+    label: 遺族の生活費率（子育て期）
+    note: >-
+      遺族が現在と同じ一人当たり水準を保つ前提での、世帯人数の減少による総額の減り
+      （亡くなった本人の消費が消えるぶんの控除）。生活水準の切り詰めではない。業界慣行。公的出典なし
+    userAdjustable: true
+  survivorLivingRatioAlone:
+    value: 0.50
+    unit: ratio
+    label: 遺族の生活費率（末子独立後）
+    note: >-
+      同上（末子の独立で世帯人数がさらに減るため 0.70 から下がる）。業界慣行。公的出典なし
+    userAdjustable: true
+  netIncomeRatio:
+    value: 0.80
+    unit: ratio
+    label: 年収→手取り
+    note: 公的出典なし
+    userAdjustable: false
+  postIndepMinIncome:
+    value: 1000000
+    unit: JPY/year
+    label: 末子独立後の最低就労推定（パート相当）
+    note: ADR-008で新設。公的出典なし
+    userAdjustable: true
+  # **掛ける相手は手取り**（年収ではない）。`normalize.ts` は
+  # `年収 × netIncomeRatio(0.80) → 手取り` にしてからこの係数を掛けている。
+  # ラベルが「年収から」だったので、在庫一覧だけ見ると 年収×0.75 に読めた（2026-09-21 訂正）。
+  livingCostEstimateRatio:
+    value: 0.75
+    unit: ratio
+    label: 生活費を推定するときの係数（手取りに掛ける）
+    source: 当社基準（公的出典なし）
+    note: >-
+      生活費「年収から推定」を選んだ未回答者に当てる仮置き。1点で置いており幅を持たない（T-H）。
+      0.70（遺族生活費率）・葬儀費の床・保険外10万円と同列の当社基準
+    verified: false
+    userAdjustable: false
+  selfInsureMultiple:
+    value: 3
+    unit: ratio
+    label: 自己保険と判定する資産倍率
+    note: ADR-010。公的な裏付けなし＝当社判断として明示する
+    userAdjustable: false
+  # 暮らし方の目盛り（D-02）。**率（人数）とは別の変数**として掛ける。
+  # 既定 1.0 では出力が一切変わらない（ゴールデンの期待値は不変）。
+  lifestyleDialMultipliers:
+    value: 1.0 # 既定＝いま通り
+    values:
+      tight: 0.9
+      asis: 1.0
+      roomy: 1.1
+    unit: ratio
+    label: 暮らし方の目盛り（1割しぼる／いまと同じ／1割のゆとり）
+    source: 当社基準（公的出典なし）
+    note: >-
+      幅の根拠は当社基準。n1で体感を確認する。
+      既定＝1.0＝現状維持が最も中立であること、選択肢を出すこと自体が圧にならないかも n1 の確認事項。
+    verified: false
+    userAdjustable: true
+
+  # **床として使うという置き方**が当社基準（額は toBeSourced.funeralReserve）。
+  # 2026-09-21、滝グラフの最終行に説明文を書くために根拠を全文検索したところ、
+  # 時期の根拠（直後に現金で要る等）が1件も無く、床ルールだけだと分かったので昇格させた。
+  funeralFloorRule:
+    value: 1
+    unit: flag
+    label: 余剰があっても葬儀・予備費を必要額の床として残す
+    source: 当社基準（公的出典なし）。額は toBeSourced.funeralReserve
+    verified: false
+    userAdjustable: false
+  # **値は inputRanges.assets.unknown に残し、ここからは置き方を参照する**
+  # （funeralFloorRule と同じ扱い。inputRanges は expiry/verified ゲートの対象外なので、
+  #  当社基準の在庫としてはこちらに列挙しないと一覧から漏れる）。
+  fallbackFinancialAssets:
+    value: 3000000
+    unit: JPY
+    label: 金融資産「分からない」のときの仮置き額
+    source: 当社基準（公的出典なし）。値の正本は inputRanges.assets.unknown
+    note: >-
+      1点で置いており幅を持たない（T-H）。0.70（遺族生活費率）・葬儀費の床・保険外10万円と同列
+    verified: false
+    userAdjustable: false
+  amplemarginRatio:
+    value: 0.2
+    unit: ratio
+    label: 「上乗せも不要」と判定する余剰率（margin > E × この値）
+    note: 煽らないための閾値。当社基準
+    userAdjustable: false
+  # **レンジの幅も当社基準**（2026-09-22 在庫漏れの是正）。
+  # 従来 `death.ts` に直書きされており、在庫一覧に出ていなかった。値は据え置き。
+  shortageRangeLowFactor:
+    value: 0.8
+    unit: ratio
+    label: 不足のときの必要額の幅（下端の係数）
+    source: 当社基準（公的出典なし）
+    note: 機能仕様書 §4.2.7 の shortage 枝。幅の根拠は無く、概算であることを示すための置き方
+    userAdjustable: false
+  shortageRangeHighFactor:
+    value: 1.2
+    unit: ratio
+    label: 不足のときの必要額の幅（上端の係数）
+    source: 当社基準（公的出典なし）
+    note: 同上
+    userAdjustable: false
+  sufficientTopUpMonthsLow:
+    value: 12
+    unit: months
+    label: 上乗せの目安の下端（遺族の生活費の月数）
+    source: 当社基準（公的出典なし）
+    note: 機能仕様書 §4.2.7 の sufficient 枝（生活の立て直し期間の見立て）
+    userAdjustable: false
+  sufficientTopUpMonthsHigh:
+    value: 24
+    unit: months
+    label: 上乗せの目安の上端（遺族の生活費の月数）
+    source: 当社基準（公的出典なし）
+    note: 同上
+    userAdjustable: false
+  # 雇用保険の加入年数の推定に使う（設問に無いため年齢から置く）。2026-09-22 在庫へ登録。
+  # 失業カードの開示文「◯歳就業開始として推定」もこの値から描く（書き写さない）
+  workStartAge:
+    value: 22
+    unit: age
+    label: 雇用保険の加入年数を推定するときの就業開始年齢
+    source: 当社基準（公的出典なし）
+    note: 設問に無い加入年数を年齢から置くための仮置き。短ければ給付日数が減り、失業の必要額は増える
+    userAdjustable: false
+  # **旧来の gap（excess / adequate）の境目。** カードのバッジ（Verdict3）ではなく、
+  # householdHeadline（rebalanceable / reducible / all_covered）に効く。
+  excessCoverageRatio:
+    value: 1.5
+    unit: ratio
+    label: いまの保障を「多すぎる」とみなす境目（必要額の上端に対する倍率）
+    source: 当社基準（公的出典なし）
+    note: 判定の分かれ目を決める当社基準・公的出典なし。機能仕様書 §4.2.7「現在の保障との比較」
+    userAdjustable: false
+
+# ============ 出典に差し替えるべき想定値 ============
+toBeSourced:
+  # ⚠️ **額そのものだけでなく、「床として使う」という置き方も当社基準**（2026-09-21 昇格）。
+  #    `ample` / `not_needed` では、余剰があってもこの額を必要額の床として残している。
+  #    `機能仕様書_MVP.md` §4.2.7 は `提示レンジ = [round100(E4), round100(E4)]` の床ルールだけで、
+  #    **時期（直後に現金で要る等）の根拠はどの文書にも無い**（全文確認・0件）。
+  #    ownStandard に列挙するのは額ではなく**この置き方**なので、値はここに残し、
+  #    在庫一覧（ownStandard.funeralFloorRule）から参照する。
+  funeralReserve:
+    value: 2000000
+    unit: JPY
+    label: 葬儀・予備費
+    source: TODO 民間の大規模調査に差し替える
+    verified: false
+  hospitalMonthsStd:
+    value: 1
+    unit: months
+    label: 標準入院期間
+    source: TODO 厚労省 患者調査 平均在院日数に差し替える
+    verified: false
+  hospitalMonthsLong:
+    value: 3
+    unit: months
+    label: 長期化ケース
+    source: TODO 同上
+    verified: false
+  uncoveredMedicalMonthly:
+    value: 100000
+    unit: JPY/month
+    label: 保険外費用（差額ベッド・食事・雑費）
+    source: TODO 民間調査に差し替える
+    verified: false
+  householdDeathCoverageAvg:
+    value: 19360000
+    unit: JPY
+    label: 参考：世帯の死亡保険金額の平均（2人以上世帯）。目標ではなく文脈用
+    source: 生命保険文化センター 2024 生命保険に関する全国実態調査（速報）
+    verified: false # 速報値。確報で確定させること
+
+# ============ 固定値 ============
+constants:
+  childIndepAge: 22
+  pensionAge: 65
+  shortageThreshold: 3000000 # これ未満は「不足」と呼ばない
+  roundUnit: 1000000 # 100万円単位に丸め
+
+# ============ 入力レンジ→代表値（DR-02 の正規化） ============
+# 制度パラメータではなく「レンジ選択を算定エンジンの点の値に写像する前提」。当社基準。
+# 各バケツの中点（下限=1つ下の上限、最初は0）。開区間 gte は裾を見て上に寄せる。
+# expiry/verified ゲートの対象外（public/toBeSourced には置かない）。値は円単位の整数。
+# 見直したらこの版のログを残すこと（金額に直結するため）。
+inputRanges:
+  income: # 本人・配偶者の年収
+    lt400: 2000000
+    lt600: 5000000
+    lt800: 7000000
+    lt1000: 9000000
+    gte1000: 12000000
+    none: 0 # 配偶者「収入なし」
+    prefer_not: 3000000 # 「答えたくない」＝区分エ相当で仮置き（推定フラグ）
+  assets: # 金融資産・世帯合計
+    lt100: 500000
+    lt300: 2000000
+    lt500: 4000000
+    lt1000: 7500000
+    gte1000: 15000000
+    unknown: 3000000 # 「分からない」→300万で仮置き（推定フラグ・§3.2指定）
+  monthlyLiving: # 毎月の生活費（住居費込み／住宅ローン返済は除く）。円/月。**区分の中央値**
+    lt20: 175000
+    lt25: 225000
+    lt30: 275000
+    lt35: 325000
+    gte35: 400000
+  # 回答帯の上下端（D-01・2026-09-21 追加）。**幅の出どころは利用者の回答**であって当社基準ではない。
+  # 設問が既に持っている事実を書き出しただけで、新しい基準は作っていない。
+  # gte35 は上端が無い（開いた区分）ので high を置かない ── 欠測として扱う。
+  monthlyLivingBand:
+    lt20: { low: 150000, high: 200000 }
+    lt25: { low: 200000, high: 250000 }
+    lt30: { low: 250000, high: 300000 }
+    lt35: { low: 300000, high: 350000 }
+    gte35: { low: 350000 }
+  loan: # 住宅ローン残高（団信なしのときだけ必要額に乗る）
+    lt500: 2500000
+    lt1000: 7500000
+    lt1500: 12500000
+    lt2000: 17500000
+    lt3000: 25000000
+    gte3000: 35000000
+    unknown: 15000000 # 「分からない」で仮置き（推定フラグ）
+  coverage: # 現在の死亡保障額（被保険者ごと）。証券に書かれた値なので中央値ではなく具体額。
+    # 必要額レンジと直接比べて過不足を出すため、代表値の誤差を持ち込まない（レンジにしない）。
+    # 「分からない」はここに置かず、normalize 側で null にして過不足を pending にする。
+    none: 0 # 加入していない
+    m300: 3000000
+    m500: 5000000
+    m1000: 10000000
+    m1500: 15000000
+    m2000: 20000000
+    m3000: 30000000
+    m5000: 50000000
+    gte10000: 100000000 # 1億円以上。過大側は floor で控えめに（誤って「減らせる」と言わない側）
+
+# ============ 教育費（段階別・子供の学習費調査ベース） ============
+# 「学習費総額」＝授業料に加え、塾(補助学習費)・部活(教科外活動費)・行事・修学旅行・制服・寄付を含む実支出。
+# 子の現年齢から、残りの各年を段階に割り当てて実額を積む（§4.2.2）。就学支援金は別に控除する。
+# 出典: 文部科学省 令和5年度子供の学習費調査（2024-12公表）。幼小中高は本番前に公式PDFで照合すること。
+education:
+  # 地域係数（都会↑/地方↓）。当面は全国平均=1.0。将来 文科省「都市階級別」で係数化する。
+  regionFactor: 1.0
+  stages:
+    kinder: { fromAge: 3, toAge: 5, public: 184644, private: 347338 } # 幼稚園
+    primary: { fromAge: 6, toAge: 11, public: 336265, private: 1828112 } # 小学校
+    junior: { fromAge: 12, toAge: 14, public: 542475, private: 1560359 } # 中学校
+    high: { fromAge: 15, toAge: 17, public: 597752, private: 1030283 } # 高校(全日)
+  # 大学（18-21歳）は年額換算＝4年総額÷4。二次情報ベースなので一次情報（文科省 私立大学等授業料調査）で要確認。
+  university:
+    fromAge: 18
+    toAge: 21
+    national: 606300 # 国立: (入学料282,000＋授業料535,800×4)/4
+    privateLiberal: 1045000 # 私立文系: 約418万/4
+    privateScience: 1417500 # 私立理系: 約567万/4
+    verified: false
+  # 就学支援金（高校無償化・2026年度・所得制限なし）。年額。教育費から明示的に控除する。
+  shien:
+    publicHigh: 118800 # 公立高
+    privateHigh: 457000 # 私立高（私立平均授業料まで）
+    verified: false
+  # プリセット→段階パターン。「まだ決めていない」は normalize 側で public に仮置きし推定フラグを立てる。
+  presets:
+    public: { kinder: public, primary: public, junior: public, high: public, university: national }
+    mixed: { kinder: private, primary: public, junior: public, high: private, university: privateLiberal }
+    private: { kinder: private, primary: private, junior: private, high: private, university: privateScience }

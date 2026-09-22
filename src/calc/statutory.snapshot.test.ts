@@ -18,6 +18,7 @@
 import { describe, expect, it } from "vitest";
 import { loadParams } from "../params/index.js";
 import { GOLDEN } from "../__tests__/households.js";
+import { PRE_TG } from "../paramwatch/__fixtures__/preTg.js";
 import { simulate } from "./simulate.js";
 
 const P = loadParams("2026-08");
@@ -48,34 +49,72 @@ describe("statutory 3行のスナップショット（T-C）", () => {
 });
 
 /**
- * 温存を時限化するための置き石（T-G・2026-09-21 オーナー決定）。
+ * **T-G：給付制限 2→1 か月（2026-09-23 適用済み）。**
  *
- * 給付制限 `restrictionMonthsVoluntary: 2` は **2025-04-01 施行の改正（原則1か月）を反映していない**。
- * これは見落としではなく、**制度監視ウォッチャーが「改正を見つけて提案する」デモ素材として
- * わざと温存している**。`params/2026-08.yaml` の `sources.restrictionMonthsVoluntary.expires`
- * に期限（2026-10-05）を入れてある。
+ * 2025-04-01 施行の改正（原則1か月）を、制度監視ウォッチャーが一次情報から見つけ、
+ * 承認画面で人が承認したうえで適用した（提案ID `ydmcjrqmk0z85t4HypXy`）。
+ * 温存していた旧値 2 は `params/2026-08.yaml` から消え、期限（`expires`）と
+ * 改正予定（`pendingChange`）も外れている。
  *
- * **期待レンジを先に書いておく。** 更新したときに「なんとなく下がった」で通さないため。
+ * **先に書いておいた期待レンジを、ここで実測に変える。**
+ * 「なんとなく下がった」で通さないために置いた todo だったので、
+ * 同じ数字を検査として残す（比較の相手は改正前の凍結コピー）。
  */
-describe("T-G：給付制限 2→1 か月（未適用・温存中）", () => {
+describe("T-G：給付制限 2→1 か月（適用済み）", () => {
+  /** 改正前（給付制限2か月）の世界。差を測る相手 */
+  const BEFORE = PRE_TG;
+
   /**
-   * **前提コミット: 9352bd5 時点**（基本手当日額を令和8年8月1日値に更新したコミット）。
+   * todo に書いてあったサンプル世帯そのもの（40歳会社員・生活費27.5万/月）。
+   * 加入年数は設問に無く、`workStartAge`（22歳）から 18 年と置かれる。
    *
-   * 期待値を先に書く方式の弱点は、**先に書いた値が別コミットで古びる**こと。
-   * 実際、日額更新で失業レンジが 17〜72万 → 11〜66万 に動き、この todo の両方の数字が
-   * 現状と合わなくなった（2026-09-21）。前提コミットを添えておけば、
-   * 次に日額が動いたときも「どの時点の値か」を突き合わせられる。
-   * **日額が動いたら、この describe の期待値も実測で書き直すこと。**
+   * **前提コミット: 9352bd5**（基本手当日額を令和8年8月1日値に更新したコミット）。
+   * 日額が動けば下端も動く。そのときは実測で書き直すこと。
    */
-  it.todo(
-    "サンプル世帯（40歳会社員・生活費27.5万/月・加入18年）の失業は 約11〜38万円 になる（いまは 約11〜66万円）【前提コミット: 9352bd5】",
-  );
+  const SAMPLE = {
+    self: { age: 40, income: 600 * 10_000, employment: "employee" as const },
+    spouse: null,
+    children: [],
+    housing: { type: "rent" as const },
+    assets: 300 * 10_000,
+    monthlyLiving: 27.5 * 10_000,
+    educationPlan: "public" as const,
+    coverageSelf: 0,
+  };
+
+  it("サンプル世帯（40歳会社員・生活費27.5万/月・加入18年）の失業は 約11〜38万円（改正前は 約11〜66万円）", () => {
+    const after = simulate(P, { answers: SAMPLE, asOf: AS_OF }, "unemployment");
+    const before = simulate(BEFORE, { answers: SAMPLE, asOf: AS_OF }, "unemployment");
+    expect(after.amounts?.needLow).toBe(107_600);
+    expect(after.amounts?.needHigh).toBe(382_600);
+    expect(before.amounts?.needLow).toBe(107_600);
+    expect(before.amounts?.needHigh).toBe(657_600);
+    // 下がったぶんは生活費きっかり1か月（給付制限が1か月短くなったから）
+    expect((before.amounts?.needHigh ?? 0) - (after.amounts?.needHigh ?? 0)).toBe(275_000);
+  });
+
   /**
    * こちらは**日額に依存しない**。落ちるのは生活費1か月ぶんで、基本手当の額とは無関係のため
    * （給付制限のあいだは手当が出ず、生活費を丸ごと貯蓄で受ける、という項目）。
    */
-  it.todo(
-    "ゴールデン10世帯の needHigh が 20.0〜40.0万円 下がる。needLow と過不足の判定は動かない（日額に依存しない）",
-  );
-  it.todo("params の sources.restrictionMonthsVoluntary から expires と pendingChange を外す");
+  it("ゴールデン10世帯の needHigh が 20.0〜40.0万円 下がる。needLow と過不足の判定は動かない", () => {
+    for (const g of GOLDEN) {
+      const after = simulate(P, { answers: g.input, asOf: AS_OF }, "unemployment");
+      const before = simulate(BEFORE, { answers: g.input, asOf: AS_OF }, "unemployment");
+      const drop = (before.amounts?.needHigh ?? 0) - (after.amounts?.needHigh ?? 0);
+      expect(drop, g.id).toBeGreaterThanOrEqual(200_000);
+      expect(drop, g.id).toBeLessThanOrEqual(400_000);
+      expect(after.amounts?.needLow, g.id).toBe(before.amounts?.needLow);
+      /** 過不足の判定（貯蓄という受け皿で足りるか）は動かない */
+      expect(after.verdict, g.id).toBe(before.verdict);
+    }
+  });
+
+  it("params の sources.restrictionMonthsVoluntary に expires と pendingChange が無い（温存は終わった）", () => {
+    const s = P.kihonTeate.sources?.restrictionMonthsVoluntary;
+    expect(s?.expires).toBeUndefined();
+    expect(s?.pendingChange).toBeUndefined();
+    expect(s?.effectiveFrom).toBe("2025-04-01");
+    expect(P.kihonTeate.restrictionMonthsVoluntary).toBe(1);
+  });
 });
