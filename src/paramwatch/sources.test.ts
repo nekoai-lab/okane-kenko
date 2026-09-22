@@ -7,7 +7,7 @@
  *
  * `RUSHING_WORDS` が「急かさない」を機械化したのと同じで、これは「コメントに状態を書かない」の機械化。
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -27,8 +27,32 @@ function stateComments(file: string): string[] {
     .map(({ line, no }) => `${file}:${no} ${line.trim()}`);
 }
 
+/**
+ * **ガードが走査してよいのは `params/` の下だけ**（2026-09-23）。
+ *
+ * `src/paramwatch/__fixtures__/pre-tg.yaml` は、T-G 適用直前の params の凍結コピーで、
+ * **温存の note と「旧値をわざと残している」コメントがそのまま入っている**。
+ * あれは「一時状態を書いてはいけない正本」ではなく、一時状態が残っていた当時の記録なので、
+ * 走査対象に入れると誤爆する。**D6 でガードを `params/2026-08.yaml` に広げるときも、
+ * 入口はこの関数に保ち、`src/` を混ぜない。**
+ */
+function guardTargets(): string[] {
+  return readdirSync(join(process.cwd(), "params"))
+    .filter((f) => f.endsWith(".yaml"))
+    .map((f) => `params/${f}`);
+}
+
 describe("YAML のコメントに一時状態を書かない", () => {
   it("params/watch-sources.yaml のコメントに状態語が無い", () => {
     expect(stateComments("params/watch-sources.yaml")).toEqual([]);
+  });
+
+  it("走査対象は params/ の下だけで、テスト用の凍結コピーは入らない", () => {
+    const targets = guardTargets();
+    expect(targets).toContain("params/watch-sources.yaml");
+    expect(targets.filter((f) => f.startsWith("src/") || f.includes("__fixtures__"))).toEqual([]);
+    // **凍結コピーは、対象に入れたら必ず落ちる中身**（改正前の温存コメントを保存しているため）。
+    // ここが 0 件になったら、コピーが「掃除」されて被験体を失っている合図
+    expect(stateComments("src/paramwatch/__fixtures__/pre-tg.yaml").length).toBeGreaterThan(0);
   });
 });
