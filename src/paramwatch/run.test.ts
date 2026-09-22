@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
 import { loadParams, loadParamsText } from "../params/index.js";
+import { PRE_TG, PRE_TG_FILE, PRE_TG_TEXT } from "./__fixtures__/preTg.js";
 import { runParamWatch } from "./run.js";
 import { loadWatchSources } from "./sources.js";
 import { createMemoryProposalStore } from "./store.memory.js";
@@ -128,6 +129,10 @@ describe("runParamWatch", () => {
   /**
    * **T-G：`public` の外（給付制限）も監視できる**（2026-09-22・キックオフ v2 の D1）。
    * 文面は厚生労働省 Q&A の実ページどおり（数字が全角）。
+   *
+   * **params は凍結コピー（改正前）を渡す**（2026-09-23）。
+   * T-G を本物の `params/` に適用したので、生きた params にはもう見つけるべきズレが無い。
+   * 「改正を見つけて提案する」経路そのものは残す必要があるため、前提の側を固定する。
    */
   it("給付制限のページから 2→1 か月の提案を作り、台帳と適用できる差分を載せる", async () => {
     const tg = { version: ALL.version, watches: { kyufuSeigen: ALL.watches.kyufuSeigen } };
@@ -135,11 +140,11 @@ describe("runParamWatch", () => {
       <p>※ 給付制限は、退職日が令和７年４月１日以降である場合は原則１か月、同年３月31日以前である場合は原則２か月です。</p>`;
     const store = createMemoryProposalStore();
     const result = await runParamWatch({
-      params: P,
+      params: PRE_TG,
       sources: tg,
       cases: CASES,
       store,
-      paramsYaml: loadParamsText("2026-08"),
+      paramsYaml: { file: PRE_TG_FILE, text: PRE_TG_TEXT },
       now: () => NOW,
       fetchImpl: page(body),
     });

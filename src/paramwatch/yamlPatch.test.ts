@@ -11,11 +11,28 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { loadParamsText } from "../params/index.js";
+import { PRE_TG_FILE, PRE_TG_TEXT } from "./__fixtures__/preTg.js";
 import { applyEdits, buildYamlPatch } from "./yamlPatch.js";
 
-const { file, text } = loadParamsText("2026-08");
+/**
+ * **置き換え・削除を試す相手は、改正前の凍結コピー**（2026-09-23）。
+ *
+ * T-G を本物の `params/` に適用したことで、生きた params では
+ * `restrictionMonthsVoluntary` の編集が「1 → 1」＝**何も変えない編集**になり、
+ * 温存の `pendingChange` / `expires` も消えた。前提が消えた検査は、
+ * 緑のまま何も確かめなくなるか、位置が無いと言って落ちるかのどちらかになる。
+ */
+const file = PRE_TG_FILE;
+const text = PRE_TG_TEXT;
 const EDITS = [
   { path: ["kihonTeate", "restrictionMonthsVoluntary"], value: 1 },
+  { path: ["public", "izokuKisoBase", "value"], value: 847300 },
+  { path: ["public", "childAdd1_2", "value"], value: 243800 },
+];
+
+/** **本物の params にも当たること**は、いま値が違う2件で確かめ続ける */
+const LIVE = loadParamsText("2026-08");
+const LIVE_EDITS = [
   { path: ["public", "izokuKisoBase", "value"], value: 847300 },
   { path: ["public", "childAdd1_2", "value"], value: 243800 },
 ];
@@ -47,11 +64,11 @@ describe("applyEdits：値の文字だけを置き換える", () => {
 });
 
 describe("buildYamlPatch：git apply がそのまま通る", () => {
-  it("git apply --check に通る", () => {
+  it("git apply --check に通る（いま本番にある params そのものに当てる）", () => {
     const dir = mkdtempSync(join(tmpdir(), "yamlpatch-"));
     mkdirSync(join(dir, "params"));
-    writeFileSync(join(dir, file), text);
-    const patch = buildYamlPatch(file, text, EDITS);
+    writeFileSync(join(dir, LIVE.file), LIVE.text);
+    const patch = buildYamlPatch(LIVE.file, LIVE.text, LIVE_EDITS);
     writeFileSync(join(dir, "p.diff"), patch);
     execFileSync("git", ["init", "-q"], { cwd: dir });
     // 失敗したら例外で落ちる（黙って通さない）
