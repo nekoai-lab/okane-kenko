@@ -79,9 +79,14 @@ export function crossingNote(
 ): string | null {
   if (!r.crossed) return null;
   const say = (v: Verdict): string => VERDICT_WORD[v];
+  /**
+   * **原因の回答を名指しできない世帯がある**（2026-09-23）。
+   * どれか1つの答えを厳しめ端に振っても判定が変わらず、**いくつかの幅が重なって**跨ぐ場合で、
+   * そこで無理に1つ名前を出すと推測になる。**名前の代わりに「重なっている」という事実を言う。**
+   */
   const lead = driver
     ? `この幅は、答えの幅（${driver}）から来ています。`
-    : "この幅は、答えの幅から来ています。";
+    : "この幅は、いくつかの答えの幅が重なって生まれています。";
   const ends = `緩めに見ると「${say(r.verdictLoose)}」、厳しめに見ると「${say(r.verdictStrict)}」です。`;
 
   const middle = middleVerdict(r);

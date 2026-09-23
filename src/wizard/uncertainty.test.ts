@@ -146,7 +146,9 @@ describe("枝跨ぎ：端で判定が変わっても幅が潰れない", () => {
       ends: [],
     };
     // 既存の感度文と同じ型：①何がこの幅を作っているか ②緩め／厳しめでどう変わるか
-    expect(crossingNote(crossed)).toContain("この幅は、答えの幅");
+    expect(crossingNote(crossed, "毎月の生活費「25〜30万円」")).toContain("この幅は、答えの幅");
+    // **原因を名指しできないときは、名前の代わりに「重なっている」と言う**（推測しない）
+    expect(crossingNote(crossed)).toContain("いくつかの答えの幅が重なって");
     expect(crossingNote(crossed)).toContain("緩めに見ると");
     expect(crossingNote(crossed)).toContain("厳しめに見ると");
     // **数値は書かない**（金額は画面が算定結果から描く）
