@@ -264,7 +264,7 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
       if (duplicate) {
         await record(
           "skipped",
-          `同じ watch・同じ候補値の承認待ちが既にあるので積まなかった（提案ID: ${duplicate.id}／作成 ${duplicate.createdAt}）。人の承認待ち`,
+          `同一提案が pending のため skip（提案ID: ${duplicate.id}／作成 ${duplicate.createdAt}）。人の承認待ち`,
         );
         result.skipped += 1;
         continue;

@@ -131,6 +131,7 @@ describe("runParamWatch", () => {
       const [latest] = await store.listRunLog(10);
       const [proposal] = await store.listProposals();
       expect(latest.decision).toBe("skipped");
+      expect(latest.detail).toContain("同一提案が pending のため skip");
       expect(latest.detail).toContain(proposal.id);
       expect(latest.detail).toContain("人の承認待ち");
       // 黙って止まったのではなく、確かめたうえで積まなかったことが読める
@@ -156,6 +157,11 @@ describe("runParamWatch", () => {
       expect(await store.listProposals()).toHaveLength(2);
     });
 
+    /**
+     * **`rejected` との突き合わせは実装しない**（2026-09-23 裁定）。
+     * 見送り理由によって再提案の是非が変わる（「いまは要らない」と「この値は誤り」では意味が違う）ので、
+     * 定期化後のノイズを見てから決める。論点は `docs/TICKETS.md` に起票済み。
+     */
     it("決定済み（承認・見送り）の提案とはぶつからない＝また積む", async () => {
       const { store } = await runTwice(withValues(700000, 200000, 70000));
       const [p] = await store.listProposals();
