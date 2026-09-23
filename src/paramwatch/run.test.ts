@@ -4,6 +4,8 @@
  * いちばん確かめたいのは「**提案を作らない条件**」。
  * 外のページが何を書いていても、勝手に params を動かす提案が生まれないこと。
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GOLDEN } from "../__tests__/households.js";
 import { loadParams, loadParamsText } from "../params/index.js";
@@ -270,6 +272,93 @@ describe("runParamWatch", () => {
       "assess_impact",
       "build_yaml_patch",
     ]);
+  });
+
+  /**
+   * **値は同じでも、確かめていなければ仕事が残っている**（2026-09-23・D6）。
+   * 値の変更ではなく「検証の昇格」を積む経路。
+   */
+  describe("検証の昇格（値は一致・台帳が verified: false）", () => {
+    const HTML = readFileSync(
+      join(process.cwd(), "src/paramwatch/__fixtures__/kenpo-kogaku-2026-09-23.html"),
+      "utf-8",
+    );
+    const tasuukai = () => {
+      const all = loadWatchSources();
+      return { version: all.version, watches: { kogakuTasuukai: all.watches.kogakuTasuukai } };
+    };
+    const runTasuukai = async (store = createMemoryProposalStore()) => {
+      const result = await runParamWatch({
+        params: P,
+        sources: tasuukai(),
+        cases: CASES,
+        store,
+        paramsYaml: loadParamsText("2026-08"),
+        now: () => NOW,
+        fetchImpl: (async () =>
+          new Response(HTML, {
+            status: 200,
+            headers: { "content-type": "text/html" },
+          })) as unknown as typeof fetch,
+      });
+      return { result, store };
+    };
+
+    it("silent にせず、**値を動かさない昇格の提案**を1件積む", async () => {
+      const { result, store } = await runTasuukai();
+      expect(result.proposed).toBe(1);
+      expect(result.silent).toBe(0);
+      const [p] = await store.listProposals();
+      // **金額は1円も動かない**ことを、型の側で言えるようにしてある
+      expect(p.changes).toEqual([]);
+      expect(p.verifications).toHaveLength(5);
+      expect(p.verifications?.[0]).toMatchObject({ from: false, to: true });
+      expect(p.impact.changedCount).toBe(0);
+      expect(p.impact.safe).toBe(true);
+    });
+
+    it("差分は verified と台帳の整理だけで、**値の行を書き換えない**", async () => {
+      const { store } = await runTasuukai();
+      const [p] = await store.listProposals();
+      expect(p.yamlPatch).toContain("verified: true");
+      expect(p.yamlPatch).toContain("multipleOccurrenceVerified: true");
+      // 解消できた改正予定は消す（新しい一時状態は人が書く）
+      expect(p.yamlPatch).toContain("-      pendingChange: >-");
+      // 5値の行は1つも触らない
+      for (const v of ["140100", "93000", "44400", "24600"]) {
+        expect(p.yamlPatch, `値の行 ${v} を書き換えている`).not.toContain(`+    区分`);
+        expect(p.yamlPatch).not.toContain(`- 区分ア: ${v}`);
+      }
+    });
+
+    it("昇格の提案が承認待ちに残っている間は、次の巡回で積み増さない", async () => {
+      const { store } = await runTasuukai();
+      const again = await runTasuukai(store);
+      expect(again.result.skipped).toBe(1);
+      expect(await store.listProposals()).toHaveLength(1);
+    });
+
+    it("台帳が verified: true なら、昇格の提案は作らず silent に戻る", async () => {
+      const verified = structuredClone(P);
+      const src = verified.kogaku.sources?.multipleOccurrence;
+      if (src) src.verified = true;
+      const store = createMemoryProposalStore();
+      const result = await runParamWatch({
+        params: verified,
+        sources: tasuukai(),
+        cases: CASES,
+        store,
+        paramsYaml: loadParamsText("2026-08"),
+        now: () => NOW,
+        fetchImpl: (async () =>
+          new Response(HTML, {
+            status: 200,
+            headers: { "content-type": "text/html" },
+          })) as unknown as typeof fetch,
+      });
+      expect(result.proposed).toBe(0);
+      expect(result.silent).toBe(1);
+    });
   });
 
   /**

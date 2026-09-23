@@ -31,6 +31,15 @@ export interface Watch {
   demo?: boolean;
   sources: string[];
   targets: WatchTarget[];
+  /**
+   * 同じ「確かめたか」を台帳の外にも持っている場合の、その位置（2026-09-23・D6）。
+   *
+   * 高額療養費の多数回該当は `kogaku.sources.multipleOccurrence.verified` のほかに
+   * **算定側の門である `kogaku.multipleOccurrenceVerified` がある**。
+   * 台帳だけ真にしても製品は「未確認」のままなので、昇格の提案では2か所を一緒に動かす。
+   * **位置をコードに書かず、探し方と同じくここ（params 側）に置く。**
+   */
+  legacyVerifiedPath?: string;
 }
 
 export interface WatchSources {
