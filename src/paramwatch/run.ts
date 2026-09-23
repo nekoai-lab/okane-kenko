@@ -13,6 +13,13 @@ import type { ActionLogEntry, ProposalStore, RunDecision } from "./store.js";
 import type { WatchSources } from "./sources.js";
 import { ledgerOps } from "./ledgerOps.js";
 import { buildYamlPatch, type YamlOp } from "./yamlPatch.js";
+import {
+  isPromotable,
+  type VerificationChange,
+  verificationChanges,
+  verifyOps,
+  type VerifyTarget,
+} from "./verifyOps.js";
 
 export interface RunParamWatchResult {
   checked: number;
@@ -25,6 +32,19 @@ export interface RunParamWatchResult {
    */
   skipped: number;
   errors: string[];
+}
+
+/**
+ * 同じ昇格提案か（2026-09-23・D6）。**値の変更と昇格は別概念なので、別々に見る。**
+ * 片方だけが昇格提案なら「同じ」ではない
+ */
+function sameVerification(
+  a: VerificationChange[] | undefined,
+  b: VerificationChange[] | undefined,
+): boolean {
+  const ka = (a ?? []).map((v) => `${v.key}\u0000${v.value}`).sort();
+  const kb = (b ?? []).map((v) => `${v.key}\u0000${v.value}`).sort();
+  return ka.length === kb.length && ka.every((v, i) => v === kb[i]);
 }
 
 /**
@@ -193,6 +213,8 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
       );
 
       const changes: ParamChange[] = [];
+      /** 値は動かさない昇格の提案（2026-09-23・D6）。`changes` と混ぜない */
+      let verificationsForProposal: VerificationChange[] | undefined;
       const ops: YamlOp[] = [];
       const matchedTexts: string[] = [];
       for (const r of extracted) {
@@ -221,7 +243,27 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
         }
       }
 
-      if (changes.length === 0) {
+      /**
+       * **値が同じでも、まだ確かめていなければ仕事が残っている**（2026-09-23・D6）。
+       *
+       * `verified: false` は「一次情報で確かめていない」という意味なので、
+       * 一致を確かめた回は**昇格を提案できる**。値は1円も動かさない。
+       * ここを silent にしてしまうと、巡回が毎週一致を確かめているのに
+       * **params は永久に「未確認」のまま**になる（誰も昇格させる人がいない）。
+       */
+      const promotable: VerifyTarget[] =
+        changes.length === 0
+          ? extracted.flatMap((r) => {
+              if (!r.ok) return [];
+              const row = resolved.find((x) => x.key === r.key);
+              if (!row?.target || !isPromotable(row.target)) return [];
+              return [
+                { key: r.key, label: row.label ?? r.key, target: row.target, value: r.value },
+              ];
+            })
+          : [];
+
+      if (changes.length === 0 && promotable.length === 0) {
         // **黙る回にも、指示を検出したことは残す。** 提案が生まれないと
         // injectionSuspected の置き場が無くなり、「読んだが従わなかった」証跡が消える
         await record(
@@ -232,6 +274,29 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
         );
         result.silent += 1;
         continue;
+      }
+
+      if (promotable.length > 0) {
+        const verifications = await step(
+          "propose_verification",
+          `値は一致・台帳が verified: false の対象 ${promotable.length} 件`,
+          () => verificationChanges(promotable),
+          (v) =>
+            v.map((x) => `${x.label}=${x.value}（値は据え置き・verified false→true）`).join(" / "),
+          "一次情報と一致したので、値は動かさずに検証の昇格だけを提案する（昇格も人の承認を通す）",
+        );
+        ops.push(
+          ...verifyOps(
+            promotable,
+            watch.legacyVerifiedPath
+              ? {
+                  [promotable[0].target.ledgerPath?.join(".") ?? ""]:
+                    watch.legacyVerifiedPath.split("."),
+                }
+              : {},
+          ),
+        );
+        verificationsForProposal = verifications;
       }
 
       /**
@@ -252,7 +317,8 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
             (p) =>
               p.status === "pending" &&
               p.watchKey === watchKey &&
-              sameCandidate(p.changes, changes),
+              sameCandidate(p.changes, changes) &&
+              sameVerification(p.verifications, verificationsForProposal),
           ),
         (d) =>
           d
@@ -272,7 +338,9 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
 
       const impact = await step(
         "assess_impact",
-        `候補値 ${changes.length} 件で ${cases.length} 世帯 × 4行（死亡＋statutory 3行）を現行と比較`,
+        changes.length > 0
+          ? `候補値 ${changes.length} 件で ${cases.length} 世帯 × 4行（死亡＋statutory 3行）を現行と比較`
+          : `値は動かさない昇格の提案なので、${cases.length} 世帯 × 4行が1円も動かないことを確かめる`,
         () => assessImpact(params, changes, cases, now()),
         (i) =>
           [
@@ -332,6 +400,7 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
         watchKey,
         label: watch.label,
         changes,
+        ...(verificationsForProposal ? { verifications: verificationsForProposal } : {}),
         sourceUrl: fetched.page.url,
         fetchedAt: fetched.page.fetchedAt,
         matchedTexts,
@@ -345,9 +414,11 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
       await record(
         "proposed",
         [
-          gated.changedCount === 0
-            ? `承認待ちを1件作成（値は動いたが、${cases.length}世帯の結論は変わらない＝通知はしない）`
-            : `承認待ちを1件作成（結論が変わる世帯 ${gated.changedCount}/${cases.length} 件）`,
+          verificationsForProposal
+            ? `承認待ちを1件作成（**値は動かさない検証の昇格** ${verificationsForProposal.length} 件・verified false→true）`
+            : gated.changedCount === 0
+              ? `承認待ちを1件作成（値は動いたが、${cases.length}世帯の結論は変わらない＝通知はしない）`
+              : `承認待ちを1件作成（結論が変わる世帯 ${gated.changedCount}/${cases.length} 件）`,
           ...(gated.injectionBlocked
             ? ["承認できない形で積んだ（本文に指示らしき文字列）"]
             : gated.safe

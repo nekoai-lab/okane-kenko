@@ -15,11 +15,11 @@ import { isMap, isPair, isScalar, parseDocument, type Document } from "yaml";
 
 export type YamlOp =
   /** 1行に収まるスカラー値だけを置き換える（キーとコメントは残す） */
-  | { kind: "set"; path: string[]; value: number | string | null }
+  | { kind: "set"; path: string[]; value: number | string | boolean | null }
   /** キーと値を丸ごと消す。**直前の説明コメントも消す**（旧状態の説明なので残すと矛盾する） */
   | { kind: "delete"; path: string[] }
   /** キーと値を1行で書き直す。直前の説明コメントも消す */
-  | { kind: "replace"; path: string[]; value: string | null };
+  | { kind: "replace"; path: string[]; value: string | boolean | null };
 
 /** D1 の呼び出し口（値だけを置き換える）。`set` の糖衣 */
 export interface YamlEdit {
@@ -29,8 +29,11 @@ export interface YamlEdit {
 
 const CONTEXT = 3;
 
-function render(v: number | string | null): string {
+function render(v: number | string | boolean | null): string {
   if (v === null) return "null";
+  // **真偽値は素のまま書く。** 引用符で囲むと YAML では文字列 "true" になり、
+  // `verified` のような門の値が「常に真」になってしまう（2026-09-23・D6）
+  if (typeof v === "boolean") return String(v);
   if (typeof v === "number") return String(v);
   return JSON.stringify(v); // 二重引用符。YAML の二重引用符スカラーとして読める
 }

@@ -8,6 +8,7 @@
  * 実装（Firestore）はテストから切り離すため、ここはインターフェースだけを置く。
  */
 import type { Impact, ParamChange } from "./judge.js";
+import type { VerificationChange } from "./verifyOps.js";
 
 /** 1回の巡回で何をしたか。**全ツール呼び出しを時系列で読める形にする**（審査軸②の証跡） */
 export interface ActionLogEntry {
@@ -47,6 +48,12 @@ export interface ProposalRecord {
    */
   ledger?: string[];
   /**
+   * **値は動かさず、`verified: false → true` だけを提案するとき**に入る（2026-09-23・D6）。
+   * 値の変更（`changes`）とは別の概念なので、別の名前で持つ。
+   * これがあって `changes` が空なら「**金額は1円も動かない**検証の昇格」である
+   */
+  verifications?: VerificationChange[];
+  /**
    * `git apply` がそのまま通る unified diff。**承認しても当たらない。当てるのは人**（コミット・push）。
    * 2026-09-22 追加。それ以前の提案には無い
    */
@@ -77,6 +84,8 @@ export interface CreateProposalInput {
   watchKey: string;
   label: string;
   changes: ParamChange[];
+  /** 検証の昇格（値は動かない）。2026-09-23・D6 */
+  verifications?: VerificationChange[];
   sourceUrl: string;
   fetchedAt: string;
   matchedTexts: string[];

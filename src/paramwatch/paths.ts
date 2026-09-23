@@ -20,6 +20,12 @@ export interface ResolvedTarget {
   label: string | undefined;
   /** 何を疑うべきかの台帳。`public` の値は持たない（出典は文字列の `source` だけ） */
   ledger: StatutorySource | undefined;
+  /**
+   * その台帳が params のどこにあるか（2026-09-23・D6）。
+   * **まとまりで1つの台帳を共有する値があるので、位置を値から組み立て直さない**
+   * （組み立て直すと、5値それぞれが別の台帳を指していると誤解する）
+   */
+  ledgerPath?: string[];
 }
 
 function toPath(key: string): string[] {
@@ -45,12 +51,30 @@ export function resolveTarget(p: ParamSet, key: string): ResolvedTarget | undefi
     return { path, current, label: p.public[path[1]]?.label, ledger: undefined };
   }
   // 制度式パラメータ：`<section>.<leaf>` の台帳は `<section>.sources.<leaf>`
-  const ledger = getAt(p, [...path.slice(0, -1), "sources", path[path.length - 1]]);
+  const direct = getAt(p, [...path.slice(0, -1), "sources", path[path.length - 1]]);
+  /**
+   * **まとまりで1つの台帳を持つ値**（2026-09-23・D6）。
+   * 高額療養費の多数回該当は `kogaku.multipleOccurrence.区分ア` のように1階層深く、
+   * 出典・施行日・verified は**5値まとめて** `kogaku.sources.multipleOccurrence` にある。
+   * 台帳を値ごとに増やすと、同じ一次情報を5回書くことになる（正本が5つに割れる）ので、
+   * **1つ上のまとまりの台帳を引く**。
+   */
+  const grouped =
+    direct === undefined && path.length >= 3
+      ? getAt(p, [...path.slice(0, -2), "sources", path[path.length - 2]])
+      : undefined;
+  const ledger = direct ?? grouped;
   return {
     path,
     current,
     label: undefined,
     ledger: ledger && typeof ledger === "object" ? (ledger as StatutorySource) : undefined,
+    ledgerPath:
+      ledger === undefined
+        ? undefined
+        : direct !== undefined
+          ? [...path.slice(0, -1), "sources", path[path.length - 1]]
+          : [...path.slice(0, -2), "sources", path[path.length - 2]],
   };
 }
 

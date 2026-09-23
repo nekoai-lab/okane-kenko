@@ -45,30 +45,65 @@ export default async function ProposalsPage() {
           <section className={s.card} key={p.id}>
             <h2 className={s.h2}>{p.label}</h2>
 
-            <table className={s.table}>
-              <thead>
-                <tr>
-                  <th>パラメータ</th>
-                  <th>いまの値</th>
-                  <th>提案</th>
-                </tr>
-              </thead>
-              <tbody>
-                {p.changes.map((c) => (
-                  <tr key={c.key}>
-                    <td>{c.label}</td>
-                    <td className={s.num}>
-                      {c.current.toLocaleString()}
-                      {c.unit ?? "円"}
-                    </td>
-                    <td className={s.num}>
-                      {c.proposed.toLocaleString()}
-                      {c.unit ?? "円"}
-                    </td>
+            {/* 2026-09-23（D6）：値を動かさない「検証の昇格」。値の変更とは別の見せ方にする */}
+            {p.verifications && p.verifications.length > 0 ? (
+              <>
+                <p className={s.impact}>
+                  <strong>値の変更なし・検証の昇格です。</strong>
+                  一次情報と現在の値が一致したので、
+                  <strong>金額は1円も動かさず</strong>、台帳の「確かめたか」だけを
+                  <code>false → true</code> にします。
+                </p>
+                <table className={s.table}>
+                  <thead>
+                    <tr>
+                      <th>パラメータ</th>
+                      <th>値（据え置き）</th>
+                      <th>確認済みか</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {p.verifications.map((v) => (
+                      <tr key={v.key}>
+                        <td>{v.label}</td>
+                        <td className={s.num}>{v.value.toLocaleString()}円</td>
+                        <td className={s.num}>
+                          {String(v.from)} → {String(v.to)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : null}
+
+            {/* 値が動く提案のときだけ出す（昇格の提案では空の表を出さない） */}
+            {p.changes.length > 0 ? (
+              <table className={s.table}>
+                <thead>
+                  <tr>
+                    <th>パラメータ</th>
+                    <th>いまの値</th>
+                    <th>提案</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {p.changes.map((c) => (
+                    <tr key={c.key}>
+                      <td>{c.label}</td>
+                      <td className={s.num}>
+                        {c.current.toLocaleString()}
+                        {c.unit ?? "円"}
+                      </td>
+                      <td className={s.num}>
+                        {c.proposed.toLocaleString()}
+                        {c.unit ?? "円"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
 
             <h3 className={s.h3}>影響（10世帯で再計算した結果）</h3>
             <p className={s.impact}>
