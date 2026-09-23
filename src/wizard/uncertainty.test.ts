@@ -152,6 +152,60 @@ describe("枝跨ぎ：端で判定が変わっても幅が潰れない", () => {
   });
 });
 
+/**
+ * **跨ぎの種類ごとに1世帯ずつ固定する**（2026-09-23 オーナー裁定）。
+ *
+ * ここで確かめるのは**性質**（跨ぐこと・包絡が潰れないこと）であって金額ではない。
+ * 金額の固定は、いちばん下の区分の**下端（当社基準）が確定してから**足す
+ * ── いま書くと、床が決まった瞬間に嘘になる。
+ */
+describe("実例世帯：跨ぎの種類ごとに1つ", () => {
+  const 専業子1: WizardSelections = {
+    selfBirthYear: 1988,
+    selfEmployment: "employee",
+    selfIncome: "lt800",
+    hasSpouse: true,
+    spouseBirthYear: 1990,
+    spouseEmployment: "none",
+    spouseIncome: "none",
+    childrenBirthYears: [2020],
+    educationPlan: "public",
+    assets: "lt300",
+    livingCost: "lt30",
+    housing: "rent",
+    coverageSelf: "m1000",
+    coverageSpouse: "none",
+  };
+  const 共働き子2: WizardSelections = {
+    ...専業子1,
+    selfIncome: "lt600",
+    spouseEmployment: "employee",
+    spouseIncome: "lt400",
+    childrenBirthYears: [2021, 2024],
+  };
+
+  it("**sufficient ⇄ shortage** を跨ぐ世帯（専業・子1・年収 lt800）", () => {
+    const e = normalizeEnds(P, 専業子1, AS_OF);
+    const r = envelope(P, [e.loose, e.strict, ...e.extra], AS_OF);
+    expect(r.crossed).toBe(true);
+    expect(r.verdictLoose).toBe("sufficient");
+    expect(r.verdictStrict).toBe("shortage");
+    // 包絡は両端を含む（素直につなぐと潰れる形になっていないこと）
+    expect(r.low).toBeLessThanOrEqual(Math.min(...r.ends.map((x) => x.low)));
+    expect(r.high).toBeGreaterThanOrEqual(Math.max(...r.ends.map((x) => x.high)));
+    expect(crossingNote(r)).toContain("結論が変わります");
+  });
+
+  it("**ample ⇄ sufficient** を跨ぐ世帯（共働き・子2・年収 lt600）", () => {
+    const e = normalizeEnds(P, 共働き子2, AS_OF);
+    const r = envelope(P, [e.loose, e.strict, ...e.extra], AS_OF);
+    expect(r.crossed).toBe(true);
+    expect(r.verdictLoose).toBe("ample");
+    expect(r.verdictStrict).toBe("sufficient");
+    expect(crossingNote(r)).not.toBeNull();
+  });
+});
+
 describe("未回答には幅を作らない（区分が無いので）", () => {
   it("「答えたくない」「分からない」は点のまま、かつ黙って落とさない", () => {
     const e = normalizeEnds(
