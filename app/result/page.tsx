@@ -599,7 +599,7 @@ export default async function ResultPage({
       ? params.inputRanges.monthlyLivingBand[complete.livingCost]
       : undefined;
   const livingBand =
-    band?.high !== undefined
+    band?.high !== undefined && band.low !== undefined
       ? {
           low: band.low * v(params, "survivorLivingRatioChild") * dial,
           high: band.high * v(params, "survivorLivingRatioChild") * dial,

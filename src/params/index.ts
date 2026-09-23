@@ -78,7 +78,13 @@ export interface KogakuBracket {
  */
 /** 回答帯の上下端（D-01）。開いた区分（`gte35`）は `high` を持たない */
 export interface AnswerBand {
-  low: number;
+  /**
+   * 帯の下端。**開いた区分（いちばん下の区分）では置かない**（2026-09-23・T-H）。
+   * 「400万円未満」は 0 を含むが、0 は回答の意味として現実的でない。
+   * 下端を決めるのは**新しい当社基準**なので、決まるまで置かない＝その側は点のまま
+   */
+  low?: number;
+  /** 帯の上端。**開いた区分（`gte*`）では置かない** */
   high?: number;
 }
 
@@ -88,6 +94,14 @@ export interface InputRanges {
   monthlyLiving: Record<string, number>;
   /** 回答帯の上下端（D-01）。**幅の出どころは利用者の回答** */
   monthlyLivingBand: Record<string, AnswerBand>;
+  /**
+   * 回答帯の上下端（T-H・2026-09-23）。区分の境目をそのまま書き出したもので、
+   * **代表値はこの中点**。`gte*` は上端が無い（開いた区分）。
+   * **未回答（prefer_not / unknown）は入っていない** ── 区分が無いので幅を置けない
+   */
+  incomeBand: Record<string, AnswerBand>;
+  assetsBand: Record<string, AnswerBand>;
+  loanBand: Record<string, AnswerBand>;
   loan: Record<string, number>;
   /** 現在の死亡保障額（被保険者ごと）。証券記載の具体額なので中央値ではない */
   coverage: Record<string, number>;
