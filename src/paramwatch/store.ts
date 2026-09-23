@@ -56,7 +56,12 @@ export interface ProposalRecord {
   decidedAt: string | null;
 }
 
-export type RunDecision = "proposed" | "silent" | "blocked" | "failed";
+/**
+ * `skipped` は「ズレはあるが、同じ候補値の承認待ちが既にある」回（2026-09-23・D5 の前提）。
+ * **`silent`（制度が動いていない）と分ける。** skipped が続くのは**人の承認が溜まっている**という意味で、
+ * 読み手にとって別の知らせになる
+ */
+export type RunDecision = "proposed" | "silent" | "skipped" | "blocked" | "failed";
 
 /** 提案を作らなかった回も残す。**沈黙も設計のうち**（2a の notice_log と同じ思想） */
 export interface WatchRunLogEntry {
