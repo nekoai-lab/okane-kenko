@@ -18,7 +18,27 @@ export interface RunParamWatchResult {
   checked: number;
   proposed: number;
   silent: number;
+  /**
+   * 同じ watch・同じ候補値の承認待ちが既にあったので積まなかった回（2026-09-23・D5 の前提）。
+   * **`silent` と混ぜない。** silent は「一次情報と params が同じ」、skipped は「ズレはあるが提案済み」で、
+   * 前者は制度が動いていないこと、後者は**人の承認が溜まっていること**を表す
+   */
+  skipped: number;
   errors: string[];
+}
+
+/**
+ * 同じ提案か。**watch と、対象キーごとの現在値・候補値の組**で見る（2026-09-23）。
+ *
+ * `current` も見るのは、間に params が別の値へ動いていたら、積んである提案の差分が
+ * もう当たらない＝別の提案として積み直すべきだから。
+ */
+function sameCandidate(a: ParamChange[], b: ParamChange[]): boolean {
+  if (a.length !== b.length) return false;
+  const key = (c: ParamChange) => `${c.key}\u0000${c.current}\u0000${c.proposed}`;
+  const sa = a.map(key).sort();
+  const sb = b.map(key).sort();
+  return sa.every((v, i) => v === sb[i]);
 }
 
 export interface RunParamWatchDeps {
@@ -37,7 +57,13 @@ export interface RunParamWatchDeps {
 
 export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWatchResult> {
   const { params, sources, cases, store, now } = deps;
-  const result: RunParamWatchResult = { checked: 0, proposed: 0, silent: 0, errors: [] };
+  const result: RunParamWatchResult = {
+    checked: 0,
+    proposed: 0,
+    silent: 0,
+    skipped: 0,
+    errors: [],
+  };
 
   for (const [watchKey, watch] of Object.entries(sources.watches)) {
     const log: ActionLogEntry[] = [];
@@ -205,6 +231,42 @@ export async function runParamWatch(deps: RunParamWatchDeps): Promise<RunParamWa
             : "一次情報の値は現行 params と同じ",
         );
         result.silent += 1;
+        continue;
+      }
+
+      /**
+       * **同じ提案を積み増さない**（2026-09-23・D5 の前提条件）。
+       *
+       * 巡回は毎回「一次情報 vs 現行 params」を見るだけなので、**人が承認するまで同じズレが残り続ける**。
+       * 定期実行を入れると、同じ提案が毎回積まれて承認キューが1件の話で埋まる
+       * （2026-09-22 の本番一巡で、9/20 の提案と同じ内容が実際に二重になった）。
+       *
+       * **積まない理由は記録に残す。** 黙って何もしないと、巡回が仕事をしたのか
+       * 止まっているのかが `/admin/runs` から読めなくなる。
+       */
+      const duplicate = await step(
+        "check_duplicate",
+        `承認待ちの中に、同じ watch（${watchKey}）・同じ候補値の提案があるか`,
+        async () =>
+          (await store.listProposals()).find(
+            (p) =>
+              p.status === "pending" &&
+              p.watchKey === watchKey &&
+              sameCandidate(p.changes, changes),
+          ),
+        (d) =>
+          d
+            ? `同じ内容の承認待ちが既にある（提案ID: ${d.id}／作成 ${d.createdAt}）`
+            : "同じ内容の承認待ちは無い",
+        "同じ提案を積み増さないため（承認されるまでズレは残り続けるので、定期実行では毎回ぶつかる）",
+      );
+
+      if (duplicate) {
+        await record(
+          "skipped",
+          `同じ watch・同じ候補値の承認待ちが既にあるので積まなかった（提案ID: ${duplicate.id}／作成 ${duplicate.createdAt}）。人の承認待ち`,
+        );
+        result.skipped += 1;
         continue;
       }
 
