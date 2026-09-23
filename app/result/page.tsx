@@ -14,6 +14,7 @@ import { coverageCurve, projectDeath } from "../../src/calc/projection.js";
 import { narrate, placeholderValues } from "../../src/narrate/narrate.js";
 import { jstDate, jstYear } from "../../src/time/jstYear.js";
 import { dialFor, simulateAll } from "../../src/calc/simulate.js";
+import { crossingNote, envelope } from "../../src/calc/envelope.js";
 import { survivorIncomeSensitivity } from "../../src/calc/sensitivity.js";
 import { decisionPoints } from "../../src/calc/decisionPoints.js";
 import { reform2028 } from "../../src/calc/reform2028.js";
@@ -36,6 +37,7 @@ import { formatMan, formatRange } from "../../src/design/tokens.js";
 import { toCompleteSelections } from "../../src/wizard/complete.js";
 import type { Estimation } from "../../src/wizard/types.js";
 import { normalize } from "../../src/wizard/normalize.js";
+import { crossingDrivers, normalizeEnds } from "../../src/wizard/uncertainty.js";
 import { LIVING_LEVELS, decodeLivingLevel, withLivingLevel } from "../../src/wizard/dial.js";
 import { decodeSelections } from "../../src/wizard/url.js";
 import s from "./page.module.css";
@@ -584,6 +586,24 @@ export default async function ResultPage({
   const result = diagnose(params, input);
 
   /**
+   * **答えの幅をエンジンに通す（T-H・2026-09-23）。**
+   *
+   * 回答は区分で受けているので、点1つで出すと「幅で計算した」と言えない。
+   * 緩め端・厳しめ端の2回（連動する世帯は4回）まわして**包絡**を取り、
+   * **端で判定が変わるときは、そのことを露出部に文として出す**（畳まない）。
+   * 生活費のダイヤル（lifestyleDial）は本人が動かす前提なので、ここでは点のまま扱う。
+   */
+  const ends = normalizeEnds(params, complete, new Date());
+  const bandInputs = [ends.loose, ends.strict, ...ends.extra];
+  const envFor = (who: "self" | "spouse") => {
+    if (who === "spouse" && !result.spouse) return null;
+    const r = envelope(params, bandInputs, new Date(), who);
+    return { ...r, note: crossingNote(r, crossingDrivers(params, complete, new Date(), who)[0]) };
+  };
+  const bandSelf = envFor("self");
+  const bandSpouse = envFor("spouse");
+
+  /**
    * **目盛りを動かしても必要額が変わらない世帯がある。**
    * `ample` / `not_needed` は必要額が葬儀・予備費の床に張り付くので、
    * 生活費が動いても必要額は動かない。**無反応ではなく「吸収されている」**ので、そう言う
@@ -755,9 +775,17 @@ export default async function ResultPage({
     who: "本人" | "配偶者",
     dr: typeof result.self,
     cov: number | null | undefined,
+    band: ReturnType<typeof envFor>,
   ): RiskRow => {
-    const v = verdict3(cov, dr.range.low, dr.range.high);
-    const range = formatRange(dr.range.low, dr.range.high);
+    /**
+     * **画面に出すのは包絡したレンジ**（T-H）。点のレンジは端の一部でしかない。
+     * 過不足の判定（`Verdict3`）も同じレンジで出す ── 表示と判定が別の数字を見ていたら、
+     * 「幅を跨いでいる」と書いてあるのにバッジが動かない、という食い違いが起きる。
+     */
+    const low = band?.low ?? dr.range.low;
+    const high = band?.high ?? dr.range.high;
+    const v = verdict3(cov, low, high);
+    const range = formatRange(low, high);
     const hold = cov ?? null;
     const covText = hold === null ? "未入力" : `約${money(hold)}`;
     /**
@@ -803,10 +831,10 @@ export default async function ResultPage({
         holdText: covText,
       },
       scale: {
-        needLow: dr.range.low,
-        needHigh: dr.range.high,
+        needLow: low,
+        needHigh: high,
         hold,
-        axisMaxText: `約${money(Math.max(dr.range.high, hold ?? 0))}`,
+        axisMaxText: `約${money(Math.max(high, hold ?? 0))}`,
       },
       note: `${reason}${body}`,
       // 判定を支えている前提（仕様 §5.3 の開示6点）。`ample` 系のときだけ engine が返す
@@ -823,6 +851,11 @@ export default async function ResultPage({
           : null,
       premiseSensitivity:
         dr.assumptions.length > 0 ? sensitivityFor(who === "本人" ? "self" : "spouse") : null,
+      /**
+       * **答えの幅で判定が変わるなら、露出部に出す**（2026-09-23 オーナー裁定）。
+       * 判定が動きうるという事実を折りたたみの中に入れない。
+       */
+      crossingNote: band?.note ?? null,
       link: { href: "#death-detail", label: "詳しく →" },
     };
   };
@@ -880,8 +913,10 @@ export default async function ResultPage({
   };
 
   const riskRows: RiskRow[] = [
-    deathRow("本人", result.self, input.coverageSelf),
-    ...(result.spouse ? [deathRow("配偶者", result.spouse, input.coverageSpouse)] : []),
+    deathRow("本人", result.self, input.coverageSelf, bandSelf),
+    ...(result.spouse
+      ? [deathRow("配偶者", result.spouse, input.coverageSpouse, bandSpouse)]
+      : []),
     savingsRow(
       "sick_short",
       "病気・けが（短期）",

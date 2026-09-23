@@ -195,6 +195,18 @@
   justify-content: center;
 }
 
+/*
+  答えの幅で判定が変わるときの一文（T-H）。**レンジの直下に置く露出部**。
+  色は前提の感度文（.sensitivity）と揃える ── 同じ「前提が外れたらどう動くか」の仲間で、
+  判定色（警告色）は使わない。幅があること自体は警告ではない。
+*/
+.crossing {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #6b5a38;
+  margin: var(--space-2) 0 0;
+}
+
 .note {
   font-size: 13.5px;
   line-height: 1.75;

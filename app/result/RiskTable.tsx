@@ -73,6 +73,12 @@ export interface RiskRow {
   premiseWeight: PremiseWeight | null;
   /** 前提が外れたときの判定遷移（T-E）。初期表示に出す2つのうちの1つ */
   premiseSensitivity: PremiseSensitivity | null;
+  /**
+   * **答えの幅の中で判定が変わるときの一文**（T-H・2026-09-23）。
+   * レンジ表示の直下（露出部）に出す。**畳まない** ── 判定が動きうるという事実は、
+   * 開いてもらって初めて伝わる場所に置かない
+   */
+  crossingNote?: string | null;
   /** 同ページ内へのアンカー、または準備中の表示 */
   link: { href: string; label: string } | { pending: string };
 }
@@ -160,6 +166,13 @@ export function RiskTable({ rows, caption }: { rows: RiskRow[]; caption: string 
                 </div>
               </div>
             )}
+
+            {/*
+              **答えの幅で判定が変わるときの一文**（T-H・2026-09-23 オーナー裁定）。
+              レンジのすぐ下に出す。**畳まない** ── 判定が動きうるという事実を、
+              開いてもらって初めて見える場所に置かない
+            */}
+            {r.crossingNote ? <p className={s.crossing}>{r.crossingNote}</p> : null}
 
             {/* (a) 図の視覚アンカー。判定が文章ではなく位置関係で読める */}
             {r.scale ? (

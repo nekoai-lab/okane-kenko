@@ -28,6 +28,15 @@
  */
 import type { DiagnoseInput } from "../calc/index.js";
 import type { AnswerBand, ParamSet } from "../params/index.js";
+import { diagnose } from "../calc/index.js";
+import {
+  ASSETS_LABEL,
+  INCOME_LABEL,
+  labelOf,
+  LIVING_LABEL,
+  LOAN_LABEL,
+  SPOUSE_INCOME_LABEL,
+} from "./labels.js";
 import { normalize } from "./normalize.js";
 import type { NormalizedInput, WizardSelections } from "./types.js";
 
@@ -233,4 +242,69 @@ export function normalizeEnds(p: ParamSet, sel: WizardSelections, asOf: Date): E
     fields: loose.fields,
     pointOnly: pointOnlyFields(sel),
   };
+}
+
+/**
+ * **どの回答の幅が、判定の跨ぎを起こしているか**を特定する（2026-09-23・T-H）。
+ *
+ * 画面の一文「この幅は、答えの幅（◯◯）から来ています」の ◯◯ にあたる。
+ * **推測で名前を出さない。** その入力**だけ**を厳しめ端に動かして回し直し、
+ * 判定が実際に変わったものだけを返す（複数あれば効き目の大きい順に並べる）。
+ */
+export function crossingDrivers(
+  p: ParamSet,
+  sel: WizardSelections,
+  asOf: Date,
+  who: "self" | "spouse" = "self",
+): string[] {
+  const point = normalize(p, sel, asOf).input;
+  const strict = atEnd(p, sel, asOf, "strict").input;
+  const verdictOf = (input: DiagnoseInput) => {
+    const d = diagnose(p, input, asOf);
+    const r = who === "self" ? d.self : d.spouse;
+    return r ? { v: r.verdict, need: r.rawNeed } : null;
+  };
+  const base = verdictOf(point);
+  if (!base) return [];
+
+  /** 入力1つだけを厳しめ端に差し替えた入力を作る */
+  const only: Array<{ label: string; input: DiagnoseInput }> = [
+    {
+      label: `ご本人の年収「${labelOf(INCOME_LABEL, sel.selfIncome) ?? ""}」`,
+      input: { ...point, self: { ...point.self, income: strict.self.income } },
+    },
+    {
+      label: `毎月の生活費「${labelOf(LIVING_LABEL, sel.livingCost) ?? ""}」`,
+      input: { ...point, monthlyLiving: strict.monthlyLiving },
+    },
+    {
+      label: `金融資産「${labelOf(ASSETS_LABEL, sel.assets) ?? ""}」`,
+      input: { ...point, assets: strict.assets },
+    },
+    ...(point.spouse && strict.spouse
+      ? [
+          {
+            label: `配偶者の年収「${labelOf(SPOUSE_INCOME_LABEL, sel.spouseIncome) ?? ""}」`,
+            input: {
+              ...point,
+              spouse: { ...point.spouse, income: strict.spouse.income },
+            },
+          },
+        ]
+      : []),
+    ...(sel.loan && sel.housing === "own_loan"
+      ? [
+          {
+            label: `住宅ローン残高「${labelOf(LOAN_LABEL, sel.loan) ?? ""}」`,
+            input: { ...point, housing: strict.housing },
+          },
+        ]
+      : []),
+  ];
+
+  return only
+    .map((x) => ({ label: x.label, r: verdictOf(x.input) }))
+    .filter((x) => x.r !== null && x.r.v !== base.v)
+    .sort((a, b) => (b.r?.need ?? 0) - (a.r?.need ?? 0))
+    .map((x) => x.label);
 }
