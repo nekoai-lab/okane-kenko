@@ -13,7 +13,7 @@
  *
  * | 入力 | 緩め端（必要額を減らす） | 厳しめ端（増やす） | 連動 | 出どころ |
  * |---|---|---|---|---|
- * | 本人の年収 | 帯の上端 | 帯の下端 | **生活費が「年収から推定」のとき連動** | `inputRanges.incomeBand` |
+ * | 本人の年収 | 帯の上端 | 帯の下端（いちばん下の区分は**床**＝`ownStandard.incomeBandFloor`） | **生活費が「年収から推定」のとき連動** | `inputRanges.incomeBand` |
  * | 配偶者の年収 | 帯の上端 | 帯の下端 | 同上 | 同上 |
  * | 生活費（区分で回答） | 帯の下端 | 帯の上端 | ─ | `inputRanges.monthlyLivingBand`（D-01） |
  * | 生活費（年収から推定） | 年収の端から算出 | 年収の端から算出 | **連動する** | §4.2.1 の式 |
@@ -64,13 +64,22 @@ export interface Ends {
 }
 
 /**
- * 帯の端。**開いている側は端を作らず、点に落とす**（`gte*` に上端が無く、
- * いちばん下の区分に下端が無いのは同じ理由）。無い数字をこちらで作らない。
+ * 帯の端。
+ *
+ * **上が開いている区分（`gte*`）には上端が無い**ので、その側は点に落とす（無い数字を作らない）。
+ * **下が開いている区分（いちばん下の区分）には床を置く**（2026-09-23 オーナー裁定）。
+ * 端を消すと厳しめ側の不確かさが見えなくなり、**分からない人ほど幅が狭く安心に見える**ため。
+ * 床の値は当社基準の在庫 `ownStandard.incomeBandFloor`（数字を2か所に持たない）。
  */
-function bandEnd(band: AnswerBand | undefined, end: End, fallback: number): number {
+function bandEnd(
+  band: AnswerBand | undefined,
+  end: End,
+  fallback: number,
+  floor?: number,
+): number {
   if (!band) return fallback;
   if (end === "loose") return band.high ?? fallback;
-  return band.low ?? fallback;
+  return band.low ?? floor ?? fallback;
 }
 
 /** 生活費の端（区分で答えた場合）。緩め＝下端・厳しめ＝上端 */
@@ -97,15 +106,17 @@ function atEnd(
   const fields: UncertainField[] = [];
   const incomeEnd: End = opts.flipIncome ? (end === "loose" ? "strict" : "loose") : end;
 
+  const floor = p.ownStandard.incomeBandFloor.value;
   const selfIncome = bandEnd(
     p.inputRanges.incomeBand[sel.selfIncome],
     incomeEnd,
     base.input.self.income,
+    floor,
   );
   const spouseCode = sel.spouseIncome;
   const spouseIncome =
     base.input.spouse && spouseCode
-      ? bandEnd(p.inputRanges.incomeBand[spouseCode], incomeEnd, base.input.spouse.income)
+      ? bandEnd(p.inputRanges.incomeBand[spouseCode], incomeEnd, base.input.spouse.income, floor)
       : (base.input.spouse?.income ?? 0);
 
   // 生活費：区分で答えたなら帯の端。年収から推定なら**年収の端に連動させて**組み直す
@@ -135,7 +146,12 @@ function atEnd(
       field: "selfIncome",
       label: "ご本人の年収",
       loose: bandEnd(p.inputRanges.incomeBand[sel.selfIncome], "loose", base.input.self.income),
-      strict: bandEnd(p.inputRanges.incomeBand[sel.selfIncome], "strict", base.input.self.income),
+      strict: bandEnd(
+        p.inputRanges.incomeBand[sel.selfIncome],
+        "strict",
+        base.input.self.income,
+        floor,
+      ),
     });
   }
   if (p.inputRanges.monthlyLivingBand[sel.livingCost]) {

@@ -196,13 +196,98 @@ describe("実例世帯：跨ぎの種類ごとに1つ", () => {
     expect(crossingNote(r)).toContain("結論が変わります");
   });
 
-  it("**ample ⇄ sufficient** を跨ぐ世帯（共働き・子2・年収 lt600）", () => {
-    const e = normalizeEnds(P, 共働き子2, AS_OF);
+  /**
+   * **`ample ⇄ sufficient`**。子2人・共働き（どちらも lt600）・生活費 lt35・私立中心。
+   * 教育費が重いので、厳しめ端で余剰が消えて「上乗せの目安」が出る。
+   */
+  it("**ample ⇄ sufficient** を跨ぐ世帯（共働き・子2・私立・生活費 lt35）", () => {
+    const sel: WizardSelections = {
+      ...共働き子2,
+      spouseIncome: "lt600",
+      educationPlan: "private",
+      livingCost: "lt35",
+    };
+    const e = normalizeEnds(P, sel, AS_OF);
     const r = envelope(P, [e.loose, e.strict, ...e.extra], AS_OF);
     expect(r.crossed).toBe(true);
     expect(r.verdictLoose).toBe("ample");
     expect(r.verdictStrict).toBe("sufficient");
     expect(crossingNote(r)).not.toBeNull();
+  });
+
+  /**
+   * **`ample ⇄ shortage`（2段跨ぎ）**。子2人・共働き（本人 lt600／配偶者 lt400）。
+   *
+   * **床を入れたことで跨ぎの種類が変わった世帯**（2026-09-23）。
+   * 床を入れる前は `ample ⇄ sufficient` だったが、配偶者の年収 `lt400` の厳しめ端が
+   * **床（106万円）**まで下がり、遺族の就労収入が大きく減るため `shortage` まで届く。
+   * **これは床の効き方そのもの**なので、実例として残す。
+   */
+  it("**ample ⇄ shortage** を跨ぐ世帯（共働き・子2・配偶者 lt400 が床まで下がる）", () => {
+    const e = normalizeEnds(P, 共働き子2, AS_OF);
+    const r = envelope(P, [e.loose, e.strict, ...e.extra], AS_OF);
+    expect(r.crossed).toBe(true);
+    expect(r.verdictLoose).toBe("ample");
+    expect(r.verdictStrict).toBe("shortage");
+    // 厳しめ端の配偶者年収が床そのもの
+    expect(e.strict.spouse?.income).toBe(P.ownStandard.incomeBandFloor.value);
+  });
+});
+
+describe("いちばん下の区分の床（当社基準）", () => {
+  /** 床の値は在庫に1つだけ置き、帯はそれを参照する（数字を2か所に持たない） */
+  it("在庫の値がそのまま厳しめ端に出る", () => {
+    const floor = P.ownStandard.incomeBandFloor.value;
+    expect(floor).toBe(1_056_000);
+    const e = normalizeEnds(P, { ...BASE, selfIncome: "lt400" }, AS_OF);
+    expect(e.strict.self.income).toBe(floor);
+    // 緩め端は区分の上端のまま（床は下側だけの話）
+    expect(e.loose.self.income).toBe(4_000_000);
+  });
+
+  it("床のある区分以外は、区分の境目がそのまま端になる", () => {
+    const e = normalizeEnds(P, { ...BASE, selfIncome: "lt600" }, AS_OF);
+    expect(e.strict.self.income).toBe(4_000_000);
+    expect(e.loose.self.income).toBe(6_000_000);
+  });
+
+  /**
+   * **2026-09-22 にオーナーが手で測った値（200〜700万）を再現する。**
+   * そのときの条件は「生活費の帯だけを動かす」だったので、同じ条件で測る。
+   * 全入力を端に振ると幅はもっと広くなる（床が効くため）が、**同じ条件なら同じ答え**になる。
+   */
+  it("組み替え世帯：生活費の帯だけを動かすと 200〜700万（9/22 実測の再現）", () => {
+    const 組み替え: WizardSelections = {
+      selfBirthYear: 1989,
+      selfEmployment: "employee",
+      selfIncome: "lt600",
+      hasSpouse: true,
+      spouseBirthYear: 1991,
+      spouseEmployment: "employee",
+      spouseIncome: "lt400",
+      childrenBirthYears: [2024],
+      educationPlan: "public",
+      assets: "lt500",
+      livingCost: "lt30",
+      housing: "own_loan",
+      loan: "lt3000",
+      danshin: "yes",
+      coverageSelf: "m2000",
+      coverageSpouse: "none",
+    };
+    const e = normalizeEnds(P, 組み替え, AS_OF);
+    const livingOnly = envelope(
+      P,
+      [
+        { ...e.point.input, monthlyLiving: 250_000 },
+        { ...e.point.input, monthlyLiving: 300_000 },
+      ],
+      AS_OF,
+    );
+    expect(livingOnly.low).toBe(2_000_000);
+    expect(livingOnly.high).toBe(7_000_000);
+    expect(livingOnly.verdictLoose).toBe("ample");
+    expect(livingOnly.verdictStrict).toBe("sufficient");
   });
 });
 
