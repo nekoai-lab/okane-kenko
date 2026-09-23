@@ -21,6 +21,9 @@ export function ownStandardValueText(e: ParamEntry): string | null {
       return `${e.value}か月`;
     case "age":
       return `${e.value}歳`;
+    // 2026-09-23（D6）：所得区分の「数」。裸の数字を画面に出さないので単位を付ける
+    case "count":
+      return `${e.value}区分`;
     case "JPY":
       return formatMan(e.value);
     case "JPY/year":
