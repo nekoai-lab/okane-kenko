@@ -61,21 +61,64 @@ export function envelope(
 }
 
 /**
- * 判定が端で違うときの一文（感度文の型の再利用）。
+ * 判定が端で違うときの一文（感度文の型の再利用・2026-09-23 オーナー裁定）。
  *
- * **数値は書かない。** 画面が `{{}}` に差し込むのと同じ理由で、
- * ここが返すのは「どの前提が外れたらどちらへ動くか」の**言い方**だけにする。
- * 金額は `EnvelopeResult` の値を画面がそのまま描く。
+ * 型は既存の感度文（`sensitivity.ts` ＋ 画面の `sensitivityFor`）に合わせる。
+ * ①**何がこの幅を作っているか** → ②**緩め／厳しめで結論がどう変わるか**（ラベルは enum をバインド）。
+ *
+ * **2段跨ぎ（あいだに別の判定が入る）だけ、落ちる情報が違う。**
+ * 両端だけ書くと「あいだがある」ことが消えるので、**あいだの判定も1文に入れる**。
+ * さらに「幅が何で狭まるか」を**事実として**添える（指示形にしない＝「確かめてください」とは書かない）。
+ *
+ * **数値は書かない。** 金額は画面が算定結果から描く（AIにもここにも金額を作らせない）。
  */
-export function crossingNote(r: EnvelopeResult): string | null {
+export function crossingNote(
+  r: EnvelopeResult,
+  /** この幅を作っている回答の名前（例「配偶者の年収『400万円未満』」）。分からなければ省く */
+  driver?: string,
+): string | null {
   if (!r.crossed) return null;
-  const say = (v: Verdict): string =>
-    v === "shortage"
-      ? "上乗せが要る"
-      : v === "sufficient"
-        ? "いまの蓄えで受けられる"
-        : v === "ample"
-          ? "上乗せは要らない"
-          : "保障そのものが要らない";
-  return `答えの幅の中で結論が変わります。緩めに見ると「${say(r.verdictLoose)}」、厳しめに見ると「${say(r.verdictStrict)}」です。幅はその両方を含んでいます。`;
+  const say = (v: Verdict): string => VERDICT_WORD[v];
+  const lead = driver
+    ? `この幅は、答えの幅（${driver}）から来ています。`
+    : "この幅は、答えの幅から来ています。";
+  const ends = `緩めに見ると「${say(r.verdictLoose)}」、厳しめに見ると「${say(r.verdictStrict)}」です。`;
+
+  const middle = middleVerdict(r);
+  if (!middle) return `${lead}${ends}`;
+
+  // 2段跨ぎ：あいだの判定と、幅が狭まる条件を事実として添える
+  const between = `あいだには「${say(middle)}」も入ります。`;
+  const narrows = driver ? `この幅は、${driverSubject(driver)}がはっきりすると狭まります。` : "";
+  return `${lead}${ends}${between}${narrows}`;
+}
+
+/** 判定の言い方。**バッジと同じ enum からバインドする**（手打ちで再入力しない） */
+const VERDICT_WORD: Record<Verdict, string> = {
+  shortage: "上乗せが要る",
+  sufficient: "いまの蓄えで受けられる",
+  ample: "上乗せは要らない",
+  not_needed: "保障そのものが要らない",
+};
+
+/** 必要額の判定を、軽い順に並べたもの（あいだに何が入るかを出すため） */
+const ORDER: Verdict[] = ["not_needed", "ample", "sufficient", "shortage"];
+
+/**
+ * 2段跨ぎのとき、あいだに入る判定を返す。1段なら `null`。
+ * **順序はニーズ軸の重さ**（必要額が出ない側から、上乗せが要る側へ）。
+ */
+function middleVerdict(r: EnvelopeResult): Verdict | null {
+  const a = ORDER.indexOf(r.verdictLoose);
+  const b = ORDER.indexOf(r.verdictStrict);
+  if (a < 0 || b < 0) return null;
+  const [lo, hi] = a < b ? [a, b] : [b, a];
+  if (hi - lo < 2) return null;
+  return ORDER[lo + 1];
+}
+
+/** 「配偶者の年収『400万円未満』」→「配偶者の年収」。文の後半で言い直すため */
+function driverSubject(driver: string): string {
+  const i = driver.indexOf("「");
+  return i > 0 ? driver.slice(0, i) : driver;
 }

@@ -13,19 +13,21 @@ import { decodeSelections, encodeSelections } from "../../src/wizard/url.js";
 import { isComplete } from "../../src/wizard/complete.js";
 import { jstYear } from "../../src/time/jstYear.js";
 import type {
-  AssetCode,
   CoverageCode,
   DanshinChoice,
   EducationPlanChoice,
   EmploymentChoice,
   HousingChoice,
-  IncomeCode,
-  LivingCode,
-  LoanCode,
   SpouseEmploymentChoice,
-  SpouseIncomeCode,
   WizardSelections,
 } from "../../src/wizard/types.js";
+import {
+  ASSETS_LABEL,
+  INCOME_LABEL,
+  LIVING_LABEL,
+  LOAN_LABEL,
+  SPOUSE_INCOME_LABEL,
+} from "../../src/wizard/labels.js";
 import s from "./page.module.css";
 
 const EMPLOYMENT: [EmploymentChoice, string][] = [
@@ -37,44 +39,10 @@ const SPOUSE_EMPLOYMENT: [SpouseEmploymentChoice, string][] = [
   ...EMPLOYMENT,
   ["none", "専業主婦・主夫／無職"],
 ];
-const INCOME: [IncomeCode, string][] = [
-  ["lt400", "400万円以下"],
-  ["lt600", "400〜600万円"],
-  ["lt800", "600〜800万円"],
-  ["lt1000", "800〜1000万円"],
-  ["gte1000", "1000万円以上"],
-  ["prefer_not", "答えたくない"],
-];
-const SPOUSE_INCOME: [SpouseIncomeCode, string][] = [["none", "収入なし"], ...INCOME];
-const ASSETS: [AssetCode, string][] = [
-  ["lt100", "100万円以下"],
-  ["lt300", "100〜300万円"],
-  ["lt500", "300〜500万円"],
-  ["lt1000", "500〜1000万円"],
-  ["gte1000", "1000万円以上"],
-  ["unknown", "分からない"],
-];
-const LIVING: [LivingCode, string][] = [
-  ["lt20", "20万円以下"],
-  ["lt25", "20〜25万円"],
-  ["lt30", "25〜30万円"],
-  ["lt35", "30〜35万円"],
-  ["gte35", "35万円以上"],
-  ["estimate", "年収からおまかせで推定する"],
-];
 const HOUSING: [HousingChoice, string][] = [
   ["own_loan", "持ち家（住宅ローンあり）"],
   ["own_noloan", "持ち家（ローンなし）"],
   ["rent", "賃貸"],
-];
-const LOAN: [LoanCode, string][] = [
-  ["lt500", "500万円以下"],
-  ["lt1000", "500〜1000万円"],
-  ["lt1500", "1000〜1500万円"],
-  ["lt2000", "1500〜2000万円"],
-  ["lt3000", "2000〜3000万円"],
-  ["gte3000", "3000万円以上"],
-  ["unknown", "分からない"],
 ];
 const DANSHIN: [DanshinChoice, string][] = [
   ["yes", "入っている"],
@@ -405,14 +373,14 @@ export default function WizardPage() {
         <>
           <RadioGroup
             legend="あなたの年収（税込み）"
-            options={INCOME}
+            options={INCOME_LABEL}
             value={sel.selfIncome}
             onChange={(v) => set({ selfIncome: v })}
           />
           {sel.hasSpouse && (
             <RadioGroup
               legend="配偶者の年収（税込み）"
-              options={SPOUSE_INCOME}
+              options={SPOUSE_INCOME_LABEL}
               value={sel.spouseIncome}
               onChange={(v) => set({ spouseIncome: v })}
             />
@@ -424,14 +392,14 @@ export default function WizardPage() {
         <>
           <RadioGroup
             legend="世帯の金融資産（貯金・投資などの合計）"
-            options={ASSETS}
+            options={ASSETS_LABEL}
             value={sel.assets}
             onChange={(v) => set({ assets: v })}
           />
           <RadioGroup
             legend="毎月の生活費"
             note="家賃などの住居費は含めて、住宅ローンの返済は除いた金額でお答えください。"
-            options={LIVING}
+            options={LIVING_LABEL}
             value={sel.livingCost}
             onChange={(v) => set({ livingCost: v })}
           />
@@ -450,7 +418,7 @@ export default function WizardPage() {
             <>
               <RadioGroup
                 legend="住宅ローンの残高"
-                options={LOAN}
+                options={LOAN_LABEL}
                 value={sel.loan}
                 onChange={(v) => set({ loan: v })}
               />

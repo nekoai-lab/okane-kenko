@@ -11,7 +11,7 @@ import { crossingNote, envelope } from "../calc/envelope.js";
 import { diagnose } from "../calc/index.js";
 import { loadParams } from "../params/index.js";
 import type { WizardSelections } from "./types.js";
-import { normalizeEnds } from "./uncertainty.js";
+import { crossingDrivers, normalizeEnds } from "./uncertainty.js";
 
 const P = loadParams("2026-08");
 const AS_OF = new Date("2026-08-01T00:00:00+09:00");
@@ -145,7 +145,10 @@ describe("枝跨ぎ：端で判定が変わっても幅が潰れない", () => {
       crossed: true,
       ends: [],
     };
-    expect(crossingNote(crossed)).toContain("結論が変わります");
+    // 既存の感度文と同じ型：①何がこの幅を作っているか ②緩め／厳しめでどう変わるか
+    expect(crossingNote(crossed)).toContain("この幅は、答えの幅");
+    expect(crossingNote(crossed)).toContain("緩めに見ると");
+    expect(crossingNote(crossed)).toContain("厳しめに見ると");
     // **数値は書かない**（金額は画面が算定結果から描く）
     expect(crossingNote(crossed)).not.toMatch(/[0-9]/);
     expect(crossingNote({ ...crossed, crossed: false })).toBeNull();
@@ -193,7 +196,7 @@ describe("実例世帯：跨ぎの種類ごとに1つ", () => {
     // 包絡は両端を含む（素直につなぐと潰れる形になっていないこと）
     expect(r.low).toBeLessThanOrEqual(Math.min(...r.ends.map((x) => x.low)));
     expect(r.high).toBeGreaterThanOrEqual(Math.max(...r.ends.map((x) => x.high)));
-    expect(crossingNote(r)).toContain("結論が変わります");
+    expect(crossingNote(r)).toContain("緩めに見ると");
   });
 
   /**
@@ -234,6 +237,13 @@ describe("実例世帯：跨ぎの種類ごとに1つ", () => {
     expect(r.verdictStrict).toBe("shortage");
     // 厳しめ端の配偶者年収が床そのもの
     expect(e.strict.spouse?.income).toBe(P.ownStandard.incomeBandFloor.value);
+    // **2段跨ぎだけ、あいだの判定と「幅が狭まる条件」を足す**（A＋D・2026-09-23 裁定）
+    const driver = crossingDrivers(P, 共働き子2, AS_OF)[0];
+    const note = crossingNote(r, driver);
+    expect(note).toContain("あいだには");
+    expect(note).toContain("はっきりすると狭まります");
+    // **指示形にしない**（「確かめてください」とは書かない）
+    expect(note).not.toContain("ください");
   });
 });
 
