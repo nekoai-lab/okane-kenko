@@ -287,13 +287,19 @@ describe("runParamWatch", () => {
       const all = loadWatchSources();
       return { version: all.version, watches: { kogakuTasuukai: all.watches.kogakuTasuukai } };
     };
+    /**
+     * **params は適用前の凍結コピーを渡す**（2026-09-23）。
+     * D6 の適用で本物の台帳は `verified: true` になり、**昇格できる対象が無くなった**
+     * ＝この経路を確かめる被験体が消えた。CLAUDE.md の「ズレを解消したら、それを被験体に
+     * していた検査を点検する」に従い、凍結コピー（T-G 適用直前＝多数回該当も昇格前）を相手にする。
+     */
     const runTasuukai = async (store = createMemoryProposalStore()) => {
       const result = await runParamWatch({
-        params: P,
+        params: PRE_TG,
         sources: tasuukai(),
         cases: CASES,
         store,
-        paramsYaml: loadParamsText("2026-08"),
+        paramsYaml: { file: PRE_TG_FILE, text: PRE_TG_TEXT },
         now: () => NOW,
         fetchImpl: (async () =>
           new Response(HTML, {
@@ -339,7 +345,7 @@ describe("runParamWatch", () => {
     });
 
     it("台帳が verified: true なら、昇格の提案は作らず silent に戻る", async () => {
-      const verified = structuredClone(P);
+      const verified = structuredClone(PRE_TG);
       const src = verified.kogaku.sources?.multipleOccurrence;
       if (src) src.verified = true;
       const store = createMemoryProposalStore();
@@ -348,7 +354,7 @@ describe("runParamWatch", () => {
         sources: tasuukai(),
         cases: CASES,
         store,
-        paramsYaml: loadParamsText("2026-08"),
+        paramsYaml: { file: PRE_TG_FILE, text: PRE_TG_TEXT },
         now: () => NOW,
         fetchImpl: (async () =>
           new Response(HTML, {

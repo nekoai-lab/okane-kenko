@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadParams } from "../params/index.js";
 import { extractAll } from "./extract.js";
+import { PRE_TG } from "./__fixtures__/preTg.js";
 import { isPromotable, verifyOps } from "./verifyOps.js";
 import { resolveTarget } from "./paths.js";
 import { loadWatchSources } from "./sources.js";
@@ -102,9 +103,17 @@ describe("多数回該当の抽出（表の取り違えを起こさない）", (
   });
 });
 
+/**
+ * **昇格したら、昇格を確かめていた検査は被験体を失う**（2026-09-23）。
+ *
+ * D6 の適用で `kogaku.sources.multipleOccurrence.verified` は true になったので、
+ * 生きた params を相手にすると「昇格できる対象」が存在しなくなる。
+ * CLAUDE.md「ズレを解消したら、そのズレを被験体にしていた検査を必ず点検する」に従い、
+ * **適用前の凍結コピー**（`__fixtures__/pre-tg.yaml`＝T-G 適用直前＝多数回該当も昇格前）を相手にする。
+ */
 describe("検証の昇格（値は動かさない）", () => {
   it("台帳が verified: false なので昇格の対象になる", () => {
-    const t = resolveTarget(P, "kogaku.multipleOccurrence.区分ア");
+    const t = resolveTarget(PRE_TG, "kogaku.multipleOccurrence.区分ア");
     expect(t?.ledgerPath?.join(".")).toBe("kogaku.sources.multipleOccurrence");
     expect(t?.ledger?.verified).toBe(false);
     expect(isPromotable(t as NonNullable<typeof t>)).toBe(true);
@@ -112,7 +121,7 @@ describe("検証の昇格（値は動かさない）", () => {
 
   it("5値で台帳は1つなので、昇格の操作は1回だけ・算定側の門も一緒に動かす", () => {
     const targets = WATCH.targets.map((t) => {
-      const target = resolveTarget(P, t.key);
+      const target = resolveTarget(PRE_TG, t.key);
       if (!target) throw new Error(t.key);
       return { key: t.key, label: t.label, target, value: target.current };
     });
