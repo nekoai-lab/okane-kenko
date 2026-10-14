@@ -81,7 +81,7 @@ export function Waterfall({
         {surplus > 0 && (
           <span>
             <i className={s.lgSurplus} />
-            余る分
+            前提どおりなら上回る分
           </span>
         )}
       </div>
@@ -123,8 +123,8 @@ export function Waterfall({
               <p className={s.overflow}>
                 {d.used === 0
                   ? // 棒が出ない行。**「このうち」と書くと一部に読める**ので、全額だと書く
-                    `この全額が、総額を超えたぶんです（下の「余る分」へ）`
-                  : `このうち ${fmt(d.unusedPart)} は、総額を超えたぶんです（下の「余る分」へ）`}
+                    `この全額が、総額を超えたぶんです（下の「前提どおりなら上回る分」へ）`
+                  : `このうち ${fmt(d.unusedPart)} は、総額を超えたぶんです（下の「前提どおりなら上回る分」へ）`}
               </p>
             )}
           </li>
@@ -133,7 +133,7 @@ export function Waterfall({
         {surplus > 0 && (
           <li className={s.row}>
             <div className={s.head}>
-              <p className={s.label}>余る分</p>
+              <p className={s.label}>前提どおりなら上回る分</p>
               <p className={`${s.amount} ${s.amountSurplus}`}>{fmt(surplus)}</p>
             </div>
             <div className={s.track}>
