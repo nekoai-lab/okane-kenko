@@ -24,6 +24,9 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# standalone 出力は public/ を含まない。入れ忘れると、LP の家族画像（public/lp/）が
+# 本番だけ 404 になり、代わりに alt の文字が出る（2026-10-15 に実際に起きた）
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/params ./params
 
 USER nextjs
