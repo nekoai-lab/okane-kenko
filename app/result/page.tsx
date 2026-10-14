@@ -443,6 +443,9 @@ function CaseCard({
           {
             label: "遺族年金でカバー",
             from: `${r.income.pensionKosei > 0 ? "会社員（厚生年金）" : "自営・フリーランス"}${childCount > 0 ? `・子${childCount}人` : ""}`,
+            // **性別を聞いていないことを黙らせない。** エンジンは遺される側を妻として扱っている
+            // （中高齢寡婦加算・遺族厚生年金の年齢要件）。直すのはエンジン側の宿題（2026-10-15）
+            note: "遺される側が妻の場合の制度で計算しています（夫の場合は中高齢寡婦加算などが出ないことがあります）",
             source: "日本年金機構",
             amount: r.income.pensionBasic + r.income.pensionKosei + r.income.chukoreiKafu,
           },
@@ -473,7 +476,8 @@ function CaseCard({
           label: `民間保険で備える額${RESULT_QUALIFIER[r.verdict] ?? ""}`,
           note: RESULT_NOTE[r.verdict] ?? RESULT_NOTE.sufficient,
         }}
-        surplusNote={`この余りは、${survivorLabel}の就労収入（約${money(r.income.survivorWork)}）の前提の上にあります。`}
+        /* **手元のお金に読ませない。** 上回る分の大半は、これから算定期間をかけて入る就労収入（2026-10-15） */
+        surplusNote={`この上回る分は、${survivorLabel}の就労収入（約${money(r.income.survivorWork)}）の前提の上にあります。いま手元にあるお金ではなく、${r.years.total}年かけて入る将来の収入を含みます。`}
         total={r.expense.total}
         totalFrom="STEP 2 の毎月の収支を通算し、大学の山と一度きりの支出まで足したもの"
         totalLabel="遺されたご家族に必要な総額"
