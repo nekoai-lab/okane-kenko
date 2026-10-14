@@ -56,9 +56,11 @@ steps:
       - --min-instances=0
       - --max-instances=3
       - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,SLACK_WEBHOOK_URL=slack-webhook-url:latest,WATCH_CRON_SECRET=watch-cron-secret:latest,ADMIN_PASSWORD=admin-password:latest
-      # WATCH_BASE_URL は通知リンク（/notice/{token}）を組み立てる公開URLで、秘密ではない。
-      # Secret Manager に入れると権限と版の管理が増えるだけなので、素の環境変数で渡す。
-      - --set-env-vars=WATCH_BASE_URL=https://okane-kenko-caiwgo7uta-an.a.run.app
+      # WATCH_BASE_URL（通知リンク /notice/{token} を組み立てる公開URL）はここで渡さない。
+      # 公開リポジトリに本番URLを書かないため、サービス側に一度だけ設定してある値を使う
+      # （gcloud run deploy は、指定しない環境変数を前のリビジョンから引き継ぐ）。
+      # 設定し直すとき：gcloud run services update <サービス名> --update-env-vars=WATCH_BASE_URL=<公開URL>
+      # ここに --set-env-vars を足すと環境変数が丸ごと置き換わり、WATCH_BASE_URL が消える。
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA

@@ -35,7 +35,7 @@
 ```sh
 SECRET=$(gcloud secrets versions access latest --secret=watch-cron-secret --project=okane-kenko-507122 | tr -d '\n')
 curl -sS -X POST -H "X-Watch-Secret: $SECRET" \
-  "https://okane-kenko-caiwgo7uta-an.a.run.app/api/paramwatch/run?demo=1" | head -c 2000
+  "https://<公開URL>/api/paramwatch/run?demo=1" | head -c 2000
 ```
 
 - [ ] 結果画面は下の「組み替えの余地」世帯の URL を先に1回開いておく（AI言語化の初回待ちを避ける）

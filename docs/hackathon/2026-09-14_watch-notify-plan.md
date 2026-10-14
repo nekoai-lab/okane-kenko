@@ -1553,7 +1553,7 @@ WATCH_CRON_SECRET=
 
 # 気づき通知のリンク(マジックリンク)を組み立てる基底URL。
 # 用途：Slack通知に載せる /notice/{token} の絶対URLを作るため。
-# 値の例：本番なら https://okane-kenko-caiwgo7uta-an.a.run.app
+# 値の例：本番なら https://<公開URL>
 WATCH_BASE_URL=
 ```
 

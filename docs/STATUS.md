@@ -11,7 +11,7 @@
 法人福利厚生として社員に「必要保障の過不足」を**根拠つき**で返す診断。保険成約手数料を取らない＝「必要ないなら入らなくていい」と言える中立性が芯。
 
 ## 現在地
-**“仮の検証ビルド”が Cloud Run の公開URLで動いている。** → https://okane-kenko-caiwgo7uta-an.a.run.app
+**“仮の検証ビルド”が Cloud Run の公開URLで動いている。** → https://<公開URL>
 `main` への push で自動デプロイされる（Cloud Build トリガー `deploy-main`／`asia-northeast1`）。n1 と社内検証は、このURLを配れば回せる。
 仮の値はすべて `verified:false` ＝ **本番（strictVerified）では診断が止まる**設計なので、仮のまま本番に漏れない。
 **テスト：199 ユニット ＋ 6 E2E（モバイル）green。**
