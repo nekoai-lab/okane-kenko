@@ -4,7 +4,7 @@
 flowchart LR
   subgraph users["👤 利用者"]
     direction TB
-    employee["社員<br>登録不要で診断"]:::trigger
+    employee["診断する人<br>登録不要で診断"]:::trigger
     operator["運営者<br>合言葉つき承認画面"]:::trigger
   end
 
@@ -14,6 +14,7 @@ flowchart LR
     firestore["Firestore（native）<br>households / notice_log<br>param_proposals / param_watch_log"]:::success
     secrets["Secret Manager<br>gemini-api-key / slack-webhook-url<br>watch-cron-secret / admin-password"]:::gate
     cloudBuild["Cloud Build: deploy-main<br>lint → typecheck → test → deploy"]:::ai
+    scheduler["Cloud Scheduler<br>毎週月曜 9:00（JST）"]:::gate
   end
 
   subgraph external["🌐 外部サービス"]
@@ -30,6 +31,7 @@ flowchart LR
   end
 
   employee -- "HTTPS" --> cloudRun
+  scheduler -- "制度の監視を起動（合言葉つき POST）" --> cloudRun
   operator -- "HTTPS＋合言葉クッキー" --> cloudRun
 
   cloudRun -- "世帯記録・承認キュー（ADCで認証）" --> firestore
