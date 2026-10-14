@@ -1,5 +1,5 @@
 /* トップページ（LP v7）のスタイル。全セレクタを .okk-lp の下に閉じ込め、ほかの画面へ漏らさない（2026-10-15） */
-.okk-lp{--paper:#ffffff;--ink:#112e28;--green:#123e33;--muted:#526b62;--line:#d5e2db;--support:#4f9380;--support-light:#eaf5ef;--mint:#c4edcf;--warm:#a5432e;--serif:"Shippori Mincho","Yu Mincho",serif;--sans:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+.okk-lp{--paper:#ffffff;--ink:#112e28;--green:#123e33;--muted:#526b62;--line:#d5e2db;--support:#4f9380;--support-light:#eaf5ef;--mint:#c4edcf;--warm:#a5432e;--serif:var(--lp-font-serif),"Shippori Mincho","Yu Mincho",serif;--sans:var(--lp-font-sans),"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
 .okk-lp,.okk-lp *{box-sizing:border-box}
 .okk-lp{scroll-behavior:smooth;scroll-padding-top:28px}
 .okk-lp{margin:0;background:#fff;color:var(--ink);font:400 18px/1.85 var(--sans);-webkit-font-smoothing:antialiased}

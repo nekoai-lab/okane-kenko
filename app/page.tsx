@@ -12,6 +12,7 @@
  * スタイルは `lp.css`（全セレクタを `.okk-lp` の下に閉じ込めてある）。
  */
 import type { CSSProperties } from "react";
+import { Noto_Sans_JP, Shippori_Mincho } from "next/font/google";
 import Link from "next/link";
 import { topExample } from "../src/calc/topExample.js";
 import { loadParams } from "../src/params/index.js";
@@ -22,6 +23,24 @@ export const metadata = {
   description:
     "お金の健康診断。約10問で、家族に必要なお金と、すでにある支え、いまの保障との差を根拠つきで見える化。保険を売らない診断です。",
 };
+
+/**
+ * LP の書体（依頼どおり Noto Sans JP と Shippori Mincho を維持する）。
+ * next/font がビルド時に取得して自前配信するので、実行時に Google へ取りに行かない。
+ * 変数は `.okk-lp` にだけ付けるので、ほかの画面の書体は変わらない。
+ */
+const notoSans = Noto_Sans_JP({
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--lp-font-sans",
+});
+const shippori = Shippori_Mincho({
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--lp-font-serif",
+});
 
 /** 円 → 万円の数字（3桁区切り）。丸めは結果画面の表示（約○万円）と同じ */
 const man = (yen: number) => Math.round(yen / 10_000).toLocaleString("ja-JP");
@@ -62,7 +81,7 @@ export default function Home() {
   const afterAssets = afterWork - ex.assets;
 
   return (
-    <div className="okk-lp">
+    <div className={`okk-lp ${notoSans.variable} ${shippori.variable}`}>
       <a className="skip" href="#main">
         本文へ移動
       </a>
