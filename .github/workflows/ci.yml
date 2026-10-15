@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# CI はコードを読んでテストするだけなので、GITHUB_TOKEN は読み取りに絞る。
+# 既定はリポジトリ設定まかせで、書き込み権限が渡ることがある。
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
