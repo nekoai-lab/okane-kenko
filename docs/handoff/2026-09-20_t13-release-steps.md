@@ -277,7 +277,7 @@ https://github.com/nekoai-lab/okane-kenko/pull/new/feat/t13-watch-notify
 ## S8 本番で1周まわす
 
 ```bash
-curl -X POST https://okane-kenko-caiwgo7uta-an.a.run.app/api/watch/run \
+curl -X POST https://<公開URL>/api/watch/run \
   -H "X-Watch-Secret: <WATCH_CRON_SECRET の値>"
 ```
 
@@ -299,7 +299,7 @@ gcloud scheduler jobs create http watch-notify-weekly \
   --location=asia-northeast1 \
   --schedule="0 9 * * 1" \
   --time-zone="Asia/Tokyo" \
-  --uri="https://okane-kenko-caiwgo7uta-an.a.run.app/api/watch/run" \
+  --uri="https://<公開URL>/api/watch/run" \
   --http-method=POST \
   --headers="X-Watch-Secret=<WATCH_CRON_SECRET の値>"
 ```
