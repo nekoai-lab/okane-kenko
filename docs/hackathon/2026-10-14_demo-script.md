@@ -33,7 +33,7 @@
 - [ ] 罠の提案を積む（`?demo=1` を付け忘れると罠が並ばず山場が撮れない）：
 
 ```sh
-SECRET=$(gcloud secrets versions access latest --secret=watch-cron-secret --project=okane-kenko-507122 | tr -d '\n')
+SECRET=$(gcloud secrets versions access latest --secret=watch-cron-secret --project=<プロジェクトID> | tr -d '\n')
 curl -sS -X POST -H "X-Watch-Secret: $SECRET" \
   "https://<公開URL>/api/paramwatch/run?demo=1" | head -c 2000
 ```

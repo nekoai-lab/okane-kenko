@@ -85,7 +85,7 @@ T-H 束 → 説明資料の更新（D4〜D6 反映）→ デモ台本の更新 �
 
 | # | 項目 | 状態 | 証拠 | 差 → 対応 |
 |---|---|---|---|---|
-| ① | agent の形 | Next.js 内（単一サービス） | `gcloud run services list --project=okane-kenko-507122` は `okane-kenko` 1つ。`app/api/paramwatch/run` → `src/paramwatch/run.ts`。LLM 呼び出しなし | 裁定で単一サービスに確定（§3） |
+| ① | agent の形 | Next.js 内（単一サービス） | `gcloud run services list --project=<プロジェクトID>` は `okane-kenko` 1つ。`app/api/paramwatch/run` → `src/paramwatch/run.ts`。LLM 呼び出しなし | 裁定で単一サービスに確定（§3） |
 | ② | 許可リスト・untrusted | 実装済み | `fetch.ts`/`sources.ts`（https・ホスト＋パス完全一致・1ホップ・リダイレクト先再検査）。`extract.test.ts`「isAllowed」4本、`run.test.ts`「許可リスト外へリダイレクト…」 | 本文を LLM に渡さないのでタグの仕組みは不要。D6 で LLM を入れる場合も本文は渡さない |
 | ③ | 影響測定 | 部分 | 実走で `assess_impact`「10世帯を再計算→結論が変わる0/10・不変条件 合格」。検査は `checkInvariants` のみ | 隙間3 → D2 |
 | ③' | T-G の監視 | 無い | `applyChanges`・`run.ts` が `params.public` しか見ない | 隙間1 → D1 |

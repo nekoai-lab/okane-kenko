@@ -142,8 +142,8 @@ gcloud auth application-default login
 Phase A の「DBなし」を初めて崩す。**既にあるかを先に確認する**（create は既存だとエラーになる）。
 
 ```bash
-PROJECT=okane-kenko-507122
-PROJNUM=84783545243
+PROJECT=$(gcloud config get-value project)   # 対象プロジェクトを gcloud に設定してから
+PROJNUM=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
 RUNTIME="${PROJNUM}-compute@developer.gserviceaccount.com"
 
 # Firestore API はこのプロジェクトでまだ有効化されていない（2026-09-20 に確認）。
@@ -169,7 +169,7 @@ gcloud projects add-iam-policy-binding $PROJECT \
 > **Firebase コンソールにも出ない。これも正しい。** GCP 側で作ったプロジェクトは
 > 「Firebase を追加」するまで Firebase コンソールの一覧に現れない。追加する必要はない
 > （理由は `docs/CONTEXT.md` の「GCPプロジェクト / Firebaseプロジェクト」）。
-> 見るのはこちら → https://console.cloud.google.com/firestore/databases/-default-/data?project=okane-kenko-507122
+> 見るのはこちら → https://console.cloud.google.com/firestore/databases/-default-/data?project=<プロジェクトID>
 
 ## S4 ローカルで一連の流れを通す（いちばん大事）
 
@@ -272,7 +272,7 @@ https://github.com/nekoai-lab/okane-kenko/pull/new/feat/t13-watch-notify
 マージすると Cloud Build `deploy-main` が走り、公開URLが新しい版に差し替わる。
 
 **完了の合図**：ビルドが SUCCESS。Secret の付け忘れがあればここで落ちる（S5 をやり直す）。
-→ https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1?project=okane-kenko-507122
+→ https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1?project=<プロジェクトID>
 
 ## S8 本番で1周まわす
 
@@ -295,7 +295,7 @@ curl -X POST https://<公開URL>/api/watch/run \
 
 ```bash
 gcloud scheduler jobs create http watch-notify-weekly \
-  --project=okane-kenko-507122 \
+  --project=<プロジェクトID> \
   --location=asia-northeast1 \
   --schedule="0 9 * * 1" \
   --time-zone="Asia/Tokyo" \

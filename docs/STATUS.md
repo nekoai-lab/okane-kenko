@@ -283,4 +283,4 @@ FPの実務資料と比べると、**表の質では並んだ／部分的に勝�
 
 Secret Manager は4つ：`gemini-api-key` / `slack-webhook-url` / `watch-cron-secret` / `admin-password`。
 **`cloudbuild.yaml` が参照するので、Secret を増やすときは作ってからマージする**（無いと deploy が赤で落ちる）。
-`main` に入ると Cloud Build が自動で走る → https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1?project=okane-kenko-507122
+`main` に入ると Cloud Build が自動で走る → https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1?project=<プロジェクトID>

@@ -1596,14 +1596,14 @@ git commit -m "docs(T-13): 気づき通知の環境変数とチケットを記�
 - [ ] **Step 1: Firestoreを有効化する(人手・GCPコンソールまたはgcloud)**
 
 ```bash
-gcloud firestore databases create --project=okane-kenko-507122 --location=asia-northeast1 --type=firestore-native
+gcloud firestore databases create --project=<プロジェクトID> --location=asia-northeast1 --type=firestore-native
 ```
-Expected: プロジェクト`okane-kenko-507122`にNativeモードのFirestoreデータベースが作成される(既に存在する場合はこのコマンドはエラーになるので、既存有無を先に`gcloud firestore databases list --project=okane-kenko-507122`で確認する)
+Expected: プロジェクト`<プロジェクトID>`にNativeモードのFirestoreデータベースが作成される(既に存在する場合はこのコマンドはエラーになるので、既存有無を先に`gcloud firestore databases list --project=<プロジェクトID>`で確認する)
 
 - [ ] **Step 2: Cloud Runの実行サービスアカウントにFirestore権限を付与する(人手)**
 
 ```bash
-gcloud projects add-iam-policy-binding okane-kenko-507122 \
+gcloud projects add-iam-policy-binding <プロジェクトID> \
   --member="serviceAccount:<Cloud Runサービスの実行SA>" \
   --role="roles/datastore.user"
 ```
@@ -1664,7 +1664,7 @@ Expected: 一連の流れ(Slack→着地画面→result→削除)がすべて実
 
 ```bash
 gcloud scheduler jobs create http watch-notify-weekly \
-  --project=okane-kenko-507122 \
+  --project=<プロジェクトID> \
   --location=asia-northeast1 \
   --schedule="0 9 * * 1" \
   --uri="https://<本番のCloud Run URL>/api/watch/run" \
