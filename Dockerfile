@@ -4,7 +4,7 @@
 # **イメージに params を入れ忘れると、本番だけ「パラメータが見つかりません」で落ちる。**
 # Next の standalone 出力に任せず、明示的に COPY する（壊れ方が静かなので、二重に担保する）。
 
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 # --ignore-scripts：prepare が git のフックパスを設定するだけで、コンテナには git が無い
@@ -12,7 +12,7 @@ RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:25-alpine AS runner
 # Node.js 2026-10-21 のセキュリティリリース（CVE-2026-111497 ほか）より前の版では作らない。
 # ベースイメージの取り違えやキャッシュで古い Node が入ったら、ここでビルドを止める。
 RUN node -e "const m={22:[23,4],24:[22,1],26:[12,1]};const [a,b,c]=process.versions.node.split('.').map(Number);const min=m[a];const ok=a>26||(min&&(b>min[0]||(b===min[0]&&c>=min[1])));if(!ok){console.error('Node '+process.version+' は 2026-10-21 のセキュリティ修正より前か、サポート外');process.exit(1)}"
