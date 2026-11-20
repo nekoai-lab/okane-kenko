@@ -24,13 +24,17 @@ const nextConfig = {
     "/api/narrate": ["./params/**"],
     "/result": ["./params/**"],
   },
-  // src/ は .ts を .js 拡張子で import する（bundler 解決前提）。
-  // webpack は .js→.ts の読み替えをしないので、明示する。src/ 側は触らない。
-  webpack: (config) => {
-    config.resolve.extensionAlias = {
-      ".js": [".ts", ".tsx", ".js"],
-    };
-    return config;
+  // src/ は .ts を .js 拡張子で import する（bundler 解決前提）。src/ 側は触らない。
+  // Next 16 の next build は既定で Turbopack になり、webpack の extensionAlias は効かない。
+  // 相対 .js import はローダーで .ts → .tsx → .js の順に解決する。
+  // resolveAlias は相対 import の extensionAlias の代わりにはならない。
+  turbopack: {
+    rules: {
+      "*.{ts,tsx}": {
+        condition: { not: "foreign" },
+        loaders: ["./scripts/typescript-extension-loader.cjs"],
+      },
+    },
   },
 };
 
