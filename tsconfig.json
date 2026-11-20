@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": false,
@@ -32,7 +32,8 @@
     "app/**/*.ts",
     "scripts/**/*.ts",
     "app/**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
