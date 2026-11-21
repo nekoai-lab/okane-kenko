@@ -6,10 +6,10 @@
  * asOf は算定に影響しない（有効期限判定にしか使われない）ので、ゴールデンと同じ日付で固定する。
  */
 import { describe, expect, it } from "vitest";
+import { GOLDEN } from "../../../src/__tests__/households.js";
 import { diagnose } from "../../../src/calc/index.js";
 import { loadParams } from "../../../src/params/index.js";
-import { GOLDEN } from "../../../src/__tests__/households.js";
-import { DiagnoseRequestSchema } from "./schema.js";
+import { DiagnoseRequestSchema, isOversizedRequest, MAX_CHILDREN } from "./schema.js";
 
 const MAN = 10_000;
 const AS_OF = new Date("2026-08-17T12:00:00+09:00");
@@ -40,5 +40,26 @@ describe("POST /api/diagnose の入力検証と算定", () => {
   it("必須項目が欠けた入力は検証で弾く", () => {
     const { self: _self, ...withoutSelf } = gt01.input;
     expect(DiagnoseRequestSchema.safeParse(withoutSelf).success).toBe(false);
+  });
+
+  it("children が上限を超える巨大な配列は zod に渡す前に弾く（GHSA-mrhx-c7xc-m3w5）", () => {
+    const huge = { ...gt01.input, children: Array(1_000_000).fill("x") };
+    expect(isOversizedRequest(huge)).toBe(true);
+    expect(isOversizedRequest({ ...gt01.input, children: Array(MAX_CHILDREN + 1).fill(0) })).toBe(
+      true,
+    );
+    expect(isOversizedRequest({ ...gt01.input, children: Array(MAX_CHILDREN).fill(0) })).toBe(
+      false,
+    );
+    expect(isOversizedRequest(gt01.input)).toBe(false);
+    expect(isOversizedRequest(null)).toBe(false);
+    expect(isOversizedRequest("x")).toBe(false);
+  });
+
+  it("children は上限まで受理し、上限を超えると検証でも弾く", () => {
+    const ok = { ...gt01.input, children: Array(MAX_CHILDREN).fill(0) };
+    const over = { ...gt01.input, children: Array(MAX_CHILDREN + 1).fill(0) };
+    expect(DiagnoseRequestSchema.safeParse(ok).success).toBe(true);
+    expect(DiagnoseRequestSchema.safeParse(over).success).toBe(false);
   });
 });

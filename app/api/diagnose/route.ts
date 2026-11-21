@@ -7,7 +7,7 @@
 import { NextResponse } from "next/server";
 import { diagnose } from "../../../src/calc/index.js";
 import { loadParams } from "../../../src/params/index.js";
-import { DiagnoseRequestSchema } from "./schema.js";
+import { DiagnoseRequestSchema, isOversizedRequest, MAX_CHILDREN } from "./schema.js";
 
 export const runtime = "nodejs";
 
@@ -18,6 +18,14 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return NextResponse.json(
       { error: "invalid_json", message: "リクエストボディを JSON として解釈できません。" },
+      { status: 400 },
+    );
+  }
+
+  // 巨大な配列は zod に渡さない（要素ごとの issue でメモリを使い切るため。schema.ts）
+  if (isOversizedRequest(body)) {
+    return NextResponse.json(
+      { error: "invalid_input", message: `children は ${MAX_CHILDREN} 件までです。` },
       { status: 400 },
     );
   }

@@ -23,10 +23,24 @@ const HousingSchema = z.object({
   danshin: z.boolean().optional(),
 });
 
+/**
+ * 子の人数の上限。zod 3 の配列検証は要素ごとに issue を溜め、.max() を付けても
+ * 全要素を検査するので、巨大な配列でメモリを使い切れる（GHSA-mrhx-c7xc-m3w5）。
+ * zod に渡す前に isOversizedRequest で長さだけ見て弾く。
+ */
+export const MAX_CHILDREN = 20;
+
+/** zod に渡す前の長さの確認。children が上限を超える配列なら true。 */
+export function isOversizedRequest(body: unknown): boolean {
+  if (typeof body !== "object" || body === null) return false;
+  const children = (body as { children?: unknown }).children;
+  return Array.isArray(children) && children.length > MAX_CHILDREN;
+}
+
 export const DiagnoseRequestSchema = z.object({
   self: PersonSchema,
   spouse: PersonSchema.nullable(),
-  children: z.array(z.number().int().nonnegative()),
+  children: z.array(z.number().int().nonnegative()).max(MAX_CHILDREN),
   housing: HousingSchema,
   assets: yen,
   monthlyLiving: yen,
